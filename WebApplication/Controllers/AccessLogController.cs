@@ -1,6 +1,5 @@
 ﻿using Bussines;
 using Entity.Dto;
-using Entity.Model;
 using Microsoft.AspNetCore.Mvc;
 using Utilities.Exceptions;
 

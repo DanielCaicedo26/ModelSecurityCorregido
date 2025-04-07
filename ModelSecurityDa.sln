@@ -17,6 +17,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ddl", "ddl", "{02EA681E-C7D
 	ProjectSection(SolutionItems) = preProject
 		..\..\..\Downloads\esquema_pgadmin.sql = ..\..\..\Downloads\esquema_pgadmin.sql
 		..\..\..\Downloads\esquema_phpmyadmin.sql = ..\..\..\Downloads\esquema_phpmyadmin.sql
+		..\..\..\Downloads\esquema_sqlserver.sql = ..\..\..\Downloads\esquema_sqlserver.sql
 	EndProjectSection
 EndProject
 Global

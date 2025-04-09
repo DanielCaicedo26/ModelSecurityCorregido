@@ -10,6 +10,7 @@
         public DateTime CreatedAt { get; set; }
 
         // Propiedades de navegación
+        public User User { get; set; } 
         public virtual ICollection<User>? Users { get; set; }
         public virtual ICollection<StateInfraction>? StateInfractions { get; set; }
         public virtual ICollection<PaymentUser>? PaymentUsers { get; set; }

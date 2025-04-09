@@ -35,7 +35,7 @@ namespace Data
                 return await _context.Set<User>()
                     .Include(u => u.Person)
                     .Include(u => u.RoleUsers)
-                    .Include(u => u.Notifications)
+                    .Include(u => u.UserNotifications)
                     .Include(u => u.PaymentHistories)
                     .AsNoTracking()
                     .ToListAsync();
@@ -59,7 +59,7 @@ namespace Data
                 return await _context.Set<User>()
                     .Include(u => u.Person)
                     .Include(u => u.RoleUsers)
-                    .Include(u => u.Notifications)
+                    .Include(u => u.UserNotifications)
                     .Include(u => u.PaymentHistories)
                     .FirstOrDefaultAsync(u => u.Id == id);
             }

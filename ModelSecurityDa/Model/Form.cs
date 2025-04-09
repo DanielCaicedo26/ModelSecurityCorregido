@@ -8,7 +8,8 @@
         public DateTime DateCreation { get; set; }
         public string? Status { get; set; }
 
-        public virtual ICollection<RoleFormPermission>? RolFormPermissions { get; set; }
+
+        public virtual ICollection<RoleFormPermission>? RoleFormPermissions { get; set; }
         public virtual ICollection<ModuloForm>? ModuloForms { get; set; }
     }
 }

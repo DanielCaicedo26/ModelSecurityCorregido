@@ -1,11 +1,8 @@
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using Data;
 using Entity.Dto;
-using Entity.Model;
+using Data;
 using Microsoft.Extensions.Logging;
 using Utilities.Exceptions;
+using Entity.Model;
 
 namespace Bussines
 {
@@ -161,7 +158,3 @@ namespace Bussines
         }
     }
 }
-
-
-
-

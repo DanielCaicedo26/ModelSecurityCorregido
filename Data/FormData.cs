@@ -33,7 +33,7 @@ namespace Data
             try
             {
                 return await _context.Set<Form>()
-                    .Include(f => f.RolFormPermissions)
+                    .Include(f => f.RoleFormPermissions)
                     .Include(f => f.ModuloForms)
                     .AsNoTracking()
                     .ToListAsync();
@@ -55,7 +55,7 @@ namespace Data
             try
             {
                 return await _context.Set<Form>()
-                    .Include(f => f.RolFormPermissions)
+                    .Include(f => f.RoleFormPermissions)
                     .Include(f => f.ModuloForms)
                     .FirstOrDefaultAsync(f => f.Id == id);
             }

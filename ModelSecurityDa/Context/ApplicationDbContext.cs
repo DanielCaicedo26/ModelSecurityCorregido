@@ -1,4 +1,5 @@
 ﻿using Dapper;
+using Entity.Model;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Configuration;
@@ -28,6 +29,29 @@ namespace Entity.Context
         {
             _configuration = configuration;
         }
+        public DbSet<AccessLog> AccessLogs { get; set; }
+        public DbSet<Bill> Bill { get; set; }
+        public DbSet<Form> Form { get; set; }
+        public DbSet<InformationInfraction> InformationInfractions { get; set; }
+        public DbSet<Entity.Model.Module> Module { get; set; }
+        public DbSet<ModuloForm> ModuloForm{ get; set; }
+        public DbSet<PaymentAgreement> PaymentAgreement { get; set; }
+        public DbSet<PaymentHistory> PaymentHistory { get; set; }
+        public DbSet<PaymentUser> PaymentUser { get; set; }
+        public DbSet<Permission> Permission { get; set; }
+        public DbSet<Person> Person { get; set; }
+        public DbSet<Role> Role { get; set; }
+        public DbSet<RoleFormPermission> RoleFormPermission { get; set; }
+        public DbSet<RoleUser> RoleUser { get; set; }
+        public DbSet<StateInfraction> StateInfraction { get; set; }
+        public DbSet<TypeInfraction> TypeInfractions { get; set; }
+        public DbSet<TypePayment> TypePayments { get; set; }
+        public DbSet<User> User { get; set; }
+        public DbSet<UserNotification> UserNotifications { get; set; }
+
+
+
+
 
         /// <summary>
         /// Configura los modelos de la base de datos aplicando configuraciones desde ensamblados.
@@ -39,7 +63,88 @@ namespace Entity.Context
             modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
 
             base.OnModelCreating(modelBuilder);
+
+            modelBuilder.Entity<Person>()
+             .HasOne(p => p.User)
+             .WithOne(u => u.Person)
+             .HasForeignKey<User>(u => u.PersonId);
+
+            modelBuilder.Entity<AccessLog>()
+                .HasOne(al => al.User)
+                .WithMany(u => u.AccessLogs)
+                .HasForeignKey(al => al.UserId);
+
+            modelBuilder.Entity<RoleUser>()
+                .HasOne(ru => ru.User)
+                .WithMany(u => u.RoleUsers)
+                .HasForeignKey(ru => ru.UserId);
+
+            modelBuilder.Entity<RoleUser>()
+                .HasOne(ru => ru.Role)
+                .WithMany(r => r.RoleUsers)
+                .HasForeignKey(ru => ru.RoleId);
+
+            modelBuilder.Entity<ModuloForm>()
+                .HasOne(mf => mf.Form)
+                .WithMany(f => f.ModuloForms)
+                .HasForeignKey(mf => mf.FormId);
+
+            modelBuilder.Entity<ModuloForm>()
+                .HasOne(mf => mf.Module)
+                .WithMany(m => m.ModuloForms)
+                .HasForeignKey(mf => mf.ModuleId);
+
+            modelBuilder.Entity<RoleFormPermission>()
+                .HasOne(rfp => rfp.Role)
+                .WithMany(r => r.RoleFormPermissions)
+                .HasForeignKey(rfp => rfp.RoleId);
+
+            modelBuilder.Entity<RoleFormPermission>()
+                .HasOne(rfp => rfp.Form)
+                .WithMany(f => f.RoleFormPermissions)
+                .HasForeignKey(rfp => rfp.FormId);
+
+            modelBuilder.Entity<RoleFormPermission>()
+                .HasOne(rfp => rfp.Permission)
+                .WithMany(p => p.RoleFormPermissions)
+                .HasForeignKey(rfp => rfp.PermissionId);
+
+            modelBuilder.Entity<TypeInfraction>()
+                .HasOne(ti => ti.User)
+                .WithMany(u => u.TypeInfractions)
+                .HasForeignKey(ti => ti.UserId);
+
+            modelBuilder.Entity<StateInfraction>()
+                .HasOne(si => si.Infraction)
+                .WithMany(ti => ti.StateInfractions)
+                .HasForeignKey(si => si.InfractionId);
+
+            modelBuilder.Entity<StateInfraction>()
+                .HasOne(si => si.Person)
+                .WithMany(p => p.StateInfractions)
+                .HasForeignKey(si => si.PersonId);
+
+            modelBuilder.Entity<Bill>()
+                .HasOne(b => b.PaymentAgreement)
+                .WithMany(pa => pa.Bills)
+                .HasForeignKey(b => b.PaymentAgreementId);
+
+            modelBuilder.Entity<PaymentHistory>()
+                .HasOne(ph => ph.User)
+                .WithMany(u => u.PaymentHistories)
+                .HasForeignKey(ph => ph.UserId);
+
+            modelBuilder.Entity<PaymentUser>()
+                .HasOne(pu => pu.Person)
+                .WithMany(p => p.PaymentUsers)
+                .HasForeignKey(pu => pu.PersonId);
+
+            modelBuilder.Entity<UserNotification>()
+                .HasOne(un => un.User)
+                .WithMany(u => u.UserNotifications)
+                .HasForeignKey(un => un.UserId);
         }
+        
 
         /// <summary>
         /// Configura opciones adicionales del contexto, como el registro de datos sensibles.

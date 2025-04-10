@@ -4,6 +4,7 @@ using Entity.Context;
 using Microsoft.EntityFrameworkCore;
 
 
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Agregar DbContext

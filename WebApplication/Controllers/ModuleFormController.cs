@@ -10,12 +10,12 @@ namespace WebApplication.Controllers
     [Produces("application/json")]
     public class ModuleFormController : ControllerBase
     {
-        private readonly ModuleFormBusiness _moduleFormBusiness;
+        private readonly ModuloFormBusiness _moduloFormBusiness;
         private readonly ILogger<ModuleFormController> _logger;
 
-        public ModuleFormController(ModuleFormBusiness moduleFormBusiness, ILogger<ModuleFormController> logger)
+        public ModuleFormController(ModuloFormBusiness moduleFormBusiness, ILogger<ModuleFormController> logger)
         {
-            _moduleFormBusiness = moduleFormBusiness;
+            _moduloFormBusiness = moduleFormBusiness;
             _logger = logger;
         }
 
@@ -23,13 +23,13 @@ namespace WebApplication.Controllers
         /// Obtiene todos los formularios de módulos.
         /// </summary>
         [HttpGet]
-        [ProducesResponseType(typeof(IEnumerable<ModuleFormDto>), 200)]
+        [ProducesResponseType(typeof(IEnumerable<ModuloFormDto>), 200)]
         [ProducesResponseType(500)]
         public async Task<IActionResult> GetAll()
         {
             try
             {
-                var moduleForms = await _moduleFormBusiness.GetAllModuleFormsAsync();
+                var moduleForms = await _moduloFormBusiness.GetAllModuloFormsAsync();
                 return Ok(moduleForms);
             }
             catch (ExternalServiceException ex)
@@ -43,7 +43,7 @@ namespace WebApplication.Controllers
         /// Obtiene un formulario de módulo por ID.
         /// </summary>
         [HttpGet("{id}")]
-        [ProducesResponseType(typeof(ModuleFormDto), 200)]
+        [ProducesResponseType(typeof(ModuloFormDto), 200)]
         [ProducesResponseType(400)]
         [ProducesResponseType(404)]
         [ProducesResponseType(500)]
@@ -51,7 +51,7 @@ namespace WebApplication.Controllers
         {
             try
             {
-                var moduleForm = await _moduleFormBusiness.GetModuleFormByIdAsync(id);
+                var moduleForm = await _moduloFormBusiness.GetModuloFormByIdAsync(id);
                 return Ok(moduleForm);
             }
             catch (ValidationException ex)
@@ -75,14 +75,14 @@ namespace WebApplication.Controllers
         /// Crea un nuevo formulario de módulo.
         /// </summary>
         [HttpPost]
-        [ProducesResponseType(typeof(ModuleFormDto), 201)]
+        [ProducesResponseType(typeof(ModuloFormDto), 201)]
         [ProducesResponseType(400)]
         [ProducesResponseType(500)]
-        public async Task<IActionResult> Create([FromBody] ModuleFormDto moduleFormDto)
+        public async Task<IActionResult> Create([FromBody] ModuloFormDto moduleFormDto)
         {
             try
             {
-                var created = await _moduleFormBusiness.CreateModuleFormAsync(moduleFormDto);
+                var created = await _moduloFormBusiness.CreateModuloFormAsync(moduleFormDto);
                 return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
             }
             catch (ValidationException ex)

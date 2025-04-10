@@ -13,8 +13,48 @@ builder.Services.AddSwaggerGen();
 
 
 // Registrar clases de Rol
+builder.Services.AddScoped<AccessLogData>();
+builder.Services.AddScoped<BillData>();
+builder.Services.AddScoped<FormData>();
+builder.Services.AddScoped<InformationInfractionData>();
+builder.Services.AddScoped<ModuleData>();
+builder.Services.AddScoped<ModuloFormData>();
+builder.Services.AddScoped<PaymentAgreementData>();
+builder.Services.AddScoped<PaymentHistoryData>();
+builder.Services.AddScoped<PaymentUserData>();
+builder.Services.AddScoped<PermissionData>();
+builder.Services.AddScoped<PersonData>();
 builder.Services.AddScoped<RoleData>();
+builder.Services.AddScoped<RoleFormPermissionData>();
+builder.Services.AddScoped<RoleUserData>();
+builder.Services.AddScoped<StateInfractionData>();
+builder.Services.AddScoped<TypeInfractionData>();
+builder.Services.AddScoped<TypePaymentData>();
+builder.Services.AddScoped<UserData>();
+builder.Services.AddScoped<UserNotificationData>();
+// Registrar clases de Bussines
+builder.Services.AddScoped<AccessLogBusiness>();
+builder.Services.AddScoped<BillBusiness>();
+builder.Services.AddScoped<FormBusiness>();
+builder.Services.AddScoped<InformationInfractionBusiness>();
+builder.Services.AddScoped<ModuleBusiness>();
+builder.Services.AddScoped<ModuloFormBusiness>();
+builder.Services.AddScoped<PaymentAgreementBusiness>();
+builder.Services.AddScoped<PaymentHistoryBusiness>();
+builder.Services.AddScoped<PaymentUserBusiness>();
+builder.Services.AddScoped<PermissionBusiness>();
+builder.Services.AddScoped<PersonBusiness>();
 builder.Services.AddScoped<RoleBusiness>();
+builder.Services.AddScoped<RoleFormPermissionBusiness>();
+builder.Services.AddScoped<RoleUserBusiness>();
+builder.Services.AddScoped<StateInfractionBusiness>();
+builder.Services.AddScoped<TypeInfractionBusiness>();
+builder.Services.AddScoped<TypePaymentBusiness>();
+builder.Services.AddScoped<UserBusiness>();
+builder.Services.AddScoped<UserNotificationBusiness>();
+
+
+
 
 
 // Agregar CORS

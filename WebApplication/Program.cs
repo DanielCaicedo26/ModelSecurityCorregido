@@ -6,6 +6,10 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Agregar DbContext
+builder.Services.AddDbContext<ApplicationDbContext>(opciones =>
+    opciones.UseSqlServer("name=DefaultConnection"));
+
 // Add services to the container.
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -67,9 +71,7 @@ builder.Services.AddCors(opciones =>
     });
 });
 
-// Agregar DbContext
-builder.Services.AddDbContext<ApplicationDbContext>(opciones =>
-    opciones.UseSqlServer("name=DefaultConnection"));
+
 
 var app = builder.Build();
 

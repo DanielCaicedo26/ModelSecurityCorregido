@@ -3,7 +3,7 @@ using Entity.Dto;
 using Microsoft.AspNetCore.Mvc;
 using Utilities.Exceptions;
 
-namespace Web.Controllers
+namespace Web2.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]

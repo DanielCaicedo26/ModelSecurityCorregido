@@ -1,49 +1,49 @@
-using Bussines;
+ï»¿using Bussines;
 using Entity.Dto;
 using Microsoft.AspNetCore.Mvc;
 using Utilities.Exceptions;
 
-namespace Web.Controllers
+namespace Web2.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
     [Produces("application/json")]
-    public class PaymentUserController : ControllerBase
+    public class FormController : ControllerBase
     {
-        private readonly PaymentUserBusiness _paymentUserBusiness;
-        private readonly ILogger<PaymentUserController> _logger;
+        private readonly FormBusiness _formBusiness;
+        private readonly ILogger<FormController> _logger;
 
-        public PaymentUserController(PaymentUserBusiness paymentUserBusiness, ILogger<PaymentUserController> logger)
+        public FormController(FormBusiness formBusiness, ILogger<FormController> logger)
         {
-            _paymentUserBusiness = paymentUserBusiness;
+            _formBusiness = formBusiness;
             _logger = logger;
         }
 
         /// <summary>
-        /// Obtiene todos los pagos de usuarios.
+        /// Obtiene todos los formularios.
         /// </summary>
         [HttpGet]
-        [ProducesResponseType(typeof(IEnumerable<PaymentUserDto>), 200)]
+        [ProducesResponseType(typeof(IEnumerable<FormDto>), 200)]
         [ProducesResponseType(500)]
         public async Task<IActionResult> GetAll()
         {
             try
             {
-                var paymentUsers = await _paymentUserBusiness.GetAllPaymentUsersAsync();
-                return Ok(paymentUsers);
+                var forms = await _formBusiness.GetAllFormsAsync();
+                return Ok(forms);
             }
             catch (ExternalServiceException ex)
             {
-                _logger.LogError(ex, "Error al obtener los pagos de usuarios");
+                _logger.LogError(ex, "Error al obtener los formularios");
                 return StatusCode(500, new { message = ex.Message });
             }
         }
 
         /// <summary>
-        /// Obtiene un pago de usuario por ID.
+        /// Obtiene un formulario por ID.
         /// </summary>
         [HttpGet("{id}")]
-        [ProducesResponseType(typeof(PaymentUserDto), 200)]
+        [ProducesResponseType(typeof(FormDto), 200)]
         [ProducesResponseType(400)]
         [ProducesResponseType(404)]
         [ProducesResponseType(500)]
@@ -51,53 +51,50 @@ namespace Web.Controllers
         {
             try
             {
-                var paymentUser = await _paymentUserBusiness.GetPaymentUserByIdAsync(id);
-                return Ok(paymentUser);
+                var form = await _formBusiness.GetFormByIdAsync(id);
+                return Ok(form);
             }
             catch (ValidationException ex)
             {
-                _logger.LogWarning(ex, "Validación fallida para el ID del pago de usuario: {PaymentUserId}", id);
+                _logger.LogWarning(ex, "ValidaciÃ³n fallida para el ID del formulario: {FormId}", id);
                 return BadRequest(new { message = ex.Message });
             }
             catch (EntityNotFoundException ex)
             {
-                _logger.LogInformation(ex, "Pago de usuario no encontrado con ID: {PaymentUserId}", id);
+                _logger.LogInformation(ex, "Formulario no encontrado con ID: {FormId}", id);
                 return NotFound(new { message = ex.Message });
             }
             catch (ExternalServiceException ex)
             {
-                _logger.LogError(ex, "Error al obtener el pago de usuario con ID: {PaymentUserId}", id);
+                _logger.LogError(ex, "Error al obtener el formulario con ID: {FormId}", id);
                 return StatusCode(500, new { message = ex.Message });
             }
         }
 
         /// <summary>
-        /// Crea un nuevo pago de usuario.
+        /// Crea un nuevo formulario.
         /// </summary>
         [HttpPost]
-        [ProducesResponseType(typeof(PaymentUserDto), 201)]
+        [ProducesResponseType(typeof(FormDto), 201)]
         [ProducesResponseType(400)]
         [ProducesResponseType(500)]
-        public async Task<IActionResult> Create([FromBody] PaymentUserDto paymentUserDto)
+        public async Task<IActionResult> Create([FromBody] FormDto formDto)
         {
             try
             {
-                var created = await _paymentUserBusiness.CreatePaymentUserAsync(paymentUserDto);
+                var created = await _formBusiness.CreateFormAsync(formDto);
                 return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
             }
             catch (ValidationException ex)
             {
-                _logger.LogWarning(ex, "Validación fallida al crear el pago de usuario");
+                _logger.LogWarning(ex, "ValidaciÃ³n fallida al crear el formulario");
                 return BadRequest(new { message = ex.Message });
             }
             catch (ExternalServiceException ex)
             {
-                _logger.LogError(ex, "Error al crear el pago de usuario");
+                _logger.LogError(ex, "Error al crear el formulario");
                 return StatusCode(500, new { message = ex.Message });
             }
         }
     }
 }
-
-
-

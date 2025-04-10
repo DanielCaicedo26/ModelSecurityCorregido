@@ -11,8 +11,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bussines", "Bussines\Bussin
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Utilities", "Utilities\Utilities.csproj", "{66198EC6-9B75-4AC6-98D2-FA6DFB7D8ED5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Web", "WebApplication\Web.csproj", "{0BA13059-9E00-4671-AC13-7CC09EC49D23}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ddl", "ddl", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
 	ProjectSection(SolutionItems) = preProject
 		..\..\..\Downloads\esquema_pgadmin.sql = ..\..\..\Downloads\esquema_pgadmin.sql
@@ -44,10 +42,6 @@ Global
 		{66198EC6-9B75-4AC6-98D2-FA6DFB7D8ED5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{66198EC6-9B75-4AC6-98D2-FA6DFB7D8ED5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{66198EC6-9B75-4AC6-98D2-FA6DFB7D8ED5}.Release|Any CPU.Build.0 = Release|Any CPU
-		{0BA13059-9E00-4671-AC13-7CC09EC49D23}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{0BA13059-9E00-4671-AC13-7CC09EC49D23}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{0BA13059-9E00-4671-AC13-7CC09EC49D23}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{0BA13059-9E00-4671-AC13-7CC09EC49D23}.Release|Any CPU.Build.0 = Release|Any CPU
 		{0A6E089C-0544-4EB7-B09C-AD93D9BA7305}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{0A6E089C-0544-4EB7-B09C-AD93D9BA7305}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0A6E089C-0544-4EB7-B09C-AD93D9BA7305}.Release|Any CPU.ActiveCfg = Release|Any CPU

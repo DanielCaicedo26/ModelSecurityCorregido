@@ -3,47 +3,47 @@ using Entity.Dto;
 using Microsoft.AspNetCore.Mvc;
 using Utilities.Exceptions;
 
-namespace Web.Controllers
+namespace Web2.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
     [Produces("application/json")]
-    public class PaymentUserController : ControllerBase
+    public class PersonController : ControllerBase
     {
-        private readonly PaymentUserBusiness _paymentUserBusiness;
-        private readonly ILogger<PaymentUserController> _logger;
+        private readonly PersonBusiness _personBusiness;
+        private readonly ILogger<PersonController> _logger;
 
-        public PaymentUserController(PaymentUserBusiness paymentUserBusiness, ILogger<PaymentUserController> logger)
+        public PersonController(PersonBusiness personBusiness, ILogger<PersonController> logger)
         {
-            _paymentUserBusiness = paymentUserBusiness;
+            _personBusiness = personBusiness;
             _logger = logger;
         }
 
         /// <summary>
-        /// Obtiene todos los pagos de usuarios.
+        /// Obtiene todas las personas.
         /// </summary>
         [HttpGet]
-        [ProducesResponseType(typeof(IEnumerable<PaymentUserDto>), 200)]
+        [ProducesResponseType(typeof(IEnumerable<PersonDto>), 200)]
         [ProducesResponseType(500)]
         public async Task<IActionResult> GetAll()
         {
             try
             {
-                var paymentUsers = await _paymentUserBusiness.GetAllPaymentUsersAsync();
-                return Ok(paymentUsers);
+                var persons = await _personBusiness.GetAllPersonsAsync();
+                return Ok(persons);
             }
             catch (ExternalServiceException ex)
             {
-                _logger.LogError(ex, "Error al obtener los pagos de usuarios");
+                _logger.LogError(ex, "Error al obtener las personas");
                 return StatusCode(500, new { message = ex.Message });
             }
         }
 
         /// <summary>
-        /// Obtiene un pago de usuario por ID.
+        /// Obtiene una persona por ID.
         /// </summary>
         [HttpGet("{id}")]
-        [ProducesResponseType(typeof(PaymentUserDto), 200)]
+        [ProducesResponseType(typeof(PersonDto), 200)]
         [ProducesResponseType(400)]
         [ProducesResponseType(404)]
         [ProducesResponseType(500)]
@@ -51,48 +51,48 @@ namespace Web.Controllers
         {
             try
             {
-                var paymentUser = await _paymentUserBusiness.GetPaymentUserByIdAsync(id);
-                return Ok(paymentUser);
+                var person = await _personBusiness.GetPersonByIdAsync(id);
+                return Ok(person);
             }
             catch (ValidationException ex)
             {
-                _logger.LogWarning(ex, "Validación fallida para el ID del pago de usuario: {PaymentUserId}", id);
+                _logger.LogWarning(ex, "Validación fallida para el ID de la persona: {PersonId}", id);
                 return BadRequest(new { message = ex.Message });
             }
             catch (EntityNotFoundException ex)
             {
-                _logger.LogInformation(ex, "Pago de usuario no encontrado con ID: {PaymentUserId}", id);
+                _logger.LogInformation(ex, "Persona no encontrada con ID: {PersonId}", id);
                 return NotFound(new { message = ex.Message });
             }
             catch (ExternalServiceException ex)
             {
-                _logger.LogError(ex, "Error al obtener el pago de usuario con ID: {PaymentUserId}", id);
+                _logger.LogError(ex, "Error al obtener la persona con ID: {PersonId}", id);
                 return StatusCode(500, new { message = ex.Message });
             }
         }
 
         /// <summary>
-        /// Crea un nuevo pago de usuario.
+        /// Crea una nueva persona.
         /// </summary>
         [HttpPost]
-        [ProducesResponseType(typeof(PaymentUserDto), 201)]
+        [ProducesResponseType(typeof(PersonDto), 201)]
         [ProducesResponseType(400)]
         [ProducesResponseType(500)]
-        public async Task<IActionResult> Create([FromBody] PaymentUserDto paymentUserDto)
+        public async Task<IActionResult> Create([FromBody] PersonDto personDto)
         {
             try
             {
-                var created = await _paymentUserBusiness.CreatePaymentUserAsync(paymentUserDto);
+                var created = await _personBusiness.CreatePersonAsync(personDto);
                 return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
             }
             catch (ValidationException ex)
             {
-                _logger.LogWarning(ex, "Validación fallida al crear el pago de usuario");
+                _logger.LogWarning(ex, "Validación fallida al crear la persona");
                 return BadRequest(new { message = ex.Message });
             }
             catch (ExternalServiceException ex)
             {
-                _logger.LogError(ex, "Error al crear el pago de usuario");
+                _logger.LogError(ex, "Error al crear la persona");
                 return StatusCode(500, new { message = ex.Message });
             }
         }

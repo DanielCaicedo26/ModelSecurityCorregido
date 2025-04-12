@@ -33,7 +33,7 @@ namespace Data
             try
             {
                 return await _context.Set<Person>()
-                    .Include(p => p.Users)
+                    .Include(p => p.User)
                     .Include(p => p.StateInfractions)
                     .Include(p => p.PaymentUsers)
                     .AsNoTracking()
@@ -56,7 +56,7 @@ namespace Data
             try
             {
                 return await _context.Set<Person>()
-                    .Include(p => p.Users)
+                    .Include(p => p.User)
                     .Include(p => p.StateInfractions)
                     .Include(p => p.PaymentUsers)
                     .FirstOrDefaultAsync(p => p.Id == id);

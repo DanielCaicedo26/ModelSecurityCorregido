@@ -116,6 +116,11 @@ namespace Data
                 return false;
             }
         }
+        public async Task<bool> PersonExistsAsync(int personId)
+        {
+            return await _context.Person.AnyAsync(p => p.Id == personId);
+        }
+
 
         /// <summary>
         /// Elimina un usuario de la base de datos.

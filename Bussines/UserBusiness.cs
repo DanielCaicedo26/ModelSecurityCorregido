@@ -94,12 +94,21 @@ namespace Bussines
             {
                 ValidateUser(userDto);
 
+                // Verificar si el PersonId existe en la tabla Person
+                var personExists = await _userData.PersonExistsAsync(userDto.PersonId);
+                if (!personExists)
+                {
+                    _logger.LogWarning("El PersonId {PersonId} no existe en la base de datos", userDto.PersonId);
+                    throw new ValidationException("PersonId", "El PersonId proporcionado no existe");
+                }
+
                 var user = new User
                 {
                     Username = userDto.Username,
                     Email = userDto.Email,
                     Password = userDto.Password,
-                    CreatedAt = DateTime.UtcNow
+                    CreatedAt = DateTime.UtcNow,
+                    PersonId = userDto.PersonId // Asegúrate de que esta propiedad esté asignada
                 };
 
                 var createdUser = await _userData.CreateAsync(user);
@@ -111,6 +120,7 @@ namespace Bussines
                 throw new ExternalServiceException("Base de datos", "Error al crear el usuario", ex);
             }
         }
+
 
         /// <summary>
         /// Valida los datos del usuario.

@@ -47,7 +47,7 @@ namespace Entity.Context
         public DbSet<TypeInfraction> TypeInfractions { get; set; }
         public DbSet<TypePayment> TypePayments { get; set; }
         public DbSet<User> User { get; set; }
-        public DbSet<UserNotification> UserNotifications { get; set; }
+        public DbSet<UserNotification> UserNotification { get; set; }
 
 
 
@@ -149,13 +149,19 @@ namespace Entity.Context
                     .WithMany(p => p.PaymentUsers)
                     .HasForeignKey(pu => pu.PersonId);
 
-                modelBuilder.Entity<UserNotification>()
-                    .HasOne(un => un.User)
-                    .WithMany(u => u.UserNotifications)
-                    .HasForeignKey(un => un.UserId);
-            }
-        
-        
+            modelBuilder.Entity<UserNotification>()
+                .HasOne(un => un.User)
+                .WithMany(u => u.UserNotifications)
+                .HasForeignKey(un => un.UserId);
+
+                    modelBuilder.Entity<PaymentHistory>()
+                    .HasOne(ph => ph.InformationInfraction)
+                    .WithMany(ii => ii.PaymentHistories)
+                    .HasForeignKey(ph => ph.InformationInfractionId);
+
+        }
+
+
 
         /// <summary>
         /// Configura opciones adicionales del contexto, como el registro de datos sensibles.

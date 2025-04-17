@@ -38,7 +38,8 @@ namespace Bussines
             try
             {
                 var userNotifications = await _userNotificationData.GetAllAsync();
-                return MapToDTOList(userNotifications);
+                var visibleNotifications = userNotifications.Where(n => !n.IsHidden); // Excluir ocultos
+                return MapToDTOList(visibleNotifications);
             }
             catch (Exception ex)
             {
@@ -80,6 +81,121 @@ namespace Bussines
                 throw new ExternalServiceException("Base de datos", $"Error al recuperar la notificación de usuario con ID {id}", ex);
             }
         }
+
+        /// <summary>
+        /// Elimina una notificación de usuario por su ID de manera asíncrona.
+        /// </summary>
+        /// <param name="id">El ID de la notificación de usuario a eliminar.</param>
+        /// <returns>Un objeto UserNotificationDto de la notificación eliminada.</returns>
+        /// <exception cref="ValidationException">Lanzada cuando el ID es inválido.</exception>
+        /// <exception cref="EntityNotFoundException">Lanzada cuando no se encuentra la notificación de usuario.</exception>
+        /// <exception cref="ExternalServiceException">Lanzada cuando ocurre un error al eliminar la notificación de usuario.</exception>
+        public async Task<UserNotificationDto> DeleteUserNotificationAsync(int id)
+        {
+            if (id <= 0)
+            {
+                _logger.LogWarning("Se intentó eliminar una notificación de usuario con ID inválido: {UserNotificationId}", id);
+                throw new ValidationException("id", "El ID debe ser mayor que cero");
+            }
+
+            try
+            {
+                var userNotification = await _userNotificationData.GetByIdAsync(id);
+                if (userNotification == null)
+                {
+                    _logger.LogInformation("No se encontró ninguna notificación de usuario con ID: {UserNotificationId}", id);
+                    throw new EntityNotFoundException("UserNotification", id);
+                }
+
+                var isDeleted = await _userNotificationData.DeleteAsync(id);
+                if (!isDeleted)
+                {
+                    throw new ExternalServiceException("Base de datos", $"No se pudo eliminar la notificación de usuario con ID {id}");
+                }
+
+                return MapToDTO(userNotification);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al eliminar la notificación de usuario con ID: {UserNotificationId}", id);
+                throw new ExternalServiceException("Base de datos", $"Error al eliminar la notificación de usuario con ID {id}", ex);
+            }
+        }
+
+        /// <summary>
+        /// Actualiza los datos de una notificación de usuario.
+        /// </summary>
+        /// <param name="userNotificationDto">El objeto con los datos actualizados de la notificación.</param>
+        /// <returns>El objeto UserNotificationDto actualizado.</returns>
+        /// <exception cref="ValidationException">Lanzada si los datos son inválidos.</exception>
+        /// <exception cref="EntityNotFoundException">Lanzada si no se encuentra la notificación.</exception>
+        /// <exception cref="ExternalServiceException">Lanzada si ocurre un error al actualizar los datos.</exception>
+        public async Task<UserNotificationDto> UpdateUserNotificationAsync(UserNotificationDto userNotificationDto)
+        {
+            if (userNotificationDto == null || userNotificationDto.Id <= 0)
+            {
+                throw new ValidationException("id", "El ID debe ser mayor que cero y los datos no pueden ser nulos.");
+            }
+
+            try
+            {
+                var userNotification = await _userNotificationData.GetByIdAsync(userNotificationDto.Id);
+                if (userNotification == null)
+                {
+                    throw new EntityNotFoundException("UserNotification", userNotificationDto.Id);
+                }
+
+                userNotification.Message = userNotificationDto.Message;
+                userNotification.IsRead = userNotificationDto.IsRead;
+
+                var isUpdated = await _userNotificationData.UpdateAsync(userNotification);
+                if (!isUpdated)
+                {
+                    throw new ExternalServiceException("Base de datos", $"No se pudo actualizar la notificación con ID {userNotificationDto.Id}");
+                }
+
+                return MapToDTO(userNotification);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al actualizar la notificación de usuario con ID: {UserNotificationId}", userNotificationDto.Id);
+                throw new ExternalServiceException("Base de datos", $"Error al actualizar la notificación con ID {userNotificationDto.Id}", ex);
+            }
+        }
+
+        public async Task<UserNotificationDto> UpdateNotificationVisibilityAsync(int id, bool isHidden)
+        {
+            if (id <= 0)
+            {
+                _logger.LogWarning("Se intentó actualizar la visibilidad de una notificación con ID inválido: {UserNotificationId}", id);
+                throw new ValidationException("id", "El ID debe ser mayor que cero");
+            }
+
+            try
+            {
+                var userNotification = await _userNotificationData.GetByIdAsync(id);
+                if (userNotification == null)
+                {
+                    throw new EntityNotFoundException("UserNotification", id);
+                }
+
+                userNotification.IsHidden = isHidden;
+                var isUpdated = await _userNotificationData.UpdateAsync(userNotification);
+                if (!isUpdated)
+                {
+                    throw new ExternalServiceException("Base de datos", $"No se pudo actualizar la visibilidad de la notificación con ID {id}");
+                }
+
+                return MapToDTO(userNotification);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al actualizar la visibilidad de la notificación de usuario con ID: {UserNotificationId}", id);
+                throw new ExternalServiceException("Base de datos", $"Error al actualizar la visibilidad de la notificación con ID {id}", ex);
+            }
+        }
+
+
 
         /// <summary>
         /// Crea una nueva notificación de usuario de manera asíncrona.

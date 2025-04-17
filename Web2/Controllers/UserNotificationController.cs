@@ -96,8 +96,122 @@ namespace Web2.Controllers
                 return StatusCode(500, new { message = ex.Message });
             }
         }
+
+            /// <summary>
+            /// Elimina una notificación de usuario por ID.
+            /// </summary>
+            [HttpDelete("{id}")]
+            [ProducesResponseType(typeof(UserNotificationDto), 200)]
+            [ProducesResponseType(400)]
+            [ProducesResponseType(404)]
+            [ProducesResponseType(500)]
+            public async Task<IActionResult> Delete(int id)
+            {
+                try
+                {
+                    var deletedNotification = await _userNotificationBusiness.DeleteUserNotificationAsync(id);
+                    return Ok(deletedNotification);
+                }
+                catch (ValidationException ex)
+                {
+                    _logger.LogWarning(ex, "Validación fallida para el ID de la notificación de usuario: {UserNotificationId}", id);
+                    return BadRequest(new { message = ex.Message });
+                }
+                catch (EntityNotFoundException ex)
+                {
+                    _logger.LogInformation(ex, "Notificación de usuario no encontrada con ID: {UserNotificationId}", id);
+                    return NotFound(new { message = ex.Message });
+                }
+                catch (ExternalServiceException ex)
+                {
+                    _logger.LogError(ex, "Error al eliminar la notificación de usuario con ID: {UserNotificationId}", id);
+                    return StatusCode(500, new { message = ex.Message });
+                }
+            }
+
+
+        /// <summary>
+        /// Actualiza los datos de una notificación de usuario.
+        /// </summary>
+        /// <param name="id">El ID de la notificación de usuario a actualizar.</param>
+        /// <param name="userNotificationDto">El objeto con los datos actualizados de la notificación.</param>
+        /// <returns>Un código de estado indicando el resultado.</returns>
+        [HttpPut("{id}")]
+        [ProducesResponseType(typeof(UserNotificationDto), 200)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(404)]
+        [ProducesResponseType(500)]
+        public async Task<IActionResult> Update(int id, [FromBody] UserNotificationDto userNotificationDto)
+        {
+            try
+            {
+                if (id != userNotificationDto.Id)
+                {
+                    return BadRequest(new { message = "El ID en la URL no coincide con el ID en el cuerpo de la solicitud." });
+                }
+
+                var updatedNotification = await _userNotificationBusiness.UpdateUserNotificationAsync(userNotificationDto);
+                return Ok(updatedNotification);
+            }
+            catch (ValidationException ex)
+            {
+                _logger.LogWarning(ex, "Validación fallida al actualizar la notificación de usuario con ID: {UserNotificationId}", id);
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (EntityNotFoundException ex)
+            {
+                _logger.LogInformation(ex, "Notificación de usuario no encontrada con ID: {UserNotificationId}", id);
+                return NotFound(new { message = ex.Message });
+            }
+            catch (ExternalServiceException ex)
+            {
+                _logger.LogError(ex, "Error al actualizar la notificación de usuario con ID: {UserNotificationId}", id);
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Oculta o desoculta una notificación de usuario por ID.
+        /// </summary>
+        /// <param name="id">El ID de la notificación de usuario.</param>
+        /// <param name="isHidden">Estado deseado: true para ocultar, false para desocultar.</param>
+        /// <returns>Un código de estado indicando el resultado.</returns>
+        [HttpPatch("{id}/visibility")]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(404)]
+        [ProducesResponseType(500)]
+        public async Task<IActionResult> UpdateVisibility(int id, [FromBody] bool isHidden)
+        {
+            try
+            {
+                var updatedNotification = await _userNotificationBusiness.UpdateNotificationVisibilityAsync(id, isHidden);
+                return Ok(updatedNotification);
+            }
+            catch (ValidationException ex)
+            {
+                _logger.LogWarning(ex, "Validación fallida para el ID de la notificación de usuario: {UserNotificationId}", id);
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (EntityNotFoundException ex)
+            {
+                _logger.LogInformation(ex, "Notificación de usuario no encontrada con ID: {UserNotificationId}", id);
+                return NotFound(new { message = ex.Message });
+            }
+            catch (ExternalServiceException ex)
+            {
+                _logger.LogError(ex, "Error al actualizar la visibilidad de la notificación de usuario con ID: {UserNotificationId}", id);
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
+
+
+
+
     }
 }
+
+
 
 
 

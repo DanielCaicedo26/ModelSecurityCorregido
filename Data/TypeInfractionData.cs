@@ -34,8 +34,8 @@ namespace Data
             {
                 return await _context.Set<TypeInfraction>()
                     .Include(ti => ti.User)
-                    .Include(ti => ti.StateInfractions)
-                    .Include(ti => ti.InformationInfractions)
+                    .Include(ti => ti.StateInfraction)
+                    .Include(ti => ti.InformationInfraction)
                     .AsNoTracking()
                     .ToListAsync();
             }
@@ -57,8 +57,8 @@ namespace Data
             {
                 return await _context.Set<TypeInfraction>()
                     .Include(ti => ti.User)
-                    .Include(ti => ti.StateInfractions)
-                    .Include(ti => ti.InformationInfractions)
+                    .Include(ti => ti.StateInfraction)
+                    .Include(ti => ti.InformationInfraction)
                     .FirstOrDefaultAsync(ti => ti.Id == id);
             }
             catch (Exception ex)

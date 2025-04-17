@@ -11,7 +11,7 @@ namespace Entity.Model
         public string? InformationFine { get; set; }
         public DateTime CreatedAt { get; set; }
         public virtual User User { get; set; } = null!;
-        public virtual ICollection<StateInfraction>? StateInfractions { get; set; }
-        public virtual ICollection<InformationInfraction>? InformationInfractions { get; set; }
+        public virtual ICollection<StateInfraction>? StateInfraction { get; set; }
+        public virtual ICollection<InformationInfraction>? InformationInfraction { get; set; }
     }
 }

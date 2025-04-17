@@ -32,7 +32,7 @@ namespace Entity.Context
         public DbSet<AccessLog> AccessLogs { get; set; }
         public DbSet<Bill> Bill { get; set; }
         public DbSet<Form> Form { get; set; }
-        public DbSet<InformationInfraction> InformationInfractions { get; set; }
+        public DbSet<InformationInfraction> InformationInfraction { get; set; }
         public DbSet<Entity.Model.Module> Module { get; set; }
         public DbSet<ModuloForm> ModuloForm{ get; set; }
         public DbSet<PaymentAgreement> PaymentAgreement { get; set; }
@@ -44,8 +44,8 @@ namespace Entity.Context
         public DbSet<RoleFormPermission> RoleFormPermission { get; set; }
         public DbSet<RoleUser> RoleUser { get; set; }
         public DbSet<StateInfraction> StateInfraction { get; set; }
-        public DbSet<TypeInfraction> TypeInfractions { get; set; }
-        public DbSet<TypePayment> TypePayments { get; set; }
+        public DbSet<TypeInfraction> TypeInfraction { get; set; }
+        public DbSet<TypePayment> TypePayment { get; set; }
         public DbSet<User> User { get; set; }
         public DbSet<UserNotification> UserNotification { get; set; }
 
@@ -81,7 +81,7 @@ namespace Entity.Context
 
                 modelBuilder.Entity<AccessLog>()
                     .HasOne(al => al.User)
-                    .WithMany(u => u.AccessLogs)
+                    .WithMany(u => u.AccessLog)
                     .HasForeignKey(al => al.UserId);
 
                 modelBuilder.Entity<RoleUser>()
@@ -126,7 +126,7 @@ namespace Entity.Context
 
                 modelBuilder.Entity<StateInfraction>()
                     .HasOne(si => si.Infraction)
-                    .WithMany(ti => ti.StateInfractions)
+                    .WithMany(ti => ti.StateInfraction)
                     .HasForeignKey(si => si.InfractionId);
 
                 modelBuilder.Entity<StateInfraction>()
@@ -156,7 +156,7 @@ namespace Entity.Context
 
                     modelBuilder.Entity<PaymentHistory>()
                     .HasOne(ph => ph.InformationInfraction)
-                    .WithMany(ii => ii.PaymentHistories)
+                    .WithMany(ii => ii.PaymentHistory)
                     .HasForeignKey(ph => ph.InformationInfractionId);
 
         }

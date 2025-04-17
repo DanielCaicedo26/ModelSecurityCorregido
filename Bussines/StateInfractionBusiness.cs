@@ -161,11 +161,14 @@ namespace Bussines
             return new StateInfractionDto
             {
                 Id = stateInfraction.Id,
+                InfractionId = stateInfraction.InfractionId,
+                PersonId = stateInfraction.PersonId,
                 DateViolation = stateInfraction.DateViolation,
                 FineValue = stateInfraction.FineValue,
                 State = stateInfraction.State
             };
         }
+
 
         /// <summary>
         /// Mapea una lista de objetos StateInfraction a una lista de StateInfractionDto.

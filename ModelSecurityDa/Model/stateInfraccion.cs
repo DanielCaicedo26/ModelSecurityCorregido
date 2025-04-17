@@ -1,9 +1,12 @@
-﻿namespace Entity.Model
+﻿using Microsoft.VisualBasic;
+
+namespace Entity.Model
 {
     public class StateInfraction
     {
         public int Id { get; set; }
         public int InfractionId { get; set; }
+        
         public int PersonId { get; set; }
         public DateTime DateViolation { get; set; }
         public decimal FineValue { get; set; }

@@ -96,6 +96,84 @@ namespace Web2.Controllers
                 return StatusCode(500, new { message = ex.Message });
             }
         }
+
+        /// <summary>
+        /// Elimina un formulario de módulo por su ID.
+        /// </summary>
+        /// <param name="id">El ID del formulario de módulo a eliminar.</param>
+        /// <returns>Un resultado indicando el éxito o fallo de la operación.</returns>
+        [HttpDelete("{id}")]
+        [ProducesResponseType(200)] // OK
+        [ProducesResponseType(400)] // Bad Request
+        [ProducesResponseType(404)] // Not Found
+        [ProducesResponseType(500)] // Internal Server Error
+        public async Task<IActionResult> Delete(int id)
+        {
+            try
+            {
+                var deletedModuloForm = await _moduloFormBusiness.DeleteModuloFormAsync(id);
+                return Ok(new { message = "Formulario de módulo eliminado correctamente", data = deletedModuloForm }); // 200 OK
+            }
+            catch (ValidationException ex)
+            {
+                _logger.LogWarning(ex, "Validación fallida al eliminar el formulario de módulo con ID: {ModuloFormId}", id);
+                return BadRequest(new { message = ex.Message }); // 400 Bad Request
+            }
+            catch (EntityNotFoundException ex)
+            {
+                _logger.LogInformation(ex, "Formulario de módulo no encontrado con ID: {ModuloFormId}", id);
+                return NotFound(new { message = ex.Message }); // 404 Not Found
+            }
+            catch (ExternalServiceException ex)
+            {
+                _logger.LogError(ex, "Error al eliminar el formulario de módulo con ID: {ModuloFormId}", id);
+                return StatusCode(500, new { message = ex.Message }); // 500 Internal Server Error
+            }
+        }
+
+        /// <summary>
+        /// Actualiza un formulario de módulo existente.
+        /// </summary>
+        /// <param name="id">El ID del formulario de módulo a actualizar.</param>
+        /// <param name="moduloFormDto">El objeto ModuloFormDto con los datos actualizados.</param>
+        /// <returns>Un resultado indicando el éxito o fallo de la operación.</returns>
+        [HttpPut("{id}")]
+        [ProducesResponseType(200)] // OK
+        [ProducesResponseType(400)] // Bad Request
+        [ProducesResponseType(404)] // Not Found
+        [ProducesResponseType(500)] // Internal Server Error
+        public async Task<IActionResult> Update(int id, [FromBody] ModuloFormDto moduloFormDto)
+        {
+            if (id != moduloFormDto.Id)
+            {
+                return BadRequest(new { message = "El ID en la URL no coincide con el ID en el cuerpo de la solicitud" });
+            }
+
+            try
+            {
+                var updatedModuloForm = await _moduloFormBusiness.UpdateModuloFormAsync(moduloFormDto);
+                return Ok(new { message = "Formulario de módulo actualizado correctamente", data = updatedModuloForm }); // 200 OK
+            }
+            catch (ValidationException ex)
+            {
+                _logger.LogWarning(ex, "Validación fallida al actualizar el formulario de módulo con ID: {ModuloFormId}", id);
+                return BadRequest(new { message = ex.Message }); // 400 Bad Request
+            }
+            catch (EntityNotFoundException ex)
+            {
+                _logger.LogInformation(ex, "Formulario de módulo no encontrado con ID: {ModuloFormId}", id);
+                return NotFound(new { message = ex.Message }); // 404 Not Found
+            }
+            catch (ExternalServiceException ex)
+            {
+                _logger.LogError(ex, "Error al actualizar el formulario de módulo con ID: {ModuloFormId}", id);
+                return StatusCode(500, new { message = ex.Message }); // 500 Internal Server Error
+            }
+        }
+
+
+
+
     }
 }
 

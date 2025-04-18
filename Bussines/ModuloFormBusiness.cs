@@ -79,6 +79,100 @@ namespace Bussines
         }
 
         /// <summary>
+        /// Elimina un formulario de módulo por su ID de manera asíncrona.
+        /// </summary>
+        /// <param name="id">El ID del formulario de módulo a eliminar.</param>
+        /// <returns>Un objeto ModuloFormDto del formulario de módulo eliminado.</returns>
+        /// <exception cref="ValidationException">Lanzada cuando el ID es inválido.</exception>
+        /// <exception cref="EntityNotFoundException">Lanzada cuando no se encuentra el formulario de módulo.</exception>
+        /// <exception cref="ExternalServiceException">Lanzada cuando ocurre un error al eliminar el formulario de módulo.</exception>
+        public async Task<ModuloFormDto> DeleteModuloFormAsync(int id)
+        {
+            if (id <= 0)
+            {
+                _logger.LogWarning("Se intentó eliminar un formulario de módulo con ID inválido: {ModuloFormId}", id);
+                throw new ValidationException("id", "El ID debe ser mayor que cero");
+            }
+
+            try
+            {
+                // Verificar si el formulario de módulo existe
+                var moduloForm = await _moduloFormData.GetByIdAsync(id);
+                if (moduloForm == null)
+                {
+                    _logger.LogInformation("No se encontró ningún formulario de módulo con ID: {ModuloFormId}", id);
+                    throw new EntityNotFoundException("ModuloForm", id);
+                }
+
+                // Intentar eliminar el formulario de módulo
+                var isDeleted = await _moduloFormData.DeleteAsync(id);
+                if (!isDeleted)
+                {
+                    throw new ExternalServiceException("Base de datos", $"No se pudo eliminar el formulario de módulo con ID {id}");
+                }
+
+                // Devolver el objeto eliminado mapeado a DTO
+                return MapToDTO(moduloForm);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al eliminar el formulario de módulo con ID: {ModuloFormId}", id);
+                throw new ExternalServiceException("Base de datos", $"Error al eliminar el formulario de módulo con ID {id}", ex);
+            }
+        }
+
+        /// <summary>
+        /// Actualiza un formulario de módulo existente de manera asíncrona.
+        /// </summary>
+        /// <param name="moduloFormDto">El objeto ModuloFormDto con los datos actualizados del formulario de módulo.</param>
+        /// <returns>El objeto ModuloFormDto actualizado.</returns>
+        /// <exception cref="ValidationException">Lanzada si los datos son inválidos.</exception>
+        /// <exception cref="EntityNotFoundException">Lanzada si no se encuentra el formulario de módulo.</exception>
+        /// <exception cref="ExternalServiceException">Lanzada si ocurre un error al actualizar el formulario de módulo.</exception>
+        public async Task<ModuloFormDto> UpdateModuloFormAsync(ModuloFormDto moduloFormDto)
+        {
+            if (moduloFormDto == null || moduloFormDto.Id <= 0)
+            {
+                _logger.LogWarning("Se intentó actualizar un formulario de módulo con datos inválidos o ID inválido.");
+                throw new ValidationException("id", "El ID debe ser mayor que cero y los datos no pueden ser nulos.");
+            }
+
+            // Validar los datos del DTO
+            ValidateModuloForm(moduloFormDto);
+
+            try
+            {
+                // Verificar si el formulario de módulo existe
+                var existingModuloForm = await _moduloFormData.GetByIdAsync(moduloFormDto.Id);
+                if (existingModuloForm == null)
+                {
+                    _logger.LogInformation("No se encontró ningún formulario de módulo con ID: {ModuloFormId}", moduloFormDto.Id);
+                    throw new EntityNotFoundException("ModuloForm", moduloFormDto.Id);
+                }
+
+                // Actualizar los datos del formulario de módulo
+                existingModuloForm.FormId = moduloFormDto.FormId;
+                existingModuloForm.ModuleId = moduloFormDto.ModuleId;
+
+                var isUpdated = await _moduloFormData.UpdateAsync(existingModuloForm);
+                if (!isUpdated)
+                {
+                    throw new ExternalServiceException("Base de datos", $"No se pudo actualizar el formulario de módulo con ID {moduloFormDto.Id}.");
+                }
+
+                return MapToDTO(existingModuloForm);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al actualizar el formulario de módulo con ID: {ModuloFormId}", moduloFormDto.Id);
+                throw new ExternalServiceException("Base de datos", $"Error al actualizar el formulario de módulo con ID {moduloFormDto.Id}.", ex);
+            }
+        }
+
+
+
+
+        /// <summary>
         /// Crea un nuevo formulario de módulo de manera asíncrona.
         /// </summary>
         /// <param name="moduloFormDto">El objeto ModuloFormDto con los datos del formulario de módulo.</param>
@@ -93,7 +187,8 @@ namespace Bussines
 
                 var moduloForm = new ModuloForm
                 {
-                    FormId = moduloFormDto.FormId
+                    FormId = moduloFormDto.FormId,
+                    ModuleId = moduloFormDto.ModuleId
                 };
 
                 var createdModuloForm = await _moduloFormData.CreateAsync(moduloForm);
@@ -135,7 +230,8 @@ namespace Bussines
             return new ModuloFormDto
             {
                 Id = moduloForm.Id,
-                FormId = moduloForm.FormId
+                FormId = moduloForm.FormId,
+                ModuleId = moduloForm.ModuleId
             };
         }
 

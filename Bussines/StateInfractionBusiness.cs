@@ -82,6 +82,50 @@ namespace Bussines
         }
 
         /// <summary>
+        /// Elimina una infracción de estado por su ID de manera asíncrona.
+        /// </summary>
+        /// <param name="id">El ID de la infracción de estado a eliminar.</param>
+        /// <returns>Un objeto StateInfractionDto de la infracción eliminada.</returns>
+        /// <exception cref="ValidationException">Lanzada cuando el ID es inválido.</exception>
+        /// <exception cref="EntityNotFoundException">Lanzada cuando no se encuentra la infracción de estado.</exception>
+        /// <exception cref="ExternalServiceException">Lanzada cuando ocurre un error al eliminar la infracción de estado.</exception>
+        public async Task<StateInfractionDto> DeleteStateInfractionAsync(int id)
+        {
+            if (id <= 0)
+            {
+                _logger.LogWarning("Se intentó eliminar una infracción de estado con ID inválido: {StateInfractionId}", id);
+                throw new ValidationException("id", "El ID debe ser mayor que cero");
+            }
+
+            try
+            {
+                // Verificar si la infracción de estado existe
+                var stateInfraction = await _stateInfractionData.GetByIdAsync(id);
+                if (stateInfraction == null)
+                {
+                    _logger.LogInformation("No se encontró ninguna infracción de estado con ID: {StateInfractionId}", id);
+                    throw new EntityNotFoundException("StateInfraction", id);
+                }
+
+                // Intentar eliminar la infracción de estado
+                var isDeleted = await _stateInfractionData.DeleteAsync(id);
+                if (!isDeleted)
+                {
+                    throw new ExternalServiceException("Base de datos", $"No se pudo eliminar la infracción de estado con ID {id}");
+                }
+
+                // Devolver el objeto eliminado mapeado a DTO
+                return MapToDTO(stateInfraction);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al eliminar la infracción de estado con ID: {StateInfractionId}", id);
+                throw new ExternalServiceException("Base de datos", $"Error al eliminar la infracción de estado con ID {id}", ex);
+            }
+        }
+
+
+        /// <summary>
         /// Crea una nueva infracción de estado de manera asíncrona.
         /// </summary>
         /// <param name="stateInfractionDto">El objeto StateInfractionDto con los datos de la infracción de estado.</param>

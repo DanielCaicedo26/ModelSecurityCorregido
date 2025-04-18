@@ -48,6 +48,104 @@ namespace Bussines
         }
 
         /// <summary>
+        /// Actualiza los datos de un permiso de formulario de rol.
+        /// </summary>
+        /// <param name="roleFormPermissionDto">El objeto RoleFormPermissionDto con los datos actualizados del permiso de formulario de rol.</param>
+        /// <returns>El objeto RoleFormPermissionDto actualizado.</returns>
+        /// <exception cref="ValidationException">Lanzada si los datos son inválidos.</exception>
+        /// <exception cref="EntityNotFoundException">Lanzada si no se encuentra el permiso de formulario de rol.</exception>
+        /// <exception cref="ExternalServiceException">Lanzada si ocurre un error al actualizar el permiso de formulario de rol.</exception>
+        public async Task<RoleFormPermissionDto> UpdateRoleFormPermissionAsync(RoleFormPermissionDto roleFormPermissionDto)
+        {
+            if (roleFormPermissionDto == null || roleFormPermissionDto.Id <= 0)
+            {
+                _logger.LogWarning("Se intentó actualizar un permiso de formulario de rol con datos inválidos o ID inválido.");
+                throw new ValidationException("id", "El ID debe ser mayor que cero y los datos no pueden ser nulos.");
+            }
+
+            // Validar los datos del DTO
+            ValidateRoleFormPermission(roleFormPermissionDto);
+
+            try
+            {
+                // Verificar si el permiso de formulario de rol existe
+                var existingRoleFormPermission = await _roleFormPermissionData.GetByIdAsync(roleFormPermissionDto.Id);
+                if (existingRoleFormPermission == null)
+                {
+                    _logger.LogInformation("No se encontró ningún permiso de formulario de rol con ID: {RoleFormPermissionId}", roleFormPermissionDto.Id);
+                    throw new EntityNotFoundException("RoleFormPermission", roleFormPermissionDto.Id);
+                }
+
+                // Actualizar los datos del permiso de formulario de rol
+                existingRoleFormPermission.RoleId = roleFormPermissionDto.RoleId;
+                existingRoleFormPermission.FormId = roleFormPermissionDto.FormId;
+                existingRoleFormPermission.PermissionId = roleFormPermissionDto.PermissionId;
+                existingRoleFormPermission.CanCreate = roleFormPermissionDto.CanCreate;
+                existingRoleFormPermission.CanRead = roleFormPermissionDto.CanRead;
+                existingRoleFormPermission.CanUpdate = roleFormPermissionDto.CanUpdate;
+                existingRoleFormPermission.CanDelete = roleFormPermissionDto.CanDelete;
+
+                var isUpdated = await _roleFormPermissionData.UpdateAsync(existingRoleFormPermission);
+                if (!isUpdated)
+                {
+                    throw new ExternalServiceException("Base de datos", $"No se pudo actualizar el permiso de formulario de rol con ID {roleFormPermissionDto.Id}.");
+                }
+
+                return MapToDTO(existingRoleFormPermission);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al actualizar el permiso de formulario de rol con ID: {RoleFormPermissionId}", roleFormPermissionDto.Id);
+                throw new ExternalServiceException("Base de datos", $"Error al actualizar el permiso de formulario de rol con ID {roleFormPermissionDto.Id}.", ex);
+            }
+        }
+
+        /// <summary>
+        /// Elimina un permiso de formulario de rol por su ID de manera asíncrona.
+        /// </summary>
+        /// <param name="id">El ID del permiso de formulario de rol a eliminar.</param>
+        /// <returns>Un objeto RoleFormPermissionDto del permiso de formulario de rol eliminado.</returns>
+        /// <exception cref="ValidationException">Lanzada cuando el ID es inválido.</exception>
+        /// <exception cref="EntityNotFoundException">Lanzada cuando no se encuentra el permiso de formulario de rol.</exception>
+        /// <exception cref="ExternalServiceException">Lanzada cuando ocurre un error al eliminar el permiso de formulario de rol.</exception>
+        public async Task<RoleFormPermissionDto> DeleteRoleFormPermissionAsync(int id)
+        {
+            if (id <= 0)
+            {
+                _logger.LogWarning("Se intentó eliminar un permiso de formulario de rol con ID inválido: {RoleFormPermissionId}", id);
+                throw new ValidationException("id", "El ID debe ser mayor que cero");
+            }
+
+            try
+            {
+                // Verificar si el permiso de formulario de rol existe
+                var roleFormPermission = await _roleFormPermissionData.GetByIdAsync(id);
+                if (roleFormPermission == null)
+                {
+                    _logger.LogInformation("No se encontró ningún permiso de formulario de rol con ID: {RoleFormPermissionId}", id);
+                    throw new EntityNotFoundException("RoleFormPermission", id);
+                }
+
+                // Intentar eliminar el permiso de formulario de rol
+                var isDeleted = await _roleFormPermissionData.DeleteAsync(id);
+                if (!isDeleted)
+                {
+                    throw new ExternalServiceException("Base de datos", $"No se pudo eliminar el permiso de formulario de rol con ID {id}");
+                }
+
+                // Devolver el objeto eliminado mapeado a DTO
+                return MapToDTO(roleFormPermission);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al eliminar el permiso de formulario de rol con ID: {RoleFormPermissionId}", id);
+                throw new ExternalServiceException("Base de datos", $"Error al eliminar el permiso de formulario de rol con ID {id}", ex);
+            }
+        }
+
+
+
+        /// <summary>
         /// Obtiene un permiso de formulario de rol por su ID de manera asíncrona.
         /// </summary>
         /// <param name="id">El ID del permiso de formulario de rol.</param>

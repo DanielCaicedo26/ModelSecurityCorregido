@@ -96,6 +96,81 @@ namespace Web2.Controllers
                 return StatusCode(500, new { message = ex.Message });
             }
         }
+
+        /// <summary>
+        /// Actualiza un permiso de formulario de rol existente.
+        /// </summary>
+        /// <param name="id">El ID del permiso de formulario de rol a actualizar.</param>
+        /// <param name="roleFormPermissionDto">El objeto RoleFormPermissionDto con los datos actualizados.</param>
+        /// <returns>Un resultado indicando el éxito o fallo de la operación.</returns>
+        [HttpPut("{id}")]
+        [ProducesResponseType(200)] // OK
+        [ProducesResponseType(400)] // Bad Request
+        [ProducesResponseType(404)] // Not Found
+        [ProducesResponseType(500)] // Internal Server Error
+        public async Task<IActionResult> Update(int id, [FromBody] RoleFormPermissionDto roleFormPermissionDto)
+        {
+            if (id <= 0 || roleFormPermissionDto == null || id != roleFormPermissionDto.Id)
+            {
+                return BadRequest(new { message = "El ID de la ruta no coincide con el ID del cuerpo de la solicitud o los datos son inválidos" }); // 400 Bad Request
+            }
+
+            try
+            {
+                var updatedRoleFormPermission = await _roleFormPermissionBusiness.UpdateRoleFormPermissionAsync(roleFormPermissionDto);
+                return Ok(new { message = "Permiso de formulario de rol actualizado correctamente", data = updatedRoleFormPermission }); // 200 OK
+            }
+            catch (ValidationException ex)
+            {
+                _logger.LogWarning(ex, "Validación fallida al actualizar el permiso de formulario de rol con ID: {RoleFormPermissionId}", id);
+                return BadRequest(new { message = ex.Message }); // 400 Bad Request
+            }
+            catch (EntityNotFoundException ex)
+            {
+                _logger.LogInformation(ex, "Permiso de formulario de rol no encontrado con ID: {RoleFormPermissionId}", id);
+                return NotFound(new { message = ex.Message }); // 404 Not Found
+            }
+            catch (ExternalServiceException ex)
+            {
+                _logger.LogError(ex, "Error al actualizar el permiso de formulario de rol con ID: {RoleFormPermissionId}", id);
+                return StatusCode(500, new { message = ex.Message }); // 500 Internal Server Error
+            }
+        }
+
+        /// <summary>
+        /// Elimina un permiso de formulario de rol por su ID.
+        /// </summary>
+        /// <param name="id">El ID del permiso de formulario de rol a eliminar.</param>
+        /// <returns>Un resultado indicando el éxito o fallo de la operación.</returns>
+        [HttpDelete("{id}")]
+        [ProducesResponseType(200)] // OK
+        [ProducesResponseType(400)] // Bad Request
+        [ProducesResponseType(404)] // Not Found
+        [ProducesResponseType(500)] // Internal Server Error
+        public async Task<IActionResult> Delete(int id)
+        {
+            try
+            {
+                var deletedRoleFormPermission = await _roleFormPermissionBusiness.DeleteRoleFormPermissionAsync(id);
+                return Ok(new { message = "Permiso de formulario de rol eliminado correctamente", data = deletedRoleFormPermission }); // 200 OK
+            }
+            catch (ValidationException ex)
+            {
+                _logger.LogWarning(ex, "Validación fallida al eliminar el permiso de formulario de rol con ID: {RoleFormPermissionId}", id);
+                return BadRequest(new { message = ex.Message }); // 400 Bad Request
+            }
+            catch (EntityNotFoundException ex)
+            {
+                _logger.LogInformation(ex, "Permiso de formulario de rol no encontrado con ID: {RoleFormPermissionId}", id);
+                return NotFound(new { message = ex.Message }); // 404 Not Found
+            }
+            catch (ExternalServiceException ex)
+            {
+                _logger.LogError(ex, "Error al eliminar el permiso de formulario de rol con ID: {RoleFormPermissionId}", id);
+                return StatusCode(500, new { message = ex.Message }); // 500 Internal Server Error
+            }
+        }
+
     }
 }
 

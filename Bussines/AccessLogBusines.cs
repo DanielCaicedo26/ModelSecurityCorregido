@@ -149,6 +149,7 @@ namespace Bussines
             return new AccessLogDto
             {
                 Id = accessLog.Id,
+                UserId = accessLog.UserId,
                 Action = accessLog.Action,
                 Status = accessLog.Status
             };

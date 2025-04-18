@@ -14,7 +14,7 @@
         public virtual ICollection<RoleUser>? RoleUsers { get; set; }
         public virtual ICollection<UserNotification>? UserNotifications { get; set; }
         public virtual ICollection<PaymentHistory>? PaymentHistories { get; set; }
-        public ICollection<AccessLog> AccessLog { get; set; }
+        public virtual ICollection<AccessLog>? AccessLogs { get; set; }
 
         public virtual ICollection<TypeInfraction>? TypeInfractions { get; set; }
     }

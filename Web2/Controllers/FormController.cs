@@ -96,5 +96,84 @@ namespace Web2.Controllers
                 return StatusCode(500, new { message = ex.Message });
             }
         }
+
+        /// <summary>
+        /// Elimina un formulario por su ID.
+        /// </summary>
+        /// <param name="id">El ID del formulario a eliminar.</param>
+        /// <returns>Un resultado indicando el éxito o fallo de la operación.</returns>
+        [HttpDelete("{id}")]
+        [ProducesResponseType(200)] // OK
+        [ProducesResponseType(400)] // Bad Request
+        [ProducesResponseType(404)] // Not Found
+        [ProducesResponseType(500)] // Internal Server Error
+        public async Task<IActionResult> Delete(int id)
+        {
+            try
+            {
+                var deletedForm = await _formBusiness.DeleteFormAsync(id);
+                return Ok(new { message = "Formulario eliminado correctamente", data = deletedForm }); // 200 OK
+            }
+            catch (ValidationException ex)
+            {
+                _logger.LogWarning(ex, "Validación fallida al eliminar el formulario con ID: {FormId}", id);
+                return BadRequest(new { message = ex.Message }); // 400 Bad Request
+            }
+            catch (EntityNotFoundException ex)
+            {
+                _logger.LogInformation(ex, "Formulario no encontrado con ID: {FormId}", id);
+                return NotFound(new { message = ex.Message }); // 404 Not Found
+            }
+            catch (ExternalServiceException ex)
+            {
+                _logger.LogError(ex, "Error al eliminar el formulario con ID: {FormId}", id);
+                return StatusCode(500, new { message = ex.Message }); // 500 Internal Server Error
+            }
+        }
+
+        /// <summary>
+        /// Actualiza un formulario existente.
+        /// </summary>
+        /// <param name="id">El ID del formulario a actualizar.</param>
+        /// <param name="formDto">El objeto FormDto con los datos actualizados.</param>
+        /// <returns>Un resultado indicando el éxito o fallo de la operación.</returns>
+        [HttpPut("{id}")]
+        [ProducesResponseType(200)] // OK
+        [ProducesResponseType(400)] // Bad Request
+        [ProducesResponseType(404)] // Not Found
+        [ProducesResponseType(500)] // Internal Server Error
+        public async Task<IActionResult> Update(int id, [FromBody] FormDto formDto)
+        {
+            if (id != formDto.Id)
+            {
+                return BadRequest(new { message = "El ID en la URL no coincide con el ID en el cuerpo de la solicitud" });
+            }
+
+            try
+            {
+                var updatedForm = await _formBusiness.UpdateFormAsync(formDto);
+                return Ok(new { message = "Formulario actualizado correctamente", data = updatedForm }); // 200 OK
+            }
+            catch (ValidationException ex)
+            {
+                _logger.LogWarning(ex, "Validación fallida al actualizar el formulario con ID: {FormId}", id);
+                return BadRequest(new { message = ex.Message }); // 400 Bad Request
+            }
+            catch (EntityNotFoundException ex)
+            {
+                _logger.LogInformation(ex, "Formulario no encontrado con ID: {FormId}", id);
+                return NotFound(new { message = ex.Message }); // 404 Not Found
+            }
+            catch (ExternalServiceException ex)
+            {
+                _logger.LogError(ex, "Error al actualizar el formulario con ID: {FormId}", id);
+                return StatusCode(500, new { message = ex.Message }); // 500 Internal Server Error
+            }
+        }
+
+
+
+
+
     }
 }

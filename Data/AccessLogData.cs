@@ -75,6 +75,15 @@ namespace Data
         {
             try
             {
+                // Validación extra: asegurar que el usuario existe
+                var userExists = await _context.User.AnyAsync(u => u.Id == accessLog.UserId);
+                if (!userExists)
+                {
+                    var message = $"No se puede crear el registro de acceso. El usuario con ID {accessLog.UserId} no existe.";
+                    _logger.LogWarning(message);
+                    throw new InvalidOperationException(message);
+                }
+
                 await _context.Set<AccessLog>().AddAsync(accessLog);
                 await _context.SaveChangesAsync();
                 return accessLog;

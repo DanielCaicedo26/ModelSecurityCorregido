@@ -79,6 +79,102 @@ namespace Bussines
         }
 
         /// <summary>
+        /// Elimina una factura por su ID de manera asíncrona.
+        /// </summary>
+        /// <param name="id">El ID de la factura a eliminar.</param>
+        /// <returns>Un objeto BillDto de la factura eliminada.</returns>
+        /// <exception cref="ValidationException">Lanzada cuando el ID es inválido.</exception>
+        /// <exception cref="EntityNotFoundException">Lanzada cuando no se encuentra la factura.</exception>
+        /// <exception cref="ExternalServiceException">Lanzada cuando ocurre un error al eliminar la factura.</exception>
+        public async Task<BillDto> DeleteBillAsync(int id)
+        {
+            if (id <= 0)
+            {
+                _logger.LogWarning("Se intentó eliminar una factura con ID inválido: {BillId}", id);
+                throw new ValidationException("id", "El ID debe ser mayor que cero");
+            }
+
+            try
+            {
+                // Verificar si la factura existe
+                var bill = await _billData.GetByIdAsync(id);
+                if (bill == null)
+                {
+                    _logger.LogInformation("No se encontró ninguna factura con ID: {BillId}", id);
+                    throw new EntityNotFoundException("Bill", id);
+                }
+
+                // Intentar eliminar la factura
+                var isDeleted = await _billData.DeleteAsync(id);
+                if (!isDeleted)
+                {
+                    throw new ExternalServiceException("Base de datos", $"No se pudo eliminar la factura con ID {id}");
+                }
+
+                // Devolver el objeto eliminado mapeado a DTO
+                return MapToDTO(bill);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al eliminar la factura con ID: {BillId}", id);
+                throw new ExternalServiceException("Base de datos", $"Error al eliminar la factura con ID {id}", ex);
+            }
+        }
+
+        /// <summary>
+        /// Actualiza una factura existente de manera asíncrona.
+        /// </summary>
+        /// <param name="billDto">El objeto BillDto con los datos actualizados de la factura.</param>
+        /// <returns>El objeto BillDto actualizado.</returns>
+        /// <exception cref="ValidationException">Lanzada si los datos son inválidos.</exception>
+        /// <exception cref="EntityNotFoundException">Lanzada si no se encuentra la factura.</exception>
+        /// <exception cref="ExternalServiceException">Lanzada si ocurre un error al actualizar la factura.</exception>
+        public async Task<BillDto> UpdateBillAsync(BillDto billDto)
+        {
+            if (billDto == null || billDto.Id <= 0)
+            {
+                _logger.LogWarning("Se intentó actualizar una factura con datos inválidos o ID inválido.");
+                throw new ValidationException("id", "El ID debe ser mayor que cero y los datos no pueden ser nulos.");
+            }
+
+            // Validar los datos del DTO
+            ValidateBill(billDto);
+
+            try
+            {
+                // Verificar si la factura existe
+                var existingBill = await _billData.GetByIdAsync(billDto.Id);
+                if (existingBill == null)
+                {
+                    _logger.LogInformation("No se encontró ninguna factura con ID: {BillId}", billDto.Id);
+                    throw new EntityNotFoundException("Bill", billDto.Id);
+                }
+
+                // Actualizar los datos de la factura
+                existingBill.Barcode = billDto.Barcode;
+                existingBill.IssueDate = billDto.IssueDate;
+                existingBill.ExpirationDate = billDto.ExpirationDate;
+                existingBill.TotalValue = billDto.TotalValue;
+                existingBill.State = billDto.State;
+
+                var isUpdated = await _billData.UpdateAsync(existingBill);
+                if (!isUpdated)
+                {
+                    throw new ExternalServiceException("Base de datos", $"No se pudo actualizar la factura con ID {billDto.Id}.");
+                }
+
+                return MapToDTO(existingBill);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al actualizar la factura con ID: {BillId}", billDto.Id);
+                throw new ExternalServiceException("Base de datos", $"Error al actualizar la factura con ID {billDto.Id}.", ex);
+            }
+        }
+
+
+
+        /// <summary>
         /// Crea una nueva factura de manera asíncrona.
         /// </summary>
         /// <param name="billDto">El objeto BillDto con los datos de la factura.</param>

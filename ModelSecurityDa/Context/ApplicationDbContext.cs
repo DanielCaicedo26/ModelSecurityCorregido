@@ -29,7 +29,7 @@ namespace Entity.Context
         {
             _configuration = configuration;
         }
-        public DbSet<AccessLog> AccessLogs { get; set; }
+        public DbSet<AccessLog> AccessLog { get; set; }
         public DbSet<Bill> Bill { get; set; }
         public DbSet<Form> Form { get; set; }
         public DbSet<InformationInfraction> InformationInfraction { get; set; }
@@ -81,7 +81,7 @@ namespace Entity.Context
 
                 modelBuilder.Entity<AccessLog>()
                     .HasOne(al => al.User)
-                    .WithMany(u => u.AccessLog)
+                    .WithMany(u => u.AccessLogs)
                     .HasForeignKey(al => al.UserId);
 
                 modelBuilder.Entity<RoleUser>()

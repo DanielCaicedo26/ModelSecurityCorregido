@@ -41,7 +41,6 @@ namespace Web2.Controllers
                 // Llama a la capa de negocio para obtener todos los registros
                 var logs = await _accessLogBusiness.GetAllAccessLogsAsync();
 
-
                 // Devuelve los registros encontrados con código 200
                 return Ok(logs);
             }
@@ -66,9 +65,10 @@ namespace Web2.Controllers
             try
             {
                 // Llama al servicio para obtener el registro por ID
-                var log = await _accessLogBusiness.GetAccessLogByIdAsync(id); // ✅ nombre correcto
+                var log = await _accessLogBusiness.GetAccessLogByIdAsync(id);
 
-                return Ok(log); // Devuelve el registro con código 200
+                // Si el registro se encuentra, se devuelve con código 200
+                return Ok(log);
             }
             catch (ValidationException ex)
             {
@@ -101,9 +101,16 @@ namespace Web2.Controllers
         {
             try
             {
+                // Asegúrate de obtener el ID del usuario que realiza la acción.
+                var userId = GetUserIdFromContext(); // Cambia esto según tu lógica de autenticación
+
+                if (userId == null)
+                {
+                    return Unauthorized(new { message = "Usuario no autenticado" });
+                }
+
                 // Llama al método de negocio para crear el nuevo registro
-                int userId = 1; // Esto es solo un ejemplo. Normalmente lo sacas del token JWT o el contexto del usuario
-                var createdLog = await _accessLogBusiness.CreateAccessLogAsync(accessLogDto, userId);
+                var createdLog = await _accessLogBusiness.CreateAccessLogAsync(accessLogDto, userId.Value);
 
                 // Devuelve un 201 Created con la ruta del nuevo recurso
                 return CreatedAtAction(nameof(GetAccessLogById), new { id = createdLog.Id }, createdLog);
@@ -120,6 +127,15 @@ namespace Web2.Controllers
                 _logger.LogError(ex, "Error al crear el registro de acceso");
                 return StatusCode(500, new { message = ex.Message });
             }
+        }
+
+        // Método para obtener el ID del usuario desde el contexto
+        // Puedes personalizarlo según tu implementación de autenticación, por ejemplo, JWT o cookies
+        private int? GetUserIdFromContext()
+        {
+            // Supón que estás usando autenticación basada en JWT y que el userId está en el token
+            var userIdClaim = User?.Claims?.FirstOrDefault(c => c.Type == "userId")?.Value;
+            return userIdClaim != null ? int.Parse(userIdClaim) : (int?)null;
         }
     }
 }

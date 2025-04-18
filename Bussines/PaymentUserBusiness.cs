@@ -121,6 +121,56 @@ namespace Bussines
             }
         }
 
+        /// <summary>
+        /// Actualiza los datos de un pago de usuario.
+        /// </summary>
+        /// <param name="paymentUserDto">El objeto PaymentUserDto con los datos actualizados del pago de usuario.</param>
+        /// <returns>El objeto PaymentUserDto actualizado.</returns>
+        /// <exception cref="ValidationException">Lanzada si los datos son inválidos.</exception>
+        /// <exception cref="EntityNotFoundException">Lanzada si no se encuentra el pago de usuario.</exception>
+        /// <exception cref="ExternalServiceException">Lanzada si ocurre un error al actualizar el pago de usuario.</exception>
+        public async Task<PaymentUserDto> UpdatePaymentUserAsync(PaymentUserDto paymentUserDto)
+        {
+            if (paymentUserDto == null || paymentUserDto.Id <= 0)
+            {
+                _logger.LogWarning("Se intentó actualizar un pago de usuario con datos inválidos o ID inválido.");
+                throw new ValidationException("id", "El ID debe ser mayor que cero y los datos no pueden ser nulos.");
+            }
+
+            // Validar los datos del DTO
+            ValidatePaymentUser(paymentUserDto);
+
+            try
+            {
+                // Verificar si el pago de usuario existe
+                var existingPaymentUser = await _paymentUserData.GetByIdAsync(paymentUserDto.Id);
+                if (existingPaymentUser == null)
+                {
+                    _logger.LogInformation("No se encontró ningún pago de usuario con ID: {PaymentUserId}", paymentUserDto.Id);
+                    throw new EntityNotFoundException("PaymentUser", paymentUserDto.Id);
+                }
+
+                // Actualizar los datos del pago de usuario
+                existingPaymentUser.PersonId = paymentUserDto.PersonId;
+                existingPaymentUser.Amount = paymentUserDto.Amount;
+                existingPaymentUser.PaymentDate = paymentUserDto.PaymentDate;
+
+                var isUpdated = await _paymentUserData.UpdateAsync(existingPaymentUser);
+                if (!isUpdated)
+                {
+                    throw new ExternalServiceException("Base de datos", $"No se pudo actualizar el pago de usuario con ID {paymentUserDto.Id}.");
+                }
+
+                return MapToDTO(existingPaymentUser);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al actualizar el pago de usuario con ID: {PaymentUserId}", paymentUserDto.Id);
+                throw new ExternalServiceException("Base de datos", $"Error al actualizar el pago de usuario con ID {paymentUserDto.Id}.", ex);
+            }
+        }
+
+
 
 
         /// <summary>

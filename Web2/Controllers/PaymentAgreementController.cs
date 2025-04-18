@@ -96,6 +96,84 @@ namespace Web2.Controllers
                 return StatusCode(500, new { message = ex.Message });
             }
         }
+
+        /// <summary>
+        /// Elimina un acuerdo de pago por su ID.
+        /// </summary>
+        /// <param name="id">El ID del acuerdo de pago a eliminar.</param>
+        /// <returns>Un resultado indicando el éxito o fallo de la operación.</returns>
+        [HttpDelete("{id}")]
+        [ProducesResponseType(200)] // OK
+        [ProducesResponseType(400)] // Bad Request
+        [ProducesResponseType(404)] // Not Found
+        [ProducesResponseType(500)] // Internal Server Error
+        public async Task<IActionResult> Delete(int id)
+        {
+            try
+            {
+                var deletedPaymentAgreement = await _paymentAgreementBusiness.DeletePaymentAgreementAsync(id);
+                return Ok(new { message = "Acuerdo de pago eliminado correctamente", data = deletedPaymentAgreement }); // 200 OK
+            }
+            catch (ValidationException ex)
+            {
+                _logger.LogWarning(ex, "Validación fallida al eliminar el acuerdo de pago con ID: {PaymentAgreementId}", id);
+                return BadRequest(new { message = ex.Message }); // 400 Bad Request
+            }
+            catch (EntityNotFoundException ex)
+            {
+                _logger.LogInformation(ex, "Acuerdo de pago no encontrado con ID: {PaymentAgreementId}", id);
+                return NotFound(new { message = ex.Message }); // 404 Not Found
+            }
+            catch (ExternalServiceException ex)
+            {
+                _logger.LogError(ex, "Error al eliminar el acuerdo de pago con ID: {PaymentAgreementId}", id);
+                return StatusCode(500, new { message = ex.Message }); // 500 Internal Server Error
+            }
+        }
+
+        /// <summary>
+        /// Actualiza un acuerdo de pago existente.
+        /// </summary>
+        /// <param name="id">El ID del acuerdo de pago a actualizar.</param>
+        /// <param name="paymentAgreementDto">El objeto PaymentAgreementDto con los datos actualizados.</param>
+        /// <returns>Un resultado indicando el éxito o fallo de la operación.</returns>
+        [HttpPut("{id}")]
+        [ProducesResponseType(200)] // OK
+        [ProducesResponseType(400)] // Bad Request
+        [ProducesResponseType(404)] // Not Found
+        [ProducesResponseType(500)] // Internal Server Error
+        public async Task<IActionResult> Update(int id, [FromBody] PaymentAgreementDto paymentAgreementDto)
+        {
+            if (id != paymentAgreementDto.Id)
+            {
+                return BadRequest(new { message = "El ID en la URL no coincide con el ID en el cuerpo de la solicitud" });
+            }
+
+            try
+            {
+                var updatedPaymentAgreement = await _paymentAgreementBusiness.UpdatePaymentAgreementAsync(paymentAgreementDto);
+                return Ok(new { message = "Acuerdo de pago actualizado correctamente", data = updatedPaymentAgreement }); // 200 OK
+            }
+            catch (ValidationException ex)
+            {
+                _logger.LogWarning(ex, "Validación fallida al actualizar el acuerdo de pago con ID: {PaymentAgreementId}", id);
+                return BadRequest(new { message = ex.Message }); // 400 Bad Request
+            }
+            catch (EntityNotFoundException ex)
+            {
+                _logger.LogInformation(ex, "Acuerdo de pago no encontrado con ID: {PaymentAgreementId}", id);
+                return NotFound(new { message = ex.Message }); // 404 Not Found
+            }
+            catch (ExternalServiceException ex)
+            {
+                _logger.LogError(ex, "Error al actualizar el acuerdo de pago con ID: {PaymentAgreementId}", id);
+                return StatusCode(500, new { message = ex.Message }); // 500 Internal Server Error
+            }
+        }
+
+
+
+
     }
 }
 

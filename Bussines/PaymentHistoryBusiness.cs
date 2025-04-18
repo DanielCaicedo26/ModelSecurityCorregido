@@ -79,6 +79,100 @@ namespace Bussines
         }
 
         /// <summary>
+        /// Elimina un historial de pago por su ID de manera asíncrona.
+        /// </summary>
+        /// <param name="id">El ID del historial de pago a eliminar.</param>
+        /// <returns>Un objeto PaymentHistoryDto del historial de pago eliminado.</returns>
+        /// <exception cref="ValidationException">Lanzada cuando el ID es inválido.</exception>
+        /// <exception cref="EntityNotFoundException">Lanzada cuando no se encuentra el historial de pago.</exception>
+        /// <exception cref="ExternalServiceException">Lanzada cuando ocurre un error al eliminar el historial de pago.</exception>
+        public async Task<PaymentHistoryDto> DeletePaymentHistoryAsync(int id)
+        {
+            if (id <= 0)
+            {
+                _logger.LogWarning("Se intentó eliminar un historial de pago con ID inválido: {PaymentHistoryId}", id);
+                throw new ValidationException("id", "El ID debe ser mayor que cero");
+            }
+
+            try
+            {
+                // Verificar si el historial de pago existe
+                var paymentHistory = await _paymentHistoryData.GetByIdAsync(id);
+                if (paymentHistory == null)
+                {
+                    _logger.LogInformation("No se encontró ningún historial de pago con ID: {PaymentHistoryId}", id);
+                    throw new EntityNotFoundException("PaymentHistory", id);
+                }
+
+                // Intentar eliminar el historial de pago
+                var isDeleted = await _paymentHistoryData.DeleteAsync(id);
+                if (!isDeleted)
+                {
+                    throw new ExternalServiceException("Base de datos", $"No se pudo eliminar el historial de pago con ID {id}");
+                }
+
+                // Devolver el objeto eliminado mapeado a DTO
+                return MapToDTO(paymentHistory);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al eliminar el historial de pago con ID: {PaymentHistoryId}", id);
+                throw new ExternalServiceException("Base de datos", $"Error al eliminar el historial de pago con ID {id}", ex);
+            }
+        }
+
+        /// <summary>
+        /// Actualiza un historial de pago existente de manera asíncrona.
+        /// </summary>
+        /// <param name="paymentHistoryDto">El objeto PaymentHistoryDto con los datos actualizados del historial de pago.</param>
+        /// <returns>El objeto PaymentHistoryDto actualizado.</returns>
+        /// <exception cref="ValidationException">Lanzada si los datos son inválidos.</exception>
+        /// <exception cref="EntityNotFoundException">Lanzada si no se encuentra el historial de pago.</exception>
+        /// <exception cref="ExternalServiceException">Lanzada si ocurre un error al actualizar el historial de pago.</exception>
+        public async Task<PaymentHistoryDto> UpdatePaymentHistoryAsync(PaymentHistoryDto paymentHistoryDto)
+        {
+            if (paymentHistoryDto == null || paymentHistoryDto.Id <= 0)
+            {
+                _logger.LogWarning("Se intentó actualizar un historial de pago con datos inválidos o ID inválido.");
+                throw new ValidationException("id", "El ID debe ser mayor que cero y los datos no pueden ser nulos.");
+            }
+
+            // Validar los datos del DTO
+            ValidatePaymentHistory(paymentHistoryDto);
+
+            try
+            {
+                // Verificar si el historial de pago existe
+                var existingPaymentHistory = await _paymentHistoryData.GetByIdAsync(paymentHistoryDto.Id);
+                if (existingPaymentHistory == null)
+                {
+                    _logger.LogInformation("No se encontró ningún historial de pago con ID: {PaymentHistoryId}", paymentHistoryDto.Id);
+                    throw new EntityNotFoundException("PaymentHistory", paymentHistoryDto.Id);
+                }
+
+                // Actualizar los datos del historial de pago
+                existingPaymentHistory.UserId = paymentHistoryDto.UserId;
+                existingPaymentHistory.Amount = paymentHistoryDto.Amount;
+                existingPaymentHistory.PaymentDate = paymentHistoryDto.PaymentDate;
+
+                var isUpdated = await _paymentHistoryData.UpdateAsync(existingPaymentHistory);
+                if (!isUpdated)
+                {
+                    throw new ExternalServiceException("Base de datos", $"No se pudo actualizar el historial de pago con ID {paymentHistoryDto.Id}.");
+                }
+
+                return MapToDTO(existingPaymentHistory);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al actualizar el historial de pago con ID: {PaymentHistoryId}", paymentHistoryDto.Id);
+                throw new ExternalServiceException("Base de datos", $"Error al actualizar el historial de pago con ID {paymentHistoryDto.Id}.", ex);
+            }
+        }
+
+
+
+        /// <summary>
         /// Crea un nuevo historial de pago de manera asíncrona.
         /// </summary>
         /// <param name="paymentHistoryDto">El objeto PaymentHistoryDto con los datos del historial de pago.</param>

@@ -79,6 +79,102 @@ namespace Bussines
         }
 
         /// <summary>
+        /// Elimina un acuerdo de pago por su ID de manera asíncrona.
+        /// </summary>
+        /// <param name="id">El ID del acuerdo de pago a eliminar.</param>
+        /// <returns>Un objeto PaymentAgreementDto del acuerdo de pago eliminado.</returns>
+        /// <exception cref="ValidationException">Lanzada cuando el ID es inválido.</exception>
+        /// <exception cref="EntityNotFoundException">Lanzada cuando no se encuentra el acuerdo de pago.</exception>
+        /// <exception cref="ExternalServiceException">Lanzada cuando ocurre un error al eliminar el acuerdo de pago.</exception>
+        public async Task<PaymentAgreementDto> DeletePaymentAgreementAsync(int id)
+        {
+            if (id <= 0)
+            {
+                _logger.LogWarning("Se intentó eliminar un acuerdo de pago con ID inválido: {PaymentAgreementId}", id);
+                throw new ValidationException("id", "El ID debe ser mayor que cero");
+            }
+
+            try
+            {
+                // Verificar si el acuerdo de pago existe
+                var paymentAgreement = await _paymentAgreementData.GetByIdAsync(id);
+                if (paymentAgreement == null)
+                {
+                    _logger.LogInformation("No se encontró ningún acuerdo de pago con ID: {PaymentAgreementId}", id);
+                    throw new EntityNotFoundException("PaymentAgreement", id);
+                }
+
+                // Intentar eliminar el acuerdo de pago
+                var isDeleted = await _paymentAgreementData.DeleteAsync(id);
+                if (!isDeleted)
+                {
+                    throw new ExternalServiceException("Base de datos", $"No se pudo eliminar el acuerdo de pago con ID {id}");
+                }
+
+                // Devolver el objeto eliminado mapeado a DTO
+                return MapToDTO(paymentAgreement);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al eliminar el acuerdo de pago con ID: {PaymentAgreementId}", id);
+                throw new ExternalServiceException("Base de datos", $"Error al eliminar el acuerdo de pago con ID {id}", ex);
+            }
+        }
+
+        /// <summary>
+        /// Actualiza un acuerdo de pago existente de manera asíncrona.
+        /// </summary>
+        /// <param name="paymentAgreementDto">El objeto PaymentAgreementDto con los datos actualizados del acuerdo de pago.</param>
+        /// <returns>El objeto PaymentAgreementDto actualizado.</returns>
+        /// <exception cref="ValidationException">Lanzada si los datos son inválidos.</exception>
+        /// <exception cref="EntityNotFoundException">Lanzada si no se encuentra el acuerdo de pago.</exception>
+        /// <exception cref="ExternalServiceException">Lanzada si ocurre un error al actualizar el acuerdo de pago.</exception>
+        public async Task<PaymentAgreementDto> UpdatePaymentAgreementAsync(PaymentAgreementDto paymentAgreementDto)
+        {
+            if (paymentAgreementDto == null || paymentAgreementDto.Id <= 0)
+            {
+                _logger.LogWarning("Se intentó actualizar un acuerdo de pago con datos inválidos o ID inválido.");
+                throw new ValidationException("id", "El ID debe ser mayor que cero y los datos no pueden ser nulos.");
+            }
+
+            // Validar los datos del DTO
+            ValidatePaymentAgreement(paymentAgreementDto);
+
+            try
+            {
+                // Verificar si el acuerdo de pago existe
+                var existingPaymentAgreement = await _paymentAgreementData.GetByIdAsync(paymentAgreementDto.Id);
+                if (existingPaymentAgreement == null)
+                {
+                    _logger.LogInformation("No se encontró ningún acuerdo de pago con ID: {PaymentAgreementId}", paymentAgreementDto.Id);
+                    throw new EntityNotFoundException("PaymentAgreement", paymentAgreementDto.Id);
+                }
+
+                // Actualizar los datos del acuerdo de pago
+                existingPaymentAgreement.Address = paymentAgreementDto.Address;
+                existingPaymentAgreement.Neighborhood = paymentAgreementDto.Neighborhood;
+                existingPaymentAgreement.FinanceAmount = paymentAgreementDto.FinanceAmount;
+                existingPaymentAgreement.AgreementDescription = paymentAgreementDto.AgreementDescription;
+
+                var isUpdated = await _paymentAgreementData.UpdateAsync(existingPaymentAgreement);
+                if (!isUpdated)
+                {
+                    throw new ExternalServiceException("Base de datos", $"No se pudo actualizar el acuerdo de pago con ID {paymentAgreementDto.Id}.");
+                }
+
+                return MapToDTO(existingPaymentAgreement);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al actualizar el acuerdo de pago con ID: {PaymentAgreementId}", paymentAgreementDto.Id);
+                throw new ExternalServiceException("Base de datos", $"Error al actualizar el acuerdo de pago con ID {paymentAgreementDto.Id}.", ex);
+            }
+        }
+
+
+
+
+        /// <summary>
         /// Crea un nuevo acuerdo de pago de manera asíncrona.
         /// </summary>
         /// <param name="paymentAgreementDto">El objeto PaymentAgreementDto con los datos del acuerdo de pago.</param>

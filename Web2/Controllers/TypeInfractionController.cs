@@ -96,8 +96,91 @@ namespace Web2.Controllers
                 return StatusCode(500, new { message = ex.Message });
             }
         }
+
+        /// <summary>
+        /// Elimina un tipo de infracción por su ID.
+        /// </summary>
+        [HttpDelete("{id}")]
+        [ProducesResponseType(204)] // No Content
+        [ProducesResponseType(400)] // Bad Request
+        [ProducesResponseType(404)] // Not Found
+        [ProducesResponseType(500)] // Internal Server Error
+        public async Task<IActionResult> Delete(int id)
+        {
+            try
+            {
+                var result = await _typeInfractionBusiness.DeleteTypeInfractionAsync(id);
+                if (result)
+                {
+                    return NoContent(); // 204 No Content
+                }
+
+                return NotFound(new { message = "Tipo de infracción no encontrado" }); // 404 Not Found
+            }
+            catch (ValidationException ex)
+            {
+                _logger.LogWarning(ex, "Validación fallida al eliminar el tipo de infracción con ID: {TypeInfractionId}", id);
+                return BadRequest(new { message = ex.Message }); // 400 Bad Request
+            }
+            catch (EntityNotFoundException ex)
+            {
+                _logger.LogInformation(ex, "Tipo de infracción no encontrado con ID: {TypeInfractionId}", id);
+                return NotFound(new { message = ex.Message }); // 404 Not Found
+            }
+            catch (ExternalServiceException ex)
+            {
+                _logger.LogError(ex, "Error al eliminar el tipo de infracción con ID: {TypeInfractionId}", id);
+                return StatusCode(500, new { message = ex.Message }); // 500 Internal Server Error
+            }
+        }
+
+        /// <summary>
+        /// Actualiza un tipo de infracción existente.
+        /// </summary>
+        /// <param name="id">El ID del tipo de infracción a actualizar.</param>
+        /// <param name="typeInfractionDto">El objeto TypeInfractionDto con los datos actualizados.</param>
+        /// <returns>Un resultado indicando el éxito o fallo de la operación.</returns>
+        [HttpPut("{id}")]
+        [ProducesResponseType(200)] // OK
+        [ProducesResponseType(400)] // Bad Request
+        [ProducesResponseType(404)] // Not Found
+        [ProducesResponseType(500)] // Internal Server Error
+        public async Task<IActionResult> Update(int id, [FromBody] TypeInfractionDto typeInfractionDto)
+        {
+            if (id <= 0 || typeInfractionDto == null || id != typeInfractionDto.Id)
+            {
+                return BadRequest(new { message = "El ID de la ruta no coincide con el ID del cuerpo de la solicitud o los datos son inválidos" }); // 400 Bad Request
+            }
+
+            try
+            {
+                var updatedTypeInfraction = await _typeInfractionBusiness.UpdateTypeInfractionAsync(typeInfractionDto);
+                if (updatedTypeInfraction == null)
+                {
+                    return NotFound(new { message = "Tipo de infracción no encontrado" }); // 404 Not Found
+                }
+
+                return Ok(new { message = "Tipo de infracción actualizado correctamente", data = updatedTypeInfraction }); // 200 OK
+            }
+            catch (ValidationException ex)
+            {
+                _logger.LogWarning(ex, "Validación fallida al actualizar el tipo de infracción con ID: {TypeInfractionId}", id);
+                return BadRequest(new { message = ex.Message }); // 400 Bad Request
+            }
+            catch (EntityNotFoundException ex)
+            {
+                _logger.LogInformation(ex, "Tipo de infracción no encontrado con ID: {TypeInfractionId}", id);
+                return NotFound(new { message = ex.Message }); // 404 Not Found
+            }
+            catch (ExternalServiceException ex)
+            {
+                _logger.LogError(ex, "Error al actualizar el tipo de infracción con ID: {TypeInfractionId}", id);
+                return StatusCode(500, new { message = ex.Message }); // 500 Internal Server Error
+            }
+        }
     }
 }
+
 
 
 

@@ -79,6 +79,93 @@ namespace Bussines
         }
 
         /// <summary>
+        /// Elimina un tipo de infracción por su ID de manera asíncrona.
+        /// </summary>
+        /// <param name="id">El ID del tipo de infracción a eliminar.</param>
+        /// <returns>True si la eliminación fue exitosa, False en caso contrario.</returns>
+        /// <exception cref="ValidationException">Lanzada cuando el ID es inválido.</exception>
+        /// <exception cref="EntityNotFoundException">Lanzada cuando no se encuentra el tipo de infracción.</exception>
+        /// <exception cref="ExternalServiceException">Lanzada cuando ocurre un error al eliminar el tipo de infracción.</exception>
+        public async Task<bool> DeleteTypeInfractionAsync(int id)
+        {
+            if (id <= 0)
+            {
+                _logger.LogWarning("Se intentó eliminar un tipo de infracción con ID inválido: {TypeInfractionId}", id);
+                throw new ValidationException("id", "El ID debe ser mayor que cero");
+            }
+
+            try
+            {
+                var deleted = await _typeInfractionData.DeleteAsync(id);
+                if (!deleted)
+                {
+                    _logger.LogInformation("No se encontró ningún tipo de infracción con ID: {TypeInfractionId}", id);
+                    throw new EntityNotFoundException("TypeInfraction", id);
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al eliminar el tipo de infracción con ID: {TypeInfractionId}", id);
+                throw new ExternalServiceException("Base de datos", $"Error al eliminar el tipo de infracción con ID {id}", ex);
+            }
+        }
+
+        /// <summary>
+        /// Actualiza los datos de un tipo de infracción.
+        /// </summary>
+        /// <param name="typeInfractionDto">El objeto TypeInfractionDto con los datos actualizados del tipo de infracción.</param>
+        /// <returns>El objeto TypeInfractionDto actualizado.</returns>
+        /// <exception cref="ValidationException">Lanzada si los datos son inválidos.</exception>
+        /// <exception cref="EntityNotFoundException">Lanzada si no se encuentra el tipo de infracción.</exception>
+        /// <exception cref="ExternalServiceException">Lanzada si ocurre un error al actualizar el tipo de infracción.</exception>
+        public async Task<TypeInfractionDto> UpdateTypeInfractionAsync(TypeInfractionDto typeInfractionDto)
+        {
+            if (typeInfractionDto == null || typeInfractionDto.Id <= 0)
+            {
+                _logger.LogWarning("Se intentó actualizar un tipo de infracción con datos inválidos o ID inválido.");
+                throw new ValidationException("id", "El ID debe ser mayor que cero y los datos no pueden ser nulos.");
+            }
+
+            // Validar los datos del DTO
+            ValidateTypeInfraction(typeInfractionDto);
+
+            try
+            {
+                // Verificar si el tipo de infracción existe
+                var existingTypeInfraction = await _typeInfractionData.GetByIdAsync(typeInfractionDto.Id);
+                if (existingTypeInfraction == null)
+                {
+                    _logger.LogInformation("No se encontró ningún tipo de infracción con ID: {TypeInfractionId}", typeInfractionDto.Id);
+                    throw new EntityNotFoundException("TypeInfraction", typeInfractionDto.Id);
+                }
+
+                // Actualizar los datos del tipo de infracción
+                existingTypeInfraction.UserId = typeInfractionDto.UserId;
+                existingTypeInfraction.TypeViolation = typeInfractionDto.TypeViolation;
+                existingTypeInfraction.ValueInfraction = typeInfractionDto.ValueInfraction;
+
+                var isUpdated = await _typeInfractionData.UpdateAsync(existingTypeInfraction);
+                if (!isUpdated)
+                {
+                    throw new ExternalServiceException("Base de datos", $"No se pudo actualizar el tipo de infracción con ID {typeInfractionDto.Id}.");
+                }
+
+                return MapToDTO(existingTypeInfraction);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al actualizar el tipo de infracción con ID: {TypeInfractionId}", typeInfractionDto.Id);
+                throw new ExternalServiceException("Base de datos", $"Error al actualizar el tipo de infracción con ID {typeInfractionDto.Id}.", ex);
+            }
+        }
+
+
+
+
+
+        /// <summary>
         /// Crea un nuevo tipo de infracción de manera asíncrona.
         /// </summary>
         /// <param name="typeInfractionDto">El objeto TypeInfractionDto con los datos del tipo de infracción.</param>

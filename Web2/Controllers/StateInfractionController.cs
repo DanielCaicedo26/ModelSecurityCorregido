@@ -125,6 +125,47 @@ namespace Web2.Controllers
                 return StatusCode(500, new { message = ex.Message });
             }
         }
+
+        /// <summary>
+        /// Actualiza una infracción estatal existente.
+        /// </summary>
+        /// <param name="id">ID de la infracción estatal a actualizar.</param>
+        /// <param name="stateInfractionDto">Datos actualizados de la infracción estatal.</param>
+        /// <returns>La infracción estatal actualizada.</returns>
+        [HttpPut("{id}")]
+        [ProducesResponseType(typeof(StateInfractionDto), 200)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(404)]
+        [ProducesResponseType(500)]
+        public async Task<IActionResult> Update(int id, [FromBody] StateInfractionDto stateInfractionDto)
+        {
+            if (id != stateInfractionDto.Id)
+            {
+                return BadRequest(new { message = "El ID de la URL no coincide con el ID del cuerpo de la solicitud." });
+            }
+
+            try
+            {
+                var updated = await _stateInfractionBusiness.UpdateStateInfractionAsync(stateInfractionDto);
+                return Ok(updated);
+            }
+            catch (ValidationException ex)
+            {
+                _logger.LogWarning(ex, "Validación fallida al actualizar la infracción estatal con ID: {StateInfractionId}", id);
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (EntityNotFoundException ex)
+            {
+                _logger.LogInformation(ex, "Infracción estatal no encontrada con ID: {StateInfractionId}", id);
+                return NotFound(new { message = ex.Message });
+            }
+            catch (ExternalServiceException ex)
+            {
+                _logger.LogError(ex, "Error al actualizar la infracción estatal con ID: {StateInfractionId}", id);
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
+
     }
 }
 

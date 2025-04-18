@@ -124,6 +124,54 @@ namespace Bussines
             }
         }
 
+        /// <summary>
+        /// Actualiza una infracción de estado de manera asíncrona.
+        /// </summary>
+        /// <param name="stateInfractionDto">El objeto StateInfractionDto con los datos actualizados de la infracción de estado.</param>
+        /// <returns>El objeto StateInfractionDto actualizado.</returns>
+        /// <exception cref="ValidationException">Lanzada cuando los datos de la infracción de estado son inválidos.</exception>
+        /// <exception cref="EntityNotFoundException">Lanzada cuando no se encuentra la infracción de estado.</exception>
+        /// <exception cref="ExternalServiceException">Lanzada cuando ocurre un error al actualizar la infracción de estado.</exception>
+        public async Task<StateInfractionDto> UpdateStateInfractionAsync(StateInfractionDto stateInfractionDto)
+        {
+            try
+            {
+                // Validar los datos de la infracción de estado
+                ValidateStateInfraction(stateInfractionDto);
+
+                // Verificar si la infracción de estado existe
+                var existingStateInfraction = await _stateInfractionData.GetByIdAsync(stateInfractionDto.Id);
+                if (existingStateInfraction == null)
+                {
+                    _logger.LogInformation("No se encontró ninguna infracción de estado con ID: {StateInfractionId}", stateInfractionDto.Id);
+                    throw new EntityNotFoundException("StateInfraction", stateInfractionDto.Id);
+                }
+
+                // Mapear los datos actualizados al modelo de entidad
+                existingStateInfraction.InfractionId = stateInfractionDto.InfractionId;
+                existingStateInfraction.PersonId = stateInfractionDto.PersonId;
+                existingStateInfraction.DateViolation = stateInfractionDto.DateViolation;
+                existingStateInfraction.FineValue = stateInfractionDto.FineValue;
+                existingStateInfraction.State = stateInfractionDto.State;
+
+                // Intentar actualizar la infracción de estado
+                var isUpdated = await _stateInfractionData.UpdateAsync(existingStateInfraction);
+                if (!isUpdated)
+                {
+                    throw new ExternalServiceException("Base de datos", $"No se pudo actualizar la infracción de estado con ID {stateInfractionDto.Id}");
+                }
+
+                // Devolver el objeto actualizado mapeado a DTO
+                return MapToDTO(existingStateInfraction);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al actualizar la infracción de estado con ID: {StateInfractionId}", stateInfractionDto.Id);
+                throw new ExternalServiceException("Base de datos", $"Error al actualizar la infracción de estado con ID {stateInfractionDto.Id}", ex);
+            }
+        }
+
+
 
         /// <summary>
         /// Crea una nueva infracción de estado de manera asíncrona.

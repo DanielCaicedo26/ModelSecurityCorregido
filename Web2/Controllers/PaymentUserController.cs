@@ -96,6 +96,42 @@ namespace Web2.Controllers
                 return StatusCode(500, new { message = ex.Message });
             }
         }
+
+        /// <summary>
+        /// Elimina un pago de usuario por su ID.
+        /// </summary>
+        /// <param name="id">El ID del pago de usuario a eliminar.</param>
+        /// <returns>Un resultado indicando el éxito o fallo de la operación.</returns>
+        [HttpDelete("{id}")]
+        [ProducesResponseType(200)] // OK
+        [ProducesResponseType(400)] // Bad Request
+        [ProducesResponseType(404)] // Not Found
+        [ProducesResponseType(500)] // Internal Server Error
+        public async Task<IActionResult> Delete(int id)
+        {
+            try
+            {
+                var deletedPaymentUser = await _paymentUserBusiness.DeletePaymentUserAsync(id);
+                return Ok(new { message = "Pago de usuario eliminado correctamente", data = deletedPaymentUser }); // 200 OK
+            }
+            catch (ValidationException ex)
+            {
+                _logger.LogWarning(ex, "Validación fallida al eliminar el pago de usuario con ID: {PaymentUserId}", id);
+                return BadRequest(new { message = ex.Message }); // 400 Bad Request
+            }
+            catch (EntityNotFoundException ex)
+            {
+                _logger.LogInformation(ex, "Pago de usuario no encontrado con ID: {PaymentUserId}", id);
+                return NotFound(new { message = ex.Message }); // 404 Not Found
+            }
+            catch (ExternalServiceException ex)
+            {
+                _logger.LogError(ex, "Error al eliminar el pago de usuario con ID: {PaymentUserId}", id);
+                return StatusCode(500, new { message = ex.Message }); // 500 Internal Server Error
+            }
+        }
+
+
     }
 }
 

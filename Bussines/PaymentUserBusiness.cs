@@ -79,6 +79,51 @@ namespace Bussines
         }
 
         /// <summary>
+        /// Elimina un pago de usuario por su ID de manera asíncrona.
+        /// </summary>
+        /// <param name="id">El ID del pago de usuario a eliminar.</param>
+        /// <returns>Un objeto PaymentUserDto del pago de usuario eliminado.</returns>
+        /// <exception cref="ValidationException">Lanzada cuando el ID es inválido.</exception>
+        /// <exception cref="EntityNotFoundException">Lanzada cuando no se encuentra el pago de usuario.</exception>
+        /// <exception cref="ExternalServiceException">Lanzada cuando ocurre un error al eliminar el pago de usuario.</exception>
+        public async Task<PaymentUserDto> DeletePaymentUserAsync(int id)
+        {
+            if (id <= 0)
+            {
+                _logger.LogWarning("Se intentó eliminar un pago de usuario con ID inválido: {PaymentUserId}", id);
+                throw new ValidationException("id", "El ID debe ser mayor que cero");
+            }
+
+            try
+            {
+                // Verificar si el pago de usuario existe
+                var paymentUser = await _paymentUserData.GetByIdAsync(id);
+                if (paymentUser == null)
+                {
+                    _logger.LogInformation("No se encontró ningún pago de usuario con ID: {PaymentUserId}", id);
+                    throw new EntityNotFoundException("PaymentUser", id);
+                }
+
+                // Intentar eliminar el pago de usuario
+                var isDeleted = await _paymentUserData.DeleteAsync(id);
+                if (!isDeleted)
+                {
+                    throw new ExternalServiceException("Base de datos", $"No se pudo eliminar el pago de usuario con ID {id}");
+                }
+
+                // Devolver el objeto eliminado mapeado a DTO
+                return MapToDTO(paymentUser);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al eliminar el pago de usuario con ID: {PaymentUserId}", id);
+                throw new ExternalServiceException("Base de datos", $"Error al eliminar el pago de usuario con ID {id}", ex);
+            }
+        }
+
+
+
+        /// <summary>
         /// Crea un nuevo pago de usuario de manera asíncrona.
         /// </summary>
         /// <param name="paymentUserDto">El objeto PaymentUserDto con los datos del pago de usuario.</param>

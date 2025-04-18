@@ -82,6 +82,98 @@ namespace Bussines
         }
 
         /// <summary>
+        /// Elimina un rol por su ID de manera asíncrona.
+        /// </summary>
+        /// <param name="id">El ID del rol a eliminar.</param>
+        /// <returns>Un objeto RoleDto del rol eliminado.</returns>
+        /// <exception cref="ValidationException">Lanzada cuando el ID es inválido.</exception>
+        /// <exception cref="EntityNotFoundException">Lanzada cuando no se encuentra el rol.</exception>
+        /// <exception cref="ExternalServiceException">Lanzada cuando ocurre un error al eliminar el rol.</exception>
+        public async Task<RoleDto> DeleteRoleAsync(int id)
+        {
+            if (id <= 0)
+            {
+                _logger.LogWarning("Se intentó eliminar un rol con ID inválido: {RoleId}", id);
+                throw new ValidationException("id", "El ID debe ser mayor que cero");
+            }
+
+            try
+            {
+                // Verificar si el rol existe
+                var role = await _roleData.GetByIdAsync(id);
+                if (role == null)
+                {
+                    _logger.LogInformation("No se encontró ningún rol con ID: {RoleId}", id);
+                    throw new EntityNotFoundException("Role", id);
+                }
+
+                // Intentar eliminar el rol
+                var isDeleted = await _roleData.DeleteAsync(id);
+                if (!isDeleted)
+                {
+                    throw new ExternalServiceException("Base de datos", $"No se pudo eliminar el rol con ID {id}");
+                }
+
+                // Devolver el objeto eliminado mapeado a DTO
+                return MapToDTO(role);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al eliminar el rol con ID: {RoleId}", id);
+                throw new ExternalServiceException("Base de datos", $"Error al eliminar el rol con ID {id}", ex);
+            }
+        }
+
+        /// <summary>
+        /// Actualiza los datos de un rol.
+        /// </summary>
+        /// <param name="roleDto">El objeto RoleDto con los datos actualizados del rol.</param>
+        /// <returns>El objeto RoleDto actualizado.</returns>
+        /// <exception cref="ValidationException">Lanzada si los datos son inválidos.</exception>
+        /// <exception cref="EntityNotFoundException">Lanzada si no se encuentra el rol.</exception>
+        /// <exception cref="ExternalServiceException">Lanzada si ocurre un error al actualizar el rol.</exception>
+        public async Task<RoleDto> UpdateRoleAsync(RoleDto roleDto)
+        {
+            if (roleDto == null || roleDto.Id <= 0)
+            {
+                _logger.LogWarning("Se intentó actualizar un rol con datos inválidos o ID inválido.");
+                throw new ValidationException("id", "El ID debe ser mayor que cero y los datos no pueden ser nulos.");
+            }
+
+            // Validar los datos del DTO
+            ValidateRole(roleDto);
+
+            try
+            {
+                // Verificar si el rol existe
+                var existingRole = await _roleData.GetByIdAsync(roleDto.Id);
+                if (existingRole == null)
+                {
+                    _logger.LogInformation("No se encontró ningún rol con ID: {RoleId}", roleDto.Id);
+                    throw new EntityNotFoundException("Role", roleDto.Id);
+                }
+
+                // Actualizar los datos del rol
+                existingRole.RoleName = roleDto.RoleName;
+
+                var isUpdated = await _roleData.UpdateAsync(existingRole);
+                if (!isUpdated)
+                {
+                    throw new ExternalServiceException("Base de datos", $"No se pudo actualizar el rol con ID {roleDto.Id}.");
+                }
+
+                return MapToDTO(existingRole);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al actualizar el rol con ID: {RoleId}", roleDto.Id);
+                throw new ExternalServiceException("Base de datos", $"Error al actualizar el rol con ID {roleDto.Id}.", ex);
+            }
+        }
+
+
+
+        /// <summary>
         /// Crea un nuevo rol de manera asíncrona.
         /// </summary>
         /// <param name="roleDto">El objeto RoleDto con los datos del rol.</param>

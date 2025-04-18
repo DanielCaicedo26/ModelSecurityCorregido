@@ -82,6 +82,99 @@ namespace Bussines
         }
 
         /// <summary>
+        /// Elimina un usuario de rol por su ID de manera asíncrona.
+        /// </summary>
+        /// <param name="id">El ID del usuario de rol a eliminar.</param>
+        /// <returns>Un objeto RoleUserDto del usuario de rol eliminado.</returns>
+        /// <exception cref="ValidationException">Lanzada cuando el ID es inválido.</exception>
+        /// <exception cref="EntityNotFoundException">Lanzada cuando no se encuentra el usuario de rol.</exception>
+        /// <exception cref="ExternalServiceException">Lanzada cuando ocurre un error al eliminar el usuario de rol.</exception>
+        public async Task<RoleUserDto> DeleteRoleUserAsync(int id)
+        {
+            if (id <= 0)
+            {
+                _logger.LogWarning("Se intentó eliminar un usuario de rol con ID inválido: {RoleUserId}", id);
+                throw new ValidationException("id", "El ID debe ser mayor que cero");
+            }
+
+            try
+            {
+                // Verificar si el usuario de rol existe
+                var roleUser = await _roleUserData.GetByIdAsync(id);
+                if (roleUser == null)
+                {
+                    _logger.LogInformation("No se encontró ningún usuario de rol con ID: {RoleUserId}", id);
+                    throw new EntityNotFoundException("RoleUser", id);
+                }
+
+                // Intentar eliminar el usuario de rol
+                var isDeleted = await _roleUserData.DeleteAsync(id);
+                if (!isDeleted)
+                {
+                    throw new ExternalServiceException("Base de datos", $"No se pudo eliminar el usuario de rol con ID {id}");
+                }
+
+                // Devolver el objeto eliminado mapeado a DTO
+                return MapToDTO(roleUser);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al eliminar el usuario de rol con ID: {RoleUserId}", id);
+                throw new ExternalServiceException("Base de datos", $"Error al eliminar el usuario de rol con ID {id}", ex);
+            }
+        }
+
+        /// <summary>
+        /// Actualiza los datos de un usuario de rol.
+        /// </summary>
+        /// <param name="roleUserDto">El objeto RoleUserDto con los datos actualizados del usuario de rol.</param>
+        /// <returns>El objeto RoleUserDto actualizado.</returns>
+        /// <exception cref="ValidationException">Lanzada si los datos son inválidos.</exception>
+        /// <exception cref="EntityNotFoundException">Lanzada si no se encuentra el usuario de rol.</exception>
+        /// <exception cref="ExternalServiceException">Lanzada si ocurre un error al actualizar el usuario de rol.</exception>
+        public async Task<RoleUserDto> UpdateRoleUserAsync(RoleUserDto roleUserDto)
+        {
+            if (roleUserDto == null || roleUserDto.Id <= 0)
+            {
+                _logger.LogWarning("Se intentó actualizar un usuario de rol con datos inválidos o ID inválido.");
+                throw new ValidationException("id", "El ID debe ser mayor que cero y los datos no pueden ser nulos.");
+            }
+
+            // Validar los datos del DTO
+            ValidateRoleUser(roleUserDto);
+
+            try
+            {
+                // Verificar si el usuario de rol existe
+                var existingRoleUser = await _roleUserData.GetByIdAsync(roleUserDto.Id);
+                if (existingRoleUser == null)
+                {
+                    _logger.LogInformation("No se encontró ningún usuario de rol con ID: {RoleUserId}", roleUserDto.Id);
+                    throw new EntityNotFoundException("RoleUser", roleUserDto.Id);
+                }
+
+                // Actualizar los datos del usuario de rol
+                existingRoleUser.RoleId = roleUserDto.RoleId;
+                existingRoleUser.UserId = roleUserDto.UserId;
+
+                var isUpdated = await _roleUserData.UpdateAsync(existingRoleUser);
+                if (!isUpdated)
+                {
+                    throw new ExternalServiceException("Base de datos", $"No se pudo actualizar el usuario de rol con ID {roleUserDto.Id}.");
+                }
+
+                return MapToDTO(existingRoleUser);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al actualizar el usuario de rol con ID: {RoleUserId}", roleUserDto.Id);
+                throw new ExternalServiceException("Base de datos", $"Error al actualizar el usuario de rol con ID {roleUserDto.Id}.", ex);
+            }
+        }
+
+
+
+        /// <summary>
         /// Crea un nuevo usuario de rol de manera asíncrona.
         /// </summary>
         /// <param name="roleUserDto">El objeto RoleUserDto con los datos del usuario de rol.</param>

@@ -96,6 +96,82 @@ namespace Web2.Controllers
                 return StatusCode(500, new { message = ex.Message });
             }
         }
+
+        /// <summary>
+        /// Elimina un usuario de rol por su ID.
+        /// </summary>
+        /// <param name="id">El ID del usuario de rol a eliminar.</param>
+        /// <returns>Un resultado indicando el éxito o fallo de la operación.</returns>
+        [HttpDelete("{id}")]
+        [ProducesResponseType(200)] // OK
+        [ProducesResponseType(400)] // Bad Request
+        [ProducesResponseType(404)] // Not Found
+        [ProducesResponseType(500)] // Internal Server Error
+        public async Task<IActionResult> Delete(int id)
+        {
+            try
+            {
+                var deletedRoleUser = await _roleUserBusiness.DeleteRoleUserAsync(id);
+                return Ok(new { message = "Usuario de rol eliminado correctamente", data = deletedRoleUser }); // 200 OK
+            }
+            catch (ValidationException ex)
+            {
+                _logger.LogWarning(ex, "Validación fallida al eliminar el usuario de rol con ID: {RoleUserId}", id);
+                return BadRequest(new { message = ex.Message }); // 400 Bad Request
+            }
+            catch (EntityNotFoundException ex)
+            {
+                _logger.LogInformation(ex, "Usuario de rol no encontrado con ID: {RoleUserId}", id);
+                return NotFound(new { message = ex.Message }); // 404 Not Found
+            }
+            catch (ExternalServiceException ex)
+            {
+                _logger.LogError(ex, "Error al eliminar el usuario de rol con ID: {RoleUserId}", id);
+                return StatusCode(500, new { message = ex.Message }); // 500 Internal Server Error
+            }
+        }
+
+        /// <summary>
+        /// Actualiza un usuario de rol existente.
+        /// </summary>
+        /// <param name="id">El ID del usuario de rol a actualizar.</param>
+        /// <param name="roleUserDto">El objeto RoleUserDto con los datos actualizados.</param>
+        /// <returns>Un resultado indicando el éxito o fallo de la operación.</returns>
+        [HttpPut("{id}")]
+        [ProducesResponseType(200)] // OK
+        [ProducesResponseType(400)] // Bad Request
+        [ProducesResponseType(404)] // Not Found
+        [ProducesResponseType(500)] // Internal Server Error
+        public async Task<IActionResult> Update(int id, [FromBody] RoleUserDto roleUserDto)
+        {
+            if (id <= 0 || roleUserDto == null || id != roleUserDto.Id)
+            {
+                return BadRequest(new { message = "El ID de la ruta no coincide con el ID del cuerpo de la solicitud o los datos son inválidos" }); // 400 Bad Request
+            }
+
+            try
+            {
+                var updatedRoleUser = await _roleUserBusiness.UpdateRoleUserAsync(roleUserDto);
+                return Ok(new { message = "Usuario de rol actualizado correctamente", data = updatedRoleUser }); // 200 OK
+            }
+            catch (ValidationException ex)
+            {
+                _logger.LogWarning(ex, "Validación fallida al actualizar el usuario de rol con ID: {RoleUserId}", id);
+                return BadRequest(new { message = ex.Message }); // 400 Bad Request
+            }
+            catch (EntityNotFoundException ex)
+            {
+                _logger.LogInformation(ex, "Usuario de rol no encontrado con ID: {RoleUserId}", id);
+                return NotFound(new { message = ex.Message }); // 404 Not Found
+            }
+            catch (ExternalServiceException ex)
+            {
+                _logger.LogError(ex, "Error al actualizar el usuario de rol con ID: {RoleUserId}", id);
+                return StatusCode(500, new { message = ex.Message }); // 500 Internal Server Error
+            }
+        }
+
+
     }
 }
 

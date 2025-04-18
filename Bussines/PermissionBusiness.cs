@@ -79,6 +79,101 @@ namespace Bussines
         }
 
         /// <summary>
+        /// Elimina un permiso por su ID de manera asíncrona.
+        /// </summary>
+        /// <param name="id">El ID del permiso a eliminar.</param>
+        /// <returns>Un objeto PermissionDto del permiso eliminado.</returns>
+        /// <exception cref="ValidationException">Lanzada cuando el ID es inválido.</exception>
+        /// <exception cref="EntityNotFoundException">Lanzada cuando no se encuentra el permiso.</exception>
+        /// <exception cref="ExternalServiceException">Lanzada cuando ocurre un error al eliminar el permiso.</exception>
+        public async Task<PermissionDto> DeletePermissionAsync(int id)
+        {
+            if (id <= 0)
+            {
+                _logger.LogWarning("Se intentó eliminar un permiso con ID inválido: {PermissionId}", id);
+                throw new ValidationException("id", "El ID debe ser mayor que cero");
+            }
+
+            try
+            {
+                // Verificar si el permiso existe
+                var permission = await _permissionData.GetByIdAsync(id);
+                if (permission == null)
+                {
+                    _logger.LogInformation("No se encontró ningún permiso con ID: {PermissionId}", id);
+                    throw new EntityNotFoundException("Permission", id);
+                }
+
+                // Intentar eliminar el permiso
+                var isDeleted = await _permissionData.DeleteAsync(id);
+                if (!isDeleted)
+                {
+                    throw new ExternalServiceException("Base de datos", $"No se pudo eliminar el permiso con ID {id}");
+                }
+
+                // Devolver el objeto eliminado mapeado a DTO
+                return MapToDTO(permission);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al eliminar el permiso con ID: {PermissionId}", id);
+                throw new ExternalServiceException("Base de datos", $"Error al eliminar el permiso con ID {id}", ex);
+            }
+        }
+
+        /// <summary>
+        /// Actualiza los datos de un permiso.
+        /// </summary>
+        /// <param name="permissionDto">El objeto PermissionDto con los datos actualizados del permiso.</param>
+        /// <returns>El objeto PermissionDto actualizado.</returns>
+        /// <exception cref="ValidationException">Lanzada si los datos son inválidos.</exception>
+        /// <exception cref="EntityNotFoundException">Lanzada si no se encuentra el permiso.</exception>
+        /// <exception cref="ExternalServiceException">Lanzada si ocurre un error al actualizar el permiso.</exception>
+        public async Task<PermissionDto> UpdatePermissionAsync(PermissionDto permissionDto)
+        {
+            if (permissionDto == null || permissionDto.Id <= 0)
+            {
+                _logger.LogWarning("Se intentó actualizar un permiso con datos inválidos o ID inválido.");
+                throw new ValidationException("id", "El ID debe ser mayor que cero y los datos no pueden ser nulos.");
+            }
+
+            // Validar los datos del DTO
+            ValidatePermission(permissionDto);
+
+            try
+            {
+                // Verificar si el permiso existe
+                var existingPermission = await _permissionData.GetByIdAsync(permissionDto.Id);
+                if (existingPermission == null)
+                {
+                    _logger.LogInformation("No se encontró ningún permiso con ID: {PermissionId}", permissionDto.Id);
+                    throw new EntityNotFoundException("Permission", permissionDto.Id);
+                }
+
+                // Actualizar los datos del permiso
+                existingPermission.Name = permissionDto.Name;
+                existingPermission.Description = permissionDto.Description;
+
+                var isUpdated = await _permissionData.UpdateAsync(existingPermission);
+                if (!isUpdated)
+                {
+                    throw new ExternalServiceException("Base de datos", $"No se pudo actualizar el permiso con ID {permissionDto.Id}.");
+                }
+
+                return MapToDTO(existingPermission);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al actualizar el permiso con ID: {PermissionId}", permissionDto.Id);
+                throw new ExternalServiceException("Base de datos", $"Error al actualizar el permiso con ID {permissionDto.Id}.", ex);
+            }
+        }
+
+
+
+
+
+        /// <summary>
         /// Crea un nuevo permiso de manera asíncrona.
         /// </summary>
         /// <param name="permissionDto">El objeto PermissionDto con los datos del permiso.</param>

@@ -96,6 +96,84 @@ namespace Web2.Controllers
                 return StatusCode(500, new { message = ex.Message });
             }
         }
+
+        /// <summary>
+        /// Actualiza una persona existente.
+        /// </summary>
+        /// <param name="id">El ID de la persona a actualizar.</param>
+        /// <param name="personDto">El objeto PersonDto con los datos actualizados.</param>
+        /// <returns>Un resultado indicando el éxito o fallo de la operación.</returns>
+        [HttpPut("{id}")]
+        [ProducesResponseType(200)] // OK
+        [ProducesResponseType(400)] // Bad Request
+        [ProducesResponseType(404)] // Not Found
+        [ProducesResponseType(500)] // Internal Server Error
+        public async Task<IActionResult> Update(int id, [FromBody] PersonDto personDto)
+        {
+            if (id <= 0 || personDto == null || id != personDto.Id)
+            {
+                return BadRequest(new { message = "El ID de la ruta no coincide con el ID del cuerpo de la solicitud o los datos son inválidos" }); // 400 Bad Request
+            }
+
+            try
+            {
+                var updatedPerson = await _personBusiness.UpdatePersonAsync(personDto);
+                return Ok(new { message = "Persona actualizada correctamente", data = updatedPerson }); // 200 OK
+            }
+            catch (ValidationException ex)
+            {
+                _logger.LogWarning(ex, "Validación fallida al actualizar la persona con ID: {PersonId}", id);
+                return BadRequest(new { message = ex.Message }); // 400 Bad Request
+            }
+            catch (EntityNotFoundException ex)
+            {
+                _logger.LogInformation(ex, "Persona no encontrada con ID: {PersonId}", id);
+                return NotFound(new { message = ex.Message }); // 404 Not Found
+            }
+            catch (ExternalServiceException ex)
+            {
+                _logger.LogError(ex, "Error al actualizar la persona con ID: {PersonId}", id);
+                return StatusCode(500, new { message = ex.Message }); // 500 Internal Server Error
+            }
+        }
+
+        /// <summary>
+        /// Elimina una persona por su ID.
+        /// </summary>
+        /// <param name="id">El ID de la persona a eliminar.</param>
+        /// <returns>Un resultado indicando el éxito o fallo de la operación.</returns>
+        [HttpDelete("{id}")]
+        [ProducesResponseType(200)] // OK
+        [ProducesResponseType(400)] // Bad Request
+        [ProducesResponseType(404)] // Not Found
+        [ProducesResponseType(500)] // Internal Server Error
+        public async Task<IActionResult> Delete(int id)
+        {
+            try
+            {
+                var deletedPerson = await _personBusiness.DeletePersonAsync(id);
+                return Ok(new { message = "Persona eliminada correctamente", data = deletedPerson }); // 200 OK
+            }
+            catch (ValidationException ex)
+            {
+                _logger.LogWarning(ex, "Validación fallida al eliminar la persona con ID: {PersonId}", id);
+                return BadRequest(new { message = ex.Message }); // 400 Bad Request
+            }
+            catch (EntityNotFoundException ex)
+            {
+                _logger.LogInformation(ex, "Persona no encontrada con ID: {PersonId}", id);
+                return NotFound(new { message = ex.Message }); // 404 Not Found
+            }
+            catch (ExternalServiceException ex)
+            {
+                _logger.LogError(ex, "Error al eliminar la persona con ID: {PersonId}", id);
+                return StatusCode(500, new { message = ex.Message }); // 500 Internal Server Error
+            }
+        }
+
+
+
+
     }
 }
 

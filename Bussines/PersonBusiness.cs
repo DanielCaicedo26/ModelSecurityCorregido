@@ -48,6 +48,102 @@ namespace Bussines
         }
 
         /// <summary>
+        /// Actualiza los datos de una persona.
+        /// </summary>
+        /// <param name="personDto">El objeto PersonDto con los datos actualizados de la persona.</param>
+        /// <returns>El objeto PersonDto actualizado.</returns>
+        /// <exception cref="ValidationException">Lanzada si los datos son inválidos.</exception>
+        /// <exception cref="EntityNotFoundException">Lanzada si no se encuentra la persona.</exception>
+        /// <exception cref="ExternalServiceException">Lanzada si ocurre un error al actualizar la persona.</exception>
+        public async Task<PersonDto> UpdatePersonAsync(PersonDto personDto)
+        {
+            if (personDto == null || personDto.Id <= 0)
+            {
+                _logger.LogWarning("Se intentó actualizar una persona con datos inválidos o ID inválido.");
+                throw new ValidationException("id", "El ID debe ser mayor que cero y los datos no pueden ser nulos.");
+            }
+
+            // Validar los datos del DTO
+            ValidatePerson(personDto);
+
+            try
+            {
+                // Verificar si la persona existe
+                var existingPerson = await _personData.GetByIdAsync(personDto.Id);
+                if (existingPerson == null)
+                {
+                    _logger.LogInformation("No se encontró ninguna persona con ID: {PersonId}", personDto.Id);
+                    throw new EntityNotFoundException("Person", personDto.Id);
+                }
+
+                // Actualizar los datos de la persona
+                existingPerson.FirstName = personDto.FirstName;
+                existingPerson.LastName = personDto.LastName;
+                existingPerson.Phone = personDto.Phone;
+
+                var isUpdated = await _personData.UpdateAsync(existingPerson);
+                if (!isUpdated)
+                {
+                    throw new ExternalServiceException("Base de datos", $"No se pudo actualizar la persona con ID {personDto.Id}.");
+                }
+
+                return MapToDTO(existingPerson);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al actualizar la persona con ID: {PersonId}", personDto.Id);
+                throw new ExternalServiceException("Base de datos", $"Error al actualizar la persona con ID {personDto.Id}.", ex);
+            }
+        }
+
+        /// <summary>
+        /// Elimina una persona por su ID de manera asíncrona.
+        /// </summary>
+        /// <param name="id">El ID de la persona a eliminar.</param>
+        /// <returns>Un objeto PersonDto de la persona eliminada.</returns>
+        /// <exception cref="ValidationException">Lanzada cuando el ID es inválido.</exception>
+        /// <exception cref="EntityNotFoundException">Lanzada cuando no se encuentra la persona.</exception>
+        /// <exception cref="ExternalServiceException">Lanzada cuando ocurre un error al eliminar la persona.</exception>
+        public async Task<PersonDto> DeletePersonAsync(int id)
+        {
+            if (id <= 0)
+            {
+                _logger.LogWarning("Se intentó eliminar una persona con ID inválido: {PersonId}", id);
+                throw new ValidationException("id", "El ID debe ser mayor que cero");
+            }
+
+            try
+            {
+                // Verificar si la persona existe
+                var person = await _personData.GetByIdAsync(id);
+                if (person == null)
+                {
+                    _logger.LogInformation("No se encontró ninguna persona con ID: {PersonId}", id);
+                    throw new EntityNotFoundException("Person", id);
+                }
+
+                // Intentar eliminar la persona
+                var isDeleted = await _personData.DeleteAsync(id);
+                if (!isDeleted)
+                {
+                    throw new ExternalServiceException("Base de datos", $"No se pudo eliminar la persona con ID {id}");
+                }
+
+                // Devolver el objeto eliminado mapeado a DTO
+                return MapToDTO(person);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al eliminar la persona con ID: {PersonId}", id);
+                throw new ExternalServiceException("Base de datos", $"Error al eliminar la persona con ID {id}", ex);
+            }
+        }
+
+
+
+
+
+        /// <summary>
         /// Obtiene una persona por su ID de manera asíncrona.
         /// </summary>
         /// <param name="id">El ID de la persona.</param>

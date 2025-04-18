@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using Data;
 using Entity.Dto;
 using Entity.Model;
@@ -80,6 +77,100 @@ namespace Bussines
                 throw new ExternalServiceException("Base de datos", $"Error al recuperar el módulo con ID {id}", ex);
             }
         }
+
+        /// <summary>
+        /// Elimina un módulo por su ID de manera asíncrona.
+        /// </summary>
+        /// <param name="id">El ID del módulo a eliminar.</param>
+        /// <returns>Un objeto ModuleDto del módulo eliminado.</returns>
+        /// <exception cref="ValidationException">Lanzada cuando el ID es inválido.</exception>
+        /// <exception cref="EntityNotFoundException">Lanzada cuando no se encuentra el módulo.</exception>
+        /// <exception cref="ExternalServiceException">Lanzada cuando ocurre un error al eliminar el módulo.</exception>
+        public async Task<ModuleDto> DeleteModuleAsync(int id)
+        {
+            if (id <= 0)
+            {
+                _logger.LogWarning("Se intentó eliminar un módulo con ID inválido: {ModuleId}", id);
+                throw new ValidationException("id", "El ID debe ser mayor que cero");
+            }
+
+            try
+            {
+                // Verificar si el módulo existe
+                var module = await _moduleData.GetByIdAsync(id);
+                if (module == null)
+                {
+                    _logger.LogInformation("No se encontró ningún módulo con ID: {ModuleId}", id);
+                    throw new EntityNotFoundException("Module", id);
+                }
+
+                // Intentar eliminar el módulo
+                var isDeleted = await _moduleData.DeleteAsync(id);
+                if (!isDeleted)
+                {
+                    throw new ExternalServiceException("Base de datos", $"No se pudo eliminar el módulo con ID {id}");
+                }
+
+                // Devolver el objeto eliminado mapeado a DTO
+                return MapToDTO(module);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al eliminar el módulo con ID: {ModuleId}", id);
+                throw new ExternalServiceException("Base de datos", $"Error al eliminar el módulo con ID {id}", ex);
+            }
+        }
+
+        /// <summary>
+        /// Actualiza un módulo existente de manera asíncrona.
+        /// </summary>
+        /// <param name="moduleDto">El objeto ModuleDto con los datos actualizados del módulo.</param>
+        /// <returns>El objeto ModuleDto actualizado.</returns>
+        /// <exception cref="ValidationException">Lanzada si los datos son inválidos.</exception>
+        /// <exception cref="EntityNotFoundException">Lanzada si no se encuentra el módulo.</exception>
+        /// <exception cref="ExternalServiceException">Lanzada si ocurre un error al actualizar el módulo.</exception>
+        public async Task<ModuleDto> UpdateModuleAsync(ModuleDto moduleDto)
+        {
+            if (moduleDto == null || moduleDto.Id <= 0)
+            {
+                _logger.LogWarning("Se intentó actualizar un módulo con datos inválidos o ID inválido.");
+                throw new ValidationException("id", "El ID debe ser mayor que cero y los datos no pueden ser nulos.");
+            }
+
+            // Validar los datos del DTO
+            ValidateModule(moduleDto);
+
+            try
+            {
+                // Verificar si el módulo existe
+                var existingModule = await _moduleData.GetByIdAsync(moduleDto.Id);
+                if (existingModule == null)
+                {
+                    _logger.LogInformation("No se encontró ningún módulo con ID: {ModuleId}", moduleDto.Id);
+                    throw new EntityNotFoundException("Module", moduleDto.Id);
+                }
+
+                // Actualizar los datos del módulo
+                existingModule.Name = moduleDto.Name;
+                existingModule.Description = moduleDto.Description;
+                existingModule.Statu = moduleDto.Statu;
+
+                var isUpdated = await _moduleData.UpdateAsync(existingModule);
+                if (!isUpdated)
+                {
+                    throw new ExternalServiceException("Base de datos", $"No se pudo actualizar el módulo con ID {moduleDto.Id}.");
+                }
+
+                return MapToDTO(existingModule);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al actualizar el módulo con ID: {ModuleId}", moduleDto.Id);
+                throw new ExternalServiceException("Base de datos", $"Error al actualizar el módulo con ID {moduleDto.Id}.", ex);
+            }
+        }
+
+
 
         /// <summary>
         /// Crea un nuevo módulo de manera asíncrona.

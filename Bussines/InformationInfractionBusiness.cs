@@ -45,6 +45,101 @@ namespace Bussines
         }
 
         /// <summary>
+        /// Elimina una infracción de información por su ID de manera asíncrona.
+        /// </summary>
+        /// <param name="id">El ID de la infracción de información a eliminar.</param>
+        /// <returns>Un objeto InformationInfractionDto de la infracción de información eliminada.</returns>
+        /// <exception cref="ValidationException">Lanzada cuando el ID es inválido.</exception>
+        /// <exception cref="EntityNotFoundException">Lanzada cuando no se encuentra la infracción de información.</exception>
+        /// <exception cref="ExternalServiceException">Lanzada cuando ocurre un error al eliminar la infracción de información.</exception>
+        public async Task<InformationInfractionDto> DeleteInformationInfractionAsync(int id)
+        {
+            if (id <= 0)
+            {
+                _logger.LogWarning("Se intentó eliminar una infracción de información con ID inválido: {InformationInfractionId}", id);
+                throw new ValidationException("id", "El ID debe ser mayor que cero");
+            }
+
+            try
+            {
+                // Verificar si la infracción de información existe
+                var informationInfraction = await _informationInfractionData.GetByIdAsync(id);
+                if (informationInfraction == null)
+                {
+                    _logger.LogInformation("No se encontró ninguna infracción de información con ID: {InformationInfractionId}", id);
+                    throw new EntityNotFoundException("InformationInfraction", id);
+                }
+
+                // Intentar eliminar la infracción de información
+                var isDeleted = await _informationInfractionData.DeleteAsync(id);
+                if (!isDeleted)
+                {
+                    throw new ExternalServiceException("Base de datos", $"No se pudo eliminar la infracción de información con ID {id}");
+                }
+
+                // Devolver el objeto eliminado mapeado a DTO
+                return MapToDTO(informationInfraction);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al eliminar la infracción de información con ID: {InformationInfractionId}", id);
+                throw new ExternalServiceException("Base de datos", $"Error al eliminar la infracción de información con ID {id}", ex);
+            }
+        }
+
+        /// <summary>
+        /// Actualiza una infracción de información existente de manera asíncrona.
+        /// </summary>
+        /// <param name="informationInfractionDto">El objeto InformationInfractionDto con los datos actualizados de la infracción de información.</param>
+        /// <returns>El objeto InformationInfractionDto actualizado.</returns>
+        /// <exception cref="ValidationException">Lanzada si los datos son inválidos.</exception>
+        /// <exception cref="EntityNotFoundException">Lanzada si no se encuentra la infracción de información.</exception>
+        /// <exception cref="ExternalServiceException">Lanzada si ocurre un error al actualizar la infracción de información.</exception>
+        public async Task<InformationInfractionDto> UpdateInformationInfractionAsync(InformationInfractionDto informationInfractionDto)
+        {
+            if (informationInfractionDto == null || informationInfractionDto.Id <= 0)
+            {
+                _logger.LogWarning("Se intentó actualizar una infracción de información con datos inválidos o ID inválido.");
+                throw new ValidationException("id", "El ID debe ser mayor que cero y los datos no pueden ser nulos.");
+            }
+
+            // Validar los datos del DTO
+            ValidateInformationInfraction(informationInfractionDto);
+
+            try
+            {
+                // Verificar si la infracción de información existe
+                var existingInformationInfraction = await _informationInfractionData.GetByIdAsync(informationInfractionDto.Id);
+                if (existingInformationInfraction == null)
+                {
+                    _logger.LogInformation("No se encontró ninguna infracción de información con ID: {InformationInfractionId}", informationInfractionDto.Id);
+                    throw new EntityNotFoundException("InformationInfraction", informationInfractionDto.Id);
+                }
+
+                // Actualizar los datos de la infracción de información
+                existingInformationInfraction.Numer_smldv = informationInfractionDto.Numer_smldv;
+                existingInformationInfraction.MinimumWage = informationInfractionDto.MinimumWage;
+                existingInformationInfraction.Value_smldv = informationInfractionDto.Value_smldv;
+                existingInformationInfraction.TotalValue = informationInfractionDto.TotalValue;
+
+                var isUpdated = await _informationInfractionData.UpdateAsync(existingInformationInfraction);
+                if (!isUpdated)
+                {
+                    throw new ExternalServiceException("Base de datos", $"No se pudo actualizar la infracción de información con ID {informationInfractionDto.Id}.");
+                }
+
+                return MapToDTO(existingInformationInfraction);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al actualizar la infracción de información con ID: {InformationInfractionId}", informationInfractionDto.Id);
+                throw new ExternalServiceException("Base de datos", $"Error al actualizar la infracción de información con ID {informationInfractionDto.Id}.", ex);
+            }
+        }
+
+
+
+        /// <summary>
         /// Obtiene una infracción de información por su ID de manera asíncrona.
         /// </summary>
         /// <param name="id">El ID de la infracción de información.</param>

@@ -96,5 +96,81 @@ namespace Web2.Controllers
                 return StatusCode(500, new { message = ex.Message });
             }
         }
+
+        /// <summary>
+        /// Elimina una infracción de información por su ID.
+        /// </summary>
+        /// <param name="id">El ID de la infracción de información a eliminar.</param>
+        /// <returns>Un resultado indicando el éxito o fallo de la operación.</returns>
+        [HttpDelete("{id}")]
+        [ProducesResponseType(200)] // OK
+        [ProducesResponseType(400)] // Bad Request
+        [ProducesResponseType(404)] // Not Found
+        [ProducesResponseType(500)] // Internal Server Error
+        public async Task<IActionResult> Delete(int id)
+        {
+            try
+            {
+                var deletedInformationInfraction = await _informationInfractionBusiness.DeleteInformationInfractionAsync(id);
+                return Ok(new { message = "Infracción de información eliminada correctamente", data = deletedInformationInfraction }); // 200 OK
+            }
+            catch (ValidationException ex)
+            {
+                _logger.LogWarning(ex, "Validación fallida al eliminar la infracción de información con ID: {InformationInfractionId}", id);
+                return BadRequest(new { message = ex.Message }); // 400 Bad Request
+            }
+            catch (EntityNotFoundException ex)
+            {
+                _logger.LogInformation(ex, "Infracción de información no encontrada con ID: {InformationInfractionId}", id);
+                return NotFound(new { message = ex.Message }); // 404 Not Found
+            }
+            catch (ExternalServiceException ex)
+            {
+                _logger.LogError(ex, "Error al eliminar la infracción de información con ID: {InformationInfractionId}", id);
+                return StatusCode(500, new { message = ex.Message }); // 500 Internal Server Error
+            }
+        }
+
+        /// <summary>
+        /// Actualiza una infracción de información existente.
+        /// </summary>
+        /// <param name="id">El ID de la infracción de información a actualizar.</param>
+        /// <param name="informationInfractionDto">El objeto InformationInfractionDto con los datos actualizados.</param>
+        /// <returns>Un resultado indicando el éxito o fallo de la operación.</returns>
+        [HttpPut("{id}")]
+        [ProducesResponseType(200)] // OK
+        [ProducesResponseType(400)] // Bad Request
+        [ProducesResponseType(404)] // Not Found
+        [ProducesResponseType(500)] // Internal Server Error
+        public async Task<IActionResult> Update(int id, [FromBody] InformationInfractionDto informationInfractionDto)
+        {
+            if (id != informationInfractionDto.Id)
+            {
+                return BadRequest(new { message = "El ID en la URL no coincide con el ID en el cuerpo de la solicitud" });
+            }
+
+            try
+            {
+                var updatedInformationInfraction = await _informationInfractionBusiness.UpdateInformationInfractionAsync(informationInfractionDto);
+                return Ok(new { message = "Infracción de información actualizada correctamente", data = updatedInformationInfraction }); // 200 OK
+            }
+            catch (ValidationException ex)
+            {
+                _logger.LogWarning(ex, "Validación fallida al actualizar la infracción de información con ID: {InformationInfractionId}", id);
+                return BadRequest(new { message = ex.Message }); // 400 Bad Request
+            }
+            catch (EntityNotFoundException ex)
+            {
+                _logger.LogInformation(ex, "Infracción de información no encontrada con ID: {InformationInfractionId}", id);
+                return NotFound(new { message = ex.Message }); // 404 Not Found
+            }
+            catch (ExternalServiceException ex)
+            {
+                _logger.LogError(ex, "Error al actualizar la infracción de información con ID: {InformationInfractionId}", id);
+                return StatusCode(500, new { message = ex.Message }); // 500 Internal Server Error
+            }
+        }
+
+
     }
 }

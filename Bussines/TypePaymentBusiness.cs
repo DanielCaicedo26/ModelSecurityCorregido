@@ -47,6 +47,7 @@ namespace Bussines
             }
         }
 
+
         /// <summary>
         /// Obtiene un tipo de pago por su ID de manera asíncrona.
         /// </summary>
@@ -80,6 +81,92 @@ namespace Bussines
                 throw new ExternalServiceException("Base de datos", $"Error al recuperar el tipo de pago con ID {id}", ex);
             }
         }
+
+        /// <summary>
+        /// Elimina un tipo de pago por su ID.
+        /// </summary>
+        /// <param name="id">El ID del tipo de pago a eliminar.</param>
+        /// <exception cref="ValidationException">Lanzada si el ID es inválido.</exception>
+        /// <exception cref="EntityNotFoundException">Lanzada si no se encuentra el tipo de pago.</exception>
+        /// <exception cref="ExternalServiceException">Lanzada si ocurre un error al eliminar el tipo de pago.</exception>
+        public async Task DeleteTypePaymentAsync(int id)
+        {
+            if (id <= 0)
+            {
+                _logger.LogWarning("Se intentó eliminar un tipo de pago con ID inválido: {TypePaymentId}", id);
+                throw new ValidationException("id", "El ID debe ser mayor que cero.");
+            }
+
+            try
+            {
+                // Verificar si el tipo de pago existe
+                var typePayment = await _typePaymentData.GetByIdAsync(id);
+                if (typePayment == null)
+                {
+                    _logger.LogInformation("No se encontró ningún tipo de pago con ID: {TypePaymentId}", id);
+                    throw new EntityNotFoundException("TypePayment", id);
+                }
+
+                // Intentar eliminar el tipo de pago
+                var isDeleted = await _typePaymentData.DeleteAsync(id);
+                if (!isDeleted)
+                {
+                    throw new ExternalServiceException("Base de datos", $"No se pudo eliminar el tipo de pago con ID {id}.");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al eliminar el tipo de pago con ID: {TypePaymentId}", id);
+                throw new ExternalServiceException("Base de datos", $"Error al eliminar el tipo de pago con ID {id}.", ex);
+            }
+        }
+
+        /// <summary>
+        /// Actualiza los datos de un tipo de pago.
+        /// </summary>
+        /// <param name="typePaymentDto">El objeto TypePaymentDto con los datos actualizados del tipo de pago.</param>
+        /// <returns>El objeto TypePaymentDto actualizado.</returns>
+        /// <exception cref="ValidationException">Lanzada si los datos son inválidos.</exception>
+        /// <exception cref="EntityNotFoundException">Lanzada si no se encuentra el tipo de pago.</exception>
+        /// <exception cref="ExternalServiceException">Lanzada si ocurre un error al actualizar el tipo de pago.</exception>
+        public async Task<TypePaymentDto> UpdateTypePaymentAsync(TypePaymentDto typePaymentDto)
+        {
+            if (typePaymentDto == null || typePaymentDto.Id <= 0)
+            {
+                _logger.LogWarning("Se intentó actualizar un tipo de pago con datos inválidos o ID inválido.");
+                throw new ValidationException("id", "El ID debe ser mayor que cero y los datos no pueden ser nulos.");
+            }
+
+            try
+            {
+                // Verificar si el tipo de pago existe
+                var existingTypePayment = await _typePaymentData.GetByIdAsync(typePaymentDto.Id);
+                if (existingTypePayment == null)
+                {
+                    _logger.LogInformation("No se encontró ningún tipo de pago con ID: {TypePaymentId}", typePaymentDto.Id);
+                    throw new EntityNotFoundException("TypePayment", typePaymentDto.Id);
+                }
+
+                // Actualizar los datos del tipo de pago
+                existingTypePayment.Name = typePaymentDto.Name;
+                existingTypePayment.Description = typePaymentDto.Description;
+
+                var isUpdated = await _typePaymentData.UpdateAsync(existingTypePayment);
+                if (!isUpdated)
+                {
+                    throw new ExternalServiceException("Base de datos", $"No se pudo actualizar el tipo de pago con ID {typePaymentDto.Id}.");
+                }
+
+                return MapToDTO(existingTypePayment);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al actualizar el tipo de pago con ID: {TypePaymentId}", typePaymentDto.Id);
+                throw new ExternalServiceException("Base de datos", $"Error al actualizar el tipo de pago con ID {typePaymentDto.Id}.", ex);
+            }
+        }
+
+
 
         /// <summary>
         /// Crea un nuevo tipo de pago de manera asíncrona.

@@ -96,6 +96,82 @@ namespace Web2.Controllers
                 return StatusCode(500, new { message = ex.Message });
             }
         }
+
+        /// <summary>
+        /// Elimina un tipo de pago por ID.
+        /// </summary>
+        /// <param name="id">El ID del tipo de pago a eliminar.</param>
+        /// <returns>Un código de estado indicando el resultado.</returns>
+        [HttpDelete("{id}")]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(404)]
+        [ProducesResponseType(500)]
+        public async Task<IActionResult> Delete(int id)
+        {
+            try
+            {
+                await _typePaymentBusiness.DeleteTypePaymentAsync(id);
+                return Ok(new { message = "Tipo de pago eliminado exitosamente." });
+            }
+            catch (ValidationException ex)
+            {
+                _logger.LogWarning(ex, "Validación fallida para el ID del tipo de pago: {TypePaymentId}", id);
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (EntityNotFoundException ex)
+            {
+                _logger.LogInformation(ex, "Tipo de pago no encontrado con ID: {TypePaymentId}", id);
+                return NotFound(new { message = ex.Message });
+            }
+            catch (ExternalServiceException ex)
+            {
+                _logger.LogError(ex, "Error al eliminar el tipo de pago con ID: {TypePaymentId}", id);
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Actualiza los datos de un tipo de pago.
+        /// </summary>
+        /// <param name="id">El ID del tipo de pago a actualizar.</param>
+        /// <param name="typePaymentDto">El objeto con los datos actualizados del tipo de pago.</param>
+        /// <returns>Un código de estado indicando el resultado.</returns>
+        [HttpPut("{id}")]
+        [ProducesResponseType(typeof(TypePaymentDto), 200)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(404)]
+        [ProducesResponseType(500)]
+        public async Task<IActionResult> Update(int id, [FromBody] TypePaymentDto typePaymentDto)
+        {
+            try
+            {
+                if (id != typePaymentDto.Id)
+                {
+                    return BadRequest(new { message = "El ID en la URL no coincide con el ID en el cuerpo de la solicitud." });
+                }
+
+                var updatedTypePayment = await _typePaymentBusiness.UpdateTypePaymentAsync(typePaymentDto);
+                return Ok(updatedTypePayment);
+            }
+            catch (ValidationException ex)
+            {
+                _logger.LogWarning(ex, "Validación fallida al actualizar el tipo de pago con ID: {TypePaymentId}", id);
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (EntityNotFoundException ex)
+            {
+                _logger.LogInformation(ex, "Tipo de pago no encontrado con ID: {TypePaymentId}", id);
+                return NotFound(new { message = ex.Message });
+            }
+            catch (ExternalServiceException ex)
+            {
+                _logger.LogError(ex, "Error al actualizar el tipo de pago con ID: {TypePaymentId}", id);
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
+
+
     }
 }
 

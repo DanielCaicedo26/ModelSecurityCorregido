@@ -38,7 +38,8 @@ namespace Bussines
             try
             {
                 var users = await _userData.GetAllAsync();
-                return MapToDTOList(users);
+                var activeUsers = users.Where(u => u.IsActive); // Excluir usuarios desactivados
+                return MapToDTOList(activeUsers);
             }
             catch (Exception ex)
             {
@@ -82,6 +83,134 @@ namespace Bussines
         }
 
         /// <summary>
+        /// Elimina un usuario por su ID.
+        /// </summary>
+        /// <param name="id">El ID del usuario a eliminar.</param>
+        /// <exception cref="ValidationException">Lanzada si el ID es inválido.</exception>
+        /// <exception cref="EntityNotFoundException">Lanzada si no se encuentra el usuario.</exception>
+        /// <exception cref="ExternalServiceException">Lanzada si ocurre un error al eliminar el usuario.</exception>
+        public async Task DeleteUserAsync(int id)
+        {
+            if (id <= 0)
+            {
+                _logger.LogWarning("Se intentó eliminar un usuario con ID inválido: {UserId}", id);
+                throw new ValidationException("id", "El ID debe ser mayor que cero.");
+            }
+
+            try
+            {
+                var user = await _userData.GetByIdAsync(id);
+                if (user == null)
+                {
+                    _logger.LogInformation("No se encontró ningún usuario con ID: {UserId}", id);
+                    throw new EntityNotFoundException("User", id);
+                }
+
+                var isDeleted = await _userData.DeleteAsync(id);
+                if (!isDeleted)
+                {
+                    throw new ExternalServiceException("Base de datos", $"No se pudo eliminar el usuario con ID {id}.");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al eliminar el usuario con ID: {UserId}", id);
+                throw new ExternalServiceException("Base de datos", $"Error al eliminar el usuario con ID {id}.", ex);
+            }
+        }
+
+        /// <summary>
+        /// Actualiza los datos de un usuario.
+        /// </summary>
+        /// <param name="userDto">El objeto UserDto con los datos actualizados del usuario.</param>
+        /// <returns>El objeto UserDto actualizado.</returns>
+        /// <exception cref="ValidationException">Lanzada si los datos son inválidos.</exception>
+        /// <exception cref="EntityNotFoundException">Lanzada si no se encuentra el usuario.</exception>
+        /// <exception cref="ExternalServiceException">Lanzada si ocurre un error al actualizar el usuario.</exception>
+        public async Task<UserDto> UpdateUserAsync(UserDto userDto)
+        {
+            if (userDto == null || userDto.Id <= 0)
+            {
+                _logger.LogWarning("Se intentó actualizar un usuario con datos inválidos o ID inválido.");
+                throw new ValidationException("id", "El ID debe ser mayor que cero y los datos no pueden ser nulos.");
+            }
+
+            try
+            {
+                // Verificar si el usuario existe
+                var existingUser = await _userData.GetByIdAsync(userDto.Id);
+                if (existingUser == null)
+                {
+                    _logger.LogInformation("No se encontró ningún usuario con ID: {UserId}", userDto.Id);
+                    throw new EntityNotFoundException("User", userDto.Id);
+                }
+
+                // Actualizar los datos del usuario
+                existingUser.Username = userDto.Username;
+                existingUser.Email = userDto.Email;
+                existingUser.Password = userDto.Password;
+
+                var isUpdated = await _userData.UpdateAsync(existingUser);
+                if (!isUpdated)
+                {
+                    throw new ExternalServiceException("Base de datos", $"No se pudo actualizar el usuario con ID {userDto.Id}.");
+                }
+
+                return MapToDTO(existingUser);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al actualizar el usuario con ID: {UserId}", userDto.Id);
+                throw new ExternalServiceException("Base de datos", $"Error al actualizar el usuario con ID {userDto.Id}.", ex);
+            }
+        }
+
+        /// <summary>
+        /// Activa o desactiva un usuario por su ID.
+        /// </summary>
+        /// <param name="id">El ID del usuario.</param>
+        /// <param name="isActive">Estado deseado: true para activar, false para desactivar.</param>
+        /// <returns>El objeto UserDto actualizado.</returns>
+        /// <exception cref="ValidationException">Lanzada si el ID es inválido.</exception>
+        /// <exception cref="EntityNotFoundException">Lanzada si no se encuentra el usuario.</exception>
+        /// <exception cref="ExternalServiceException">Lanzada si ocurre un error al actualizar el estado.</exception>
+        public async Task<UserDto> SetUserActiveStatusAsync(int id, bool isActive)
+        {
+            if (id <= 0)
+            {
+                _logger.LogWarning("Se intentó cambiar el estado de un usuario con ID inválido: {UserId}", id);
+                throw new ValidationException("id", "El ID debe ser mayor que cero.");
+            }
+
+            try
+            {
+                var user = await _userData.GetByIdAsync(id);
+                if (user == null)
+                {
+                    _logger.LogInformation("No se encontró ningún usuario con ID: {UserId}", id);
+                    throw new EntityNotFoundException("User", id);
+                }
+
+                user.IsActive = isActive;
+                var isUpdated = await _userData.UpdateAsync(user);
+                if (!isUpdated)
+                {
+                    throw new ExternalServiceException("Base de datos", $"No se pudo actualizar el estado del usuario con ID {id}.");
+                }
+
+                return MapToDTO(user);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al cambiar el estado del usuario con ID: {UserId}", id);
+                throw new ExternalServiceException("Base de datos", $"Error al cambiar el estado del usuario con ID {id}.", ex);
+            }
+        }
+
+
+
+
+        /// <summary>
         /// Crea un nuevo usuario de manera asíncrona.
         /// </summary>
         /// <param name="userDto">El objeto UserDto con los datos del usuario.</param>
@@ -108,7 +237,9 @@ namespace Bussines
                     Email = userDto.Email,
                     Password = userDto.Password,
                     CreatedAt = DateTime.UtcNow,
-                    PersonId = userDto.PersonId // Asegúrate de que esta propiedad esté asignada
+                    PersonId = userDto.PersonId ,// Asegúrate de que esta propiedad esté asignada
+                    IsActive = userDto.IsActive
+
                 };
 
                 var createdUser = await _userData.CreateAsync(user);
@@ -165,7 +296,9 @@ namespace Bussines
                 Id = user.Id,
                 Username = user.Username,
                 Email = user.Email,
-                Password = user.Password
+                Password = user.Password,
+                PersonId = user.PersonId,
+                IsActive = user.IsActive
             };
         }
 

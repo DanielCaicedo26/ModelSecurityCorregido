@@ -205,6 +205,44 @@ namespace Web2.Controllers
             }
         }
 
+        [HttpPatch("{id}/message-read")]
+        [ProducesResponseType(typeof(UserNotificationDto), 200)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(404)]
+        [ProducesResponseType(500)]
+        public async Task<IActionResult> UpdateMessageAndIsRead(int id, [FromBody] UserNotificationDto dto)
+        {
+            try
+            {
+                if (id != dto.Id)
+                {
+                    return BadRequest(new { message = "El ID en la URL no coincide con el ID en el cuerpo." });
+                }
+
+                var updated = await _userNotificationBusiness.UpdateMessageAndIsReadAsync(dto.Id, dto.Message, dto.IsRead);
+                return Ok(updated);
+            }
+            catch (ValidationException ex)
+            {
+                _logger.LogWarning(ex, "Validación fallida");
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (EntityNotFoundException ex)
+            {
+                _logger.LogInformation(ex, "Notificación no encontrada con ID: {UserNotificationId}", id);
+                return NotFound(new { message = ex.Message });
+            }
+            catch (ExternalServiceException ex)
+            {
+                _logger.LogError(ex, "Error al actualizar notificación con ID: {UserNotificationId}", id);
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
+
+
+
+
+
 
 
 

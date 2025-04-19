@@ -122,6 +122,42 @@ namespace Bussines
             }
         }
 
+        public async Task<UserNotificationDto> UpdateMessageAndIsReadAsync(int id, string message, bool isRead)
+        {
+            if (id <= 0 || string.IsNullOrWhiteSpace(message))
+            {
+                throw new ValidationException("Datos inválidos", "ID debe ser mayor que cero y el mensaje no puede estar vacío");
+            }
+
+            try
+            {
+                var userNotification = await _userNotificationData.GetByIdAsync(id);
+                if (userNotification == null)
+                {
+                    throw new EntityNotFoundException("UserNotification", id);
+                }
+
+                userNotification.Message = message;
+                userNotification.IsRead = isRead;
+
+                var isUpdated = await _userNotificationData.UpdateAsync(userNotification);
+                if (!isUpdated)
+                {
+                    throw new ExternalServiceException("Base de datos", $"No se pudo actualizar la notificación con ID {id}");
+                }
+
+                return MapToDTO(userNotification);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al actualizar la notificación con ID: {UserNotificationId}", id);
+                throw new ExternalServiceException("Base de datos", $"Error al actualizar la notificación con ID {id}", ex);
+            }
+        }
+
+
+
+
         /// <summary>
         /// Actualiza los datos de una notificación de usuario.
         /// </summary>
@@ -162,6 +198,8 @@ namespace Bussines
                 throw new ExternalServiceException("Base de datos", $"Error al actualizar la notificación con ID {userNotificationDto.Id}", ex);
             }
         }
+
+
 
         public async Task<UserNotificationDto> UpdateNotificationVisibilityAsync(int id, bool isActive)
         {

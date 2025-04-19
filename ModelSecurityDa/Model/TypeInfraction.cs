@@ -9,6 +9,8 @@ namespace Entity.Model
         public decimal ValueInfraction { get; set; }
         public string? Description { get; set; }
         public string? InformationFine { get; set; }
+
+        public bool IsActive { get; set; }
         public DateTime CreatedAt { get; set; }
         public virtual User User { get; set; } = null!;
         public virtual ICollection<StateInfraction>? StateInfraction { get; set; }

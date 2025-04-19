@@ -178,6 +178,42 @@ namespace Web2.Controllers
                 return StatusCode(500, new { message = ex.Message }); // 500 Internal Server Error
             }
         }
+
+        /// <summary>
+        /// Activa o desactiva un tipo de infracción por su ID.
+        /// </summary>
+        /// <param name="id">El ID del tipo de infracción.</param>
+        /// <param name="isActive">Estado deseado: true para activar, false para desactivar.</param>
+        /// <returns>Un código de estado indicando el resultado.</returns>
+        [HttpPatch("{id}/active")]
+        [ProducesResponseType(typeof(TypeInfractionDto), 200)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(404)]
+        [ProducesResponseType(500)]
+        public async Task<IActionResult> SetActiveStatus(int id, [FromBody] bool isActive)
+        {
+            try
+            {
+                var updatedTypeInfraction = await _typeInfractionBusiness.SetActiveStatusAsync(id, isActive);
+                return Ok(updatedTypeInfraction);
+            }
+            catch (ValidationException ex)
+            {
+                _logger.LogWarning(ex, "Validación fallida para el ID del tipo de infracción: {TypeInfractionId}", id);
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (EntityNotFoundException ex)
+            {
+                _logger.LogInformation(ex, "Tipo de infracción no encontrado con ID: {TypeInfractionId}", id);
+                return NotFound(new { message = ex.Message });
+            }
+            catch (ExternalServiceException ex)
+            {
+                _logger.LogError(ex, "Error al cambiar el estado del tipo de infracción con ID: {TypeInfractionId}", id);
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
+
     }
 }
 

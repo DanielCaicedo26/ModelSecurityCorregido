@@ -35,7 +35,8 @@ namespace Bussines
             try
             {
                 var typeInfractions = await _typeInfractionData.GetAllAsync();
-                return MapToDTOList(typeInfractions);
+                var visibleTypeInfractions = typeInfractions.Where(ti => ti.IsActive).ToList();
+                return MapToDTOList(visibleTypeInfractions);
             }
             catch (Exception ex)
             {
@@ -111,6 +112,49 @@ namespace Bussines
                 throw new ExternalServiceException("Base de datos", $"Error al eliminar el tipo de infracción con ID {id}", ex);
             }
         }
+        /// <summary>
+        /// Activa o desactiva un tipo de infracción por su ID.
+        /// </summary>
+        /// <param name="id">El ID del tipo de infracción.</param>
+        /// <param name="isActive">Estado deseado: true para activar, false para desactivar.</param>
+        /// <returns>El objeto TypeInfractionDto actualizado.</returns>
+        /// <exception cref="ValidationException">Lanzada si el ID es inválido.</exception>
+        /// <exception cref="EntityNotFoundException">Lanzada si no se encuentra el tipo de infracción.</exception>
+        /// <exception cref="ExternalServiceException">Lanzada si ocurre un error al actualizar el estado.</exception>
+        public async Task<TypeInfractionDto> SetActiveStatusAsync(int id, bool isActive)
+        {
+            if (id <= 0)
+            {
+                _logger.LogWarning("Se intentó cambiar el estado de un tipo de infracción con ID inválido: {TypeInfractionId}", id);
+                throw new ValidationException("id", "El ID debe ser mayor que cero");
+            }
+
+            try
+            {
+                var typeInfraction = await _typeInfractionData.GetByIdAsync(id);
+                if (typeInfraction == null)
+                {
+                    throw new EntityNotFoundException("TypeInfraction", id);
+                }
+
+                // Actualizar el estado activo
+                typeInfraction.IsActive = isActive;
+
+                var isUpdated = await _typeInfractionData.UpdateAsync(typeInfraction);
+                if (!isUpdated)
+                {
+                    throw new ExternalServiceException("Base de datos", $"No se pudo cambiar el estado del tipo de infracción con ID {id}");
+                }
+
+                return MapToDTO(typeInfraction);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al cambiar el estado del tipo de infracción con ID: {TypeInfractionId}", id);
+                throw new ExternalServiceException("Base de datos", $"Error al cambiar el estado del tipo de infracción con ID {id}", ex);
+            }
+        }
+
 
         /// <summary>
         /// Actualiza los datos de un tipo de infracción.
@@ -183,6 +227,7 @@ namespace Bussines
                     UserId = typeInfractionDto.UserId,
                     TypeViolation = typeInfractionDto.TypeViolation,
                     ValueInfraction = typeInfractionDto.ValueInfraction,
+                    IsActive = typeInfractionDto.IsActive,
                     CreatedAt = DateTime.UtcNow
                 };
 
@@ -239,7 +284,8 @@ namespace Bussines
                 Id = typeInfraction.Id,
                 UserId = typeInfraction.UserId,
                 TypeViolation = typeInfraction.TypeViolation,
-                ValueInfraction = typeInfraction.ValueInfraction
+                ValueInfraction = typeInfraction.ValueInfraction,
+                IsActive = typeInfraction.IsActive
             };
         }
 

@@ -155,6 +155,39 @@ namespace Bussines
             }
         }
 
+        public async Task<TypeInfractionDto> Update(int id,  string Typeviolation, decimal ValueInfraction)
+        {
+            if (id <= 0 || string.IsNullOrWhiteSpace(Typeviolation))
+            {
+                throw new ValidationException("Datos inválidos", "ID debe ser mayor que cero y el mensaje no puede estar vacío");
+            }
+
+            try
+            {
+                var typeInfractiont = await _typeInfractionData.GetByIdAsync(id);
+                if (typeInfractiont == null)
+                {
+                    throw new EntityNotFoundException("TypeInfraction", id);
+                }
+
+                typeInfractiont.TypeViolation = Typeviolation;
+                typeInfractiont.ValueInfraction = ValueInfraction;
+
+                var isUpdated = await _typeInfractionData.UpdateAsync(typeInfractiont);
+                if (!isUpdated)
+                {
+                    throw new ExternalServiceException("Base de datos", $"No se pudo actualizar la notificación con ID {id}");
+                }
+
+                return MapToDTO(typeInfractiont);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al actualizar la notificación con ID: {UserNotificationId}", id);
+                throw new ExternalServiceException("Base de datos", $"Error al actualizar la notificación con ID {id}", ex);
+            }
+        }
+
 
         /// <summary>
         /// Actualiza los datos de un tipo de infracción.

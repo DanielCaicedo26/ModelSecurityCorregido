@@ -17,8 +17,6 @@ namespace Bussines
         /// <summary>
         /// Constructor de la clase AccessLogBusiness.
         /// </summary>
-        /// <param name="accessLogData">Instancia de AccessLogData para acceder a los datos de los registros de acceso.</param>
-        /// <param name="logger">Instancia de ILogger para el registro de logs.</param>
         public AccessLogBusiness(AccessLogData accessLogData, ILogger<AccessLogBusiness> logger)
         {
             _accessLogData = accessLogData;
@@ -28,8 +26,6 @@ namespace Bussines
         /// <summary>
         /// Obtiene todos los registros de acceso de manera asíncrona.
         /// </summary>
-        /// <returns>Una lista de objetos AccessLogDto.</returns>
-        /// <exception cref="ExternalServiceException">Lanzada cuando ocurre un error al recuperar los registros de acceso.</exception>
         public async Task<IEnumerable<AccessLogDto>> GetAllAccessLogsAsync()
         {
             try
@@ -47,11 +43,6 @@ namespace Bussines
         /// <summary>
         /// Obtiene un registro de acceso por su ID de manera asíncrona.
         /// </summary>
-        /// <param name="id">El ID del registro de acceso.</param>
-        /// <returns>Un objeto AccessLogDto.</returns>
-        /// <exception cref="ValidationException">Lanzada cuando el ID es inválido.</exception>
-        /// <exception cref="EntityNotFoundException">Lanzada cuando no se encuentra el registro de acceso.</exception>
-        /// <exception cref="ExternalServiceException">Lanzada cuando ocurre un error al recuperar el registro de acceso.</exception>
         public async Task<AccessLogDto> GetAccessLogByIdAsync(int id)
         {
             if (id <= 0)
@@ -81,12 +72,6 @@ namespace Bussines
         /// <summary>
         /// Crea un nuevo registro de acceso de manera asíncrona.
         /// </summary>
-        /// <param name="accessLogDto">El objeto AccessLogDto con los datos del registro de acceso.</param>
-        /// <param name="userId">El ID del usuario que realiza la acción.</param>
-        /// <param name="details">Detalles adicionales de la acción.</param>
-        /// <returns>El objeto AccessLogDto creado.</returns>
-        /// <exception cref="ValidationException">Lanzada cuando los datos del registro de acceso son inválidos.</exception>
-        /// <exception cref="ExternalServiceException">Lanzada cuando ocurre un error al crear el registro de acceso.</exception>
         public async Task<AccessLogDto> CreateAccessLogAsync(AccessLogDto accessLogDto, int userId, string? details = null)
         {
             try
@@ -100,7 +85,7 @@ namespace Bussines
                     Status = accessLogDto.Status,
                     Timestamp = DateTime.UtcNow,
                     CreatedAt = DateTime.UtcNow,
-                    Details = details
+                    
                 };
 
                 var createdAccessLog = await _accessLogData.CreateAsync(accessLog);
@@ -116,15 +101,10 @@ namespace Bussines
         /// <summary>
         /// Valida los datos del registro de acceso.
         /// </summary>
-        /// <param name="accessLogDto">El objeto AccessLogDto con los datos del registro de acceso.</param>
-        /// <param name="userId">El ID del usuario que realiza la acción.</param>
-        /// <exception cref="ValidationException">Lanzada cuando los datos del registro de acceso son inválidos.</exception>
         private void ValidateAccessLog(AccessLogDto accessLogDto, int userId)
         {
             if (accessLogDto == null)
-            {
                 throw new ValidationException("El objeto AccessLog no puede ser nulo");
-            }
 
             if (string.IsNullOrWhiteSpace(accessLogDto.Action))
             {
@@ -142,8 +122,6 @@ namespace Bussines
         /// <summary>
         /// Mapea un objeto AccessLog a AccessLogDto.
         /// </summary>
-        /// <param name="accessLog">El objeto AccessLog a mapear.</param>
-        /// <returns>El objeto AccessLogDto mapeado.</returns>
         private static AccessLogDto MapToDTO(AccessLog accessLog)
         {
             return new AccessLogDto
@@ -158,8 +136,6 @@ namespace Bussines
         /// <summary>
         /// Mapea una lista de objetos AccessLog a una lista de AccessLogDto.
         /// </summary>
-        /// <param name="accessLogs">La lista de objetos AccessLog a mapear.</param>
-        /// <returns>La lista de objetos AccessLogDto mapeados.</returns>
         private IEnumerable<AccessLogDto> MapToDTOList(IEnumerable<AccessLog> accessLogs)
         {
             var accessLogsDto = new List<AccessLogDto>();

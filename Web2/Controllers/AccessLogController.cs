@@ -101,16 +101,8 @@ namespace Web2.Controllers
         {
             try
             {
-                // Asegúrate de obtener el ID del usuario que realiza la acción.
-                var userId = GetUserIdFromContext(); // Cambia esto según tu lógica de autenticación
-
-                if (userId == null)
-                {
-                    return Unauthorized(new { message = "Usuario no autenticado" });
-                }
-
-                // Llama al método de negocio para crear el nuevo registro
-                var createdLog = await _accessLogBusiness.CreateAccessLogAsync(accessLogDto, userId.Value);
+                // Se asume que el userId ya está incluido en el objeto AccessLogDto
+                var createdLog = await _accessLogBusiness.CreateAccessLogAsync(accessLogDto, accessLogDto.UserId);
 
                 // Devuelve un 201 Created con la ruta del nuevo recurso
                 return CreatedAtAction(nameof(GetAccessLogById), new { id = createdLog.Id }, createdLog);
@@ -129,13 +121,9 @@ namespace Web2.Controllers
             }
         }
 
-        // Método para obtener el ID del usuario desde el contexto
-        // Puedes personalizarlo según tu implementación de autenticación, por ejemplo, JWT o cookies
-        private int? GetUserIdFromContext()
-        {
-            // Supón que estás usando autenticación basada en JWT y que el userId está en el token
-            var userIdClaim = User?.Claims?.FirstOrDefault(c => c.Type == "userId")?.Value;
-            return userIdClaim != null ? int.Parse(userIdClaim) : (int?)null;
-        }
+
+
+
+
     }
 }

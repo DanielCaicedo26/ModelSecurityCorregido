@@ -1,6 +1,4 @@
-﻿
-
-using Entity.Context;
+﻿using Entity.Context;
 using Entity.Model;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -75,13 +73,15 @@ namespace Data
         {
             try
             {
-                // Validación extra: asegurar que el usuario existe
-                var userExists = await _context.User.AnyAsync(u => u.Id == accessLog.UserId);
-                if (!userExists)
+                // Validación opcional: Si el UserId es mayor a 0, verificar si el usuario existe
+                if (accessLog.UserId > 0)
                 {
-                    var message = $"No se puede crear el registro de acceso. El usuario con ID {accessLog.UserId} no existe.";
-                    _logger.LogWarning(message);
-                    throw new InvalidOperationException(message);
+                    var userExists = await _context.User.AnyAsync(u => u.Id == accessLog.UserId);
+                    if (!userExists)
+                    {
+                        _logger.LogWarning("El usuario con ID {UserId} no existe. Se procederá a crear el registro sin usuario asociado.", accessLog.UserId);
+                        accessLog.UserId = 0; // O asignar un valor especial para indicar "sin usuario"
+                    }
                 }
 
                 await _context.Set<AccessLog>().AddAsync(accessLog);

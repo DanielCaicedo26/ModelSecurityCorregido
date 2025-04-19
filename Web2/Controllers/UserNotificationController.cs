@@ -171,21 +171,21 @@ namespace Web2.Controllers
         }
 
         /// <summary>
-        /// Oculta o desoculta una notificación de usuario por ID.
+        /// Activa o desactiva una notificación de usuario por ID.
         /// </summary>
         /// <param name="id">El ID de la notificación de usuario.</param>
-        /// <param name="isHidden">Estado deseado: true para ocultar, false para desocultar.</param>
+        /// <param name="isActive">Estado deseado: true para activar, false para desactivar.</param>
         /// <returns>Un código de estado indicando el resultado.</returns>
-        [HttpPatch("{id}/visibility")]
+        [HttpPatch("{id}/active")]
         [ProducesResponseType(200)]
         [ProducesResponseType(400)]
         [ProducesResponseType(404)]
         [ProducesResponseType(500)]
-        public async Task<IActionResult> UpdateVisibility(int id, [FromBody] bool isHidden)
+        public async Task<IActionResult> SetActiveStatus(int id, [FromBody] bool isActive)
         {
             try
             {
-                var updatedNotification = await _userNotificationBusiness.UpdateNotificationVisibilityAsync(id, isHidden);
+                var updatedNotification = await _userNotificationBusiness.SetActiveStatusAsync(id, isActive);
                 return Ok(updatedNotification);
             }
             catch (ValidationException ex)
@@ -200,10 +200,14 @@ namespace Web2.Controllers
             }
             catch (ExternalServiceException ex)
             {
-                _logger.LogError(ex, "Error al actualizar la visibilidad de la notificación de usuario con ID: {UserNotificationId}", id);
+                _logger.LogError(ex, "Error al cambiar el estado de la notificación de usuario con ID: {UserNotificationId}", id);
                 return StatusCode(500, new { message = ex.Message });
             }
         }
+
+
+
+
 
 
 

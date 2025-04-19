@@ -38,7 +38,7 @@ namespace Bussines
             try
             {
                 var userNotifications = await _userNotificationData.GetAllAsync();
-                var visibleNotifications = userNotifications.Where(n => !n.IsHidden); // Excluir ocultos
+                var visibleNotifications = userNotifications.Where(n => n.IsActive); // Excluir ocultos
                 return MapToDTOList(visibleNotifications);
             }
             catch (Exception ex)
@@ -163,7 +163,7 @@ namespace Bussines
             }
         }
 
-        public async Task<UserNotificationDto> UpdateNotificationVisibilityAsync(int id, bool isHidden)
+        public async Task<UserNotificationDto> UpdateNotificationVisibilityAsync(int id, bool isActive)
         {
             if (id <= 0)
             {
@@ -179,7 +179,7 @@ namespace Bussines
                     throw new EntityNotFoundException("UserNotification", id);
                 }
 
-                userNotification.IsHidden = isHidden;
+                userNotification.IsActive = isActive;
                 var isUpdated = await _userNotificationData.UpdateAsync(userNotification);
                 if (!isUpdated)
                 {
@@ -194,6 +194,49 @@ namespace Bussines
                 throw new ExternalServiceException("Base de datos", $"Error al actualizar la visibilidad de la notificación con ID {id}", ex);
             }
         }
+
+        /// <summary>
+        /// Activa o desactiva una notificación de usuario por su ID.
+        /// </summary>
+        /// <param name="id">El ID de la notificación de usuario.</param>
+        /// <param name="isActive">Estado deseado: true para activar, false para desactivar.</param>
+        /// <returns>El objeto UserNotificationDto actualizado.</returns>
+        /// <exception cref="ValidationException">Lanzada si el ID es inválido.</exception>
+        /// <exception cref="EntityNotFoundException">Lanzada si no se encuentra la notificación.</exception>
+        /// <exception cref="ExternalServiceException">Lanzada si ocurre un error al actualizar el estado.</exception>
+        public async Task<UserNotificationDto> SetActiveStatusAsync(int id, bool isActive)
+        {
+            if (id <= 0)
+            {
+                _logger.LogWarning("Se intentó cambiar el estado de una notificación con ID inválido: {UserNotificationId}", id);
+                throw new ValidationException("id", "El ID debe ser mayor que cero");
+            }
+
+            try
+            {
+                var userNotification = await _userNotificationData.GetByIdAsync(id);
+                if (userNotification == null)
+                {
+                    throw new EntityNotFoundException("UserNotification", id);
+                }
+
+                userNotification.IsActive = isActive;
+                var isUpdated = await _userNotificationData.UpdateAsync(userNotification);
+                if (!isUpdated)
+                {
+                    throw new ExternalServiceException("Base de datos", $"No se pudo cambiar el estado de la notificación con ID {id}");
+                }
+
+                return MapToDTO(userNotification);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al cambiar el estado de la notificación con ID: {UserNotificationId}", id);
+                throw new ExternalServiceException("Base de datos", $"Error al cambiar el estado de la notificación con ID {id}", ex);
+            }
+        }
+
+
 
 
 
@@ -215,7 +258,8 @@ namespace Bussines
                     UserId = userNotificationDto.UserId,
                     Message = userNotificationDto.Message,
                     IsRead = false,
-                    CreatedAt = DateTime.UtcNow
+                    CreatedAt = DateTime.UtcNow,
+                    IsActive= userNotificationDto.IsActive
                 };
 
                 var createdUserNotification = await _userNotificationData.CreateAsync(userNotification);
@@ -264,7 +308,9 @@ namespace Bussines
             {
                 Id = userNotification.Id,
                 UserId = userNotification.UserId,
-                Message = userNotification.Message
+                Message = userNotification.Message,
+                IsRead = false,
+                IsActive= userNotification.IsActive
             };
         }
 

@@ -121,6 +121,70 @@ namespace Web2.Controllers
             }
         }
 
+        /// <summary>
+        /// Actualiza un registro de acceso existente
+        /// </summary>
+        [HttpPut("{id}")]
+        [ProducesResponseType(204)] // No Content si la actualización es exitosa
+        [ProducesResponseType(400)] // Error si los datos no son válidos
+        [ProducesResponseType(404)] // Error si el registro no se encuentra
+        [ProducesResponseType(500)] // Error interno
+        public async Task<IActionResult> UpdateAccessLog(int id, [FromBody] AccessLogDto accessLogDto)
+        {
+            try
+            {
+                if (id != accessLogDto.Id)
+                {
+                    return BadRequest(new { message = "El ID del cuerpo no coincide con el ID de la ruta." });
+                }
+
+                await _accessLogBusiness.UpdateAccessLogAsync(accessLogDto);
+                return NoContent();
+            }
+            catch (EntityNotFoundException ex)
+            {
+                _logger.LogInformation(ex, "Registro no encontrado con ID: {LogId}", id);
+                return NotFound(new { message = ex.Message });
+            }
+            catch (ValidationException ex)
+            {
+                _logger.LogWarning(ex, "Validación fallida al actualizar el registro de acceso");
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (ExternalServiceException ex)
+            {
+                _logger.LogError(ex, "Error al actualizar el registro de acceso");
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Elimina un registro de acceso por su ID
+        /// </summary>
+        [HttpDelete("{id}")]
+        [ProducesResponseType(204)] // No Content si la eliminación es exitosa
+        [ProducesResponseType(404)] // Error si el registro no se encuentra
+        [ProducesResponseType(500)] // Error interno
+        public async Task<IActionResult> DeleteAccessLog(int id)
+        {
+            try
+            {
+                await _accessLogBusiness.DeleteAccessLogAsync(id);
+                return NoContent();
+            }
+            catch (EntityNotFoundException ex)
+            {
+                _logger.LogInformation(ex, "Registro no encontrado con ID: {LogId}", id);
+                return NotFound(new { message = ex.Message });
+            }
+            catch (ExternalServiceException ex)
+            {
+                _logger.LogError(ex, "Error al eliminar el registro de acceso");
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
+
+
 
 
 

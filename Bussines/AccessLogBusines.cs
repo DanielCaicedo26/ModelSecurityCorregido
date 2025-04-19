@@ -41,6 +41,77 @@ namespace Bussines
         }
 
         /// <summary>
+        /// Actualiza un registro de acceso existente de manera asíncrona.
+        /// </summary>
+        public async Task UpdateAccessLogAsync(AccessLogDto accessLogDto)
+        {
+            if (accessLogDto == null || accessLogDto.Id <= 0)
+            {
+                _logger.LogWarning("Se intentó actualizar un AccessLog con datos inválidos");
+                throw new ValidationException("AccessLogDto", "El objeto AccessLogDto no es válido");
+            }
+
+            try
+            {
+                var existingLog = await _accessLogData.GetByIdAsync(accessLogDto.Id);
+                if (existingLog == null)
+                {
+                    _logger.LogInformation("No se encontró ningún AccessLog con ID: {AccessLogId}", accessLogDto.Id);
+                    throw new EntityNotFoundException("AccessLog", accessLogDto.Id);
+                }
+
+                existingLog.Action = accessLogDto.Action;
+                existingLog.Status = accessLogDto.Status;
+
+                var success = await _accessLogData.UpdateAsync(existingLog);
+                if (!success)
+                {
+                    throw new ExternalServiceException("Base de datos", "Error al actualizar el AccessLog");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al actualizar el AccessLog con ID: {AccessLogId}", accessLogDto.Id);
+                throw new ExternalServiceException("Base de datos", $"Error al actualizar el AccessLog con ID {accessLogDto.Id}", ex);
+            }
+        }
+
+        /// <summary>
+        /// Elimina un registro de acceso por su ID de manera asíncrona.
+        /// </summary>
+        public async Task DeleteAccessLogAsync(int id)
+        {
+            if (id <= 0)
+            {
+                _logger.LogWarning("Se intentó eliminar un AccessLog con ID inválido: {AccessLogId}", id);
+                throw new ValidationException("id", "El ID debe ser mayor que cero");
+            }
+
+            try
+            {
+                var existingLog = await _accessLogData.GetByIdAsync(id);
+                if (existingLog == null)
+                {
+                    _logger.LogInformation("No se encontró ningún AccessLog con ID: {AccessLogId}", id);
+                    throw new EntityNotFoundException("AccessLog", id);
+                }
+
+                var success = await _accessLogData.DeleteAsync(id);
+                if (!success)
+                {
+                    throw new ExternalServiceException("Base de datos", "Error al eliminar el AccessLog");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al eliminar el AccessLog con ID: {AccessLogId}", id);
+                throw new ExternalServiceException("Base de datos", $"Error al eliminar el AccessLog con ID {id}", ex);
+            }
+        }
+
+
+
+        /// <summary>
         /// Obtiene un registro de acceso por su ID de manera asíncrona.
         /// </summary>
         public async Task<AccessLogDto> GetAccessLogByIdAsync(int id)

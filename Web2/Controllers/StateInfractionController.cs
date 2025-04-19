@@ -166,6 +166,76 @@ namespace Web2.Controllers
             }
         }
 
+        /// <summary>
+        /// Activa o desactiva una infracción estatal por su ID.
+        /// </summary>
+        /// <param name="id">El ID de la infracción estatal.</param>
+        /// <param name="isActive">Estado deseado: true para activar, false para desactivar.</param>
+        /// <returns>Un código de estado indicando el resultado.</returns>
+        [HttpPatch("{id}/active")]
+        [ProducesResponseType(typeof(StateInfractionDto), 200)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(404)]
+        [ProducesResponseType(500)]
+        public async Task<IActionResult> SetActiveStatus(int id, [FromBody] bool isActive)
+        {
+            try
+            {
+                var updatedStateInfraction = await _stateInfractionBusiness.SetActiveStatusAsync(id, isActive);
+                return Ok(updatedStateInfraction);
+            }
+            catch (ValidationException ex)
+            {
+                _logger.LogWarning(ex, "Validación fallida para el ID de la infracción estatal: {StateInfractionId}", id);
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (EntityNotFoundException ex)
+            {
+                _logger.LogInformation(ex, "Infracción estatal no encontrada con ID: {StateInfractionId}", id);
+                return NotFound(new { message = ex.Message });
+            }
+            catch (ExternalServiceException ex)
+            {
+                _logger.LogError(ex, "Error al cambiar el estado de la infracción estatal con ID: {StateInfractionId}", id);
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
+
+        [HttpPatch("{id}/FineValue-State")]
+        [ProducesResponseType(typeof(StateInfractionDto), 200)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(404)]
+        [ProducesResponseType(500)]
+        public async Task<IActionResult> Updatee(int id, [FromBody] StateInfractionDto dto)
+        {
+            try
+            {
+                if (id != dto.Id)
+                {
+                    return BadRequest(new { message = "El ID en la URL no coincide con el ID en el cuerpo." });
+                }
+
+                var updated = await _stateInfractionBusiness.Update(dto.Id, dto.FineValue, dto.State);
+                return Ok(updated);
+            }
+            catch (ValidationException ex)
+            {
+                _logger.LogWarning(ex, "Validación fallida");
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (EntityNotFoundException ex)
+            {
+                _logger.LogInformation(ex, "Notificación no encontrada con ID: {UserNotificationId}", id);
+                return NotFound(new { message = ex.Message });
+            }
+            catch (ExternalServiceException ex)
+            {
+                _logger.LogError(ex, "Error al actualizar notificación con ID: {UserNotificationId}", id);
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
+
+
     }
 }
 

@@ -8,5 +8,6 @@
         public DateTime DateViolation { get; set; }
         public decimal FineValue { get; set; }
         public string State { get; set; } = null!;
+        public bool IsActive { get; set; }
     }
 }

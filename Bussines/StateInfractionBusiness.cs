@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using Data;
 using Entity.Dto;
 using Entity.Model;
@@ -38,7 +35,8 @@ namespace Bussines
             try
             {
                 var stateInfractions = await _stateInfractionData.GetAllAsync();
-                return MapToDTOList(stateInfractions);
+                var visibleStateInfractions = stateInfractions.Where(si => si.IsActive);
+                return MapToDTOList(visibleStateInfractions);
             }
             catch (Exception ex)
             {
@@ -125,6 +123,84 @@ namespace Bussines
         }
 
         /// <summary>
+        /// Activa o desactiva una infracción estatal por su ID.
+        /// </summary>
+        /// <param name="id">El ID de la infracción estatal.</param>
+        /// <param name="isActive">Estado deseado: true para activar, false para desactivar.</param>
+        /// <returns>El objeto StateInfractionDto actualizado.</returns>
+        /// <exception cref="ValidationException">Lanzada si el ID es inválido.</exception>
+        /// <exception cref="EntityNotFoundException">Lanzada si no se encuentra la infracción estatal.</exception>
+        /// <exception cref="ExternalServiceException">Lanzada si ocurre un error al actualizar el estado.</exception>
+        public async Task<StateInfractionDto> SetActiveStatusAsync(int id, bool isActive)
+        {
+            if (id <= 0)
+            {
+                _logger.LogWarning("Se intentó cambiar el estado de una infracción estatal con ID inválido: {StateInfractionId}", id);
+                throw new ValidationException("id", "El ID debe ser mayor que cero");
+            }
+
+            try
+            {
+                var stateInfraction = await _stateInfractionData.GetByIdAsync(id);
+                if (stateInfraction == null)
+                {
+                    throw new EntityNotFoundException("StateInfraction", id);
+                }
+
+                // Actualizar el estado activo
+                stateInfraction.IsActive = isActive;
+
+                var isUpdated = await _stateInfractionData.UpdateAsync(stateInfraction);
+                if (!isUpdated)
+                {
+                    throw new ExternalServiceException("Base de datos", $"No se pudo cambiar el estado de la infracción estatal con ID {id}");
+                }
+
+                return MapToDTO(stateInfraction);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al cambiar el estado de la infracción estatal con ID: {StateInfractionId}", id);
+                throw new ExternalServiceException("Base de datos", $"Error al cambiar el estado de la infracción estatal con ID {id}", ex);
+            }
+        }
+
+        public async Task<StateInfractionDto> Update(int id, decimal FineValue, string State )
+        {
+            if (id <= 0 || string.IsNullOrWhiteSpace(State))
+            {
+                throw new ValidationException("Datos inválidos", "ID debe ser mayor que cero y el mensaje no puede estar vacío");
+            }
+
+            try
+            {
+                var stateInfraction = await _stateInfractionData.GetByIdAsync(id);
+                if (stateInfraction == null)
+                {
+                    throw new EntityNotFoundException("TypeInfraction", id);
+                }
+
+                stateInfraction.FineValue = FineValue;
+                stateInfraction.State = State;
+
+                var isUpdated = await _stateInfractionData.UpdateAsync(stateInfraction);
+                if (!isUpdated)
+                {
+                    throw new ExternalServiceException("Base de datos", $"No se pudo actualizar la notificación con ID {id}");
+                }
+
+                return MapToDTO(stateInfraction);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al actualizar la notificación con ID: {UserNotificationId}", id);
+                throw new ExternalServiceException("Base de datos", $"Error al actualizar la notificación con ID {id}", ex);
+            }
+        }
+
+
+
+        /// <summary>
         /// Actualiza una infracción de estado de manera asíncrona.
         /// </summary>
         /// <param name="stateInfractionDto">El objeto StateInfractionDto con los datos actualizados de la infracción de estado.</param>
@@ -193,6 +269,7 @@ namespace Bussines
                     DateViolation = stateInfractionDto.DateViolation,
                     FineValue = stateInfractionDto.FineValue,
                     State = stateInfractionDto.State,
+                    IsActive = stateInfractionDto.IsActive,
                     CreatedAt = DateTime.UtcNow
                 };
 
@@ -257,7 +334,8 @@ namespace Bussines
                 PersonId = stateInfraction.PersonId,
                 DateViolation = stateInfraction.DateViolation,
                 FineValue = stateInfraction.FineValue,
-                State = stateInfraction.State
+                State = stateInfraction.State,
+                IsActive = stateInfraction.IsActive
             };
         }
 

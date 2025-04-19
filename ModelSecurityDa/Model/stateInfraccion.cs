@@ -11,6 +11,8 @@ namespace Entity.Model
         public DateTime DateViolation { get; set; }
         public decimal FineValue { get; set; }
         public string State { get; set; } = null!;
+
+        public bool IsActive { get; set; }
         public DateTime CreatedAt { get; set; }
         public virtual Person Person { get; set; } = null!;
         public virtual TypeInfraction Infraction { get; set; } = null!;

@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using Data;
 using Entity.Dto;
 using Entity.Model;
@@ -297,7 +294,7 @@ namespace Bussines
                     Message = userNotificationDto.Message,
                     IsRead = false,
                     CreatedAt = DateTime.UtcNow,
-                    IsActive= userNotificationDto.IsActive
+                    IsActive = userNotificationDto.IsActive
                 };
 
                 var createdUserNotification = await _userNotificationData.CreateAsync(userNotification);
@@ -348,7 +345,7 @@ namespace Bussines
                 UserId = userNotification.UserId,
                 Message = userNotification.Message,
                 IsRead = false,
-                IsActive= userNotification.IsActive
+                IsActive = userNotification.IsActive
             };
         }
 

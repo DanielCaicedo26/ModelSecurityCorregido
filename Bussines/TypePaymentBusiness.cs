@@ -35,7 +35,8 @@ namespace Bussines
             try
             {
                 var typePayments = await _typePaymentData.GetAllAsync();
-                return MapToDTOList(typePayments);
+                var visibletypePayments = typePayments.Where(n => n.IsActive);
+                return MapToDTOList(visibletypePayments);
             }
             catch (Exception ex)
             {
@@ -119,6 +120,50 @@ namespace Bussines
         }
 
         /// <summary>
+        /// Activa o desactiva un tipo de pago por su ID.
+        /// </summary>
+        /// <param name="id">El ID del tipo de pago.</param>
+        /// <param name="isActive">Estado deseado: true para activar, false para desactivar.</param>
+        /// <returns>El objeto TypePaymentDto actualizado.</returns>
+        /// <exception cref="ValidationException">Lanzada si el ID es inválido.</exception>
+        /// <exception cref="EntityNotFoundException">Lanzada si no se encuentra el tipo de pago.</exception>
+        /// <exception cref="ExternalServiceException">Lanzada si ocurre un error al actualizar el estado.</exception>
+        public async Task<TypePaymentDto> SetActiveStatusAsync(int id, bool isActive)
+        {
+            if (id <= 0)
+            {
+                _logger.LogWarning("Se intentó cambiar el estado de un tipo de pago con ID inválido: {TypePaymentId}", id);
+                throw new ValidationException("id", "El ID debe ser mayor que cero");
+            }
+
+            try
+            {
+                var typePayment = await _typePaymentData.GetByIdAsync(id);
+                if (typePayment == null)
+                {
+                    throw new EntityNotFoundException("TypePayment", id);
+                }
+
+                // Actualizar el estado activo
+                typePayment.IsActive = isActive;
+
+                var isUpdated = await _typePaymentData.UpdateAsync(typePayment);
+                if (!isUpdated)
+                {
+                    throw new ExternalServiceException("Base de datos", $"No se pudo cambiar el estado del tipo de pago con ID {id}");
+                }
+
+                return MapToDTO(typePayment);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al cambiar el estado del tipo de pago con ID: {TypePaymentId}", id);
+                throw new ExternalServiceException("Base de datos", $"Error al cambiar el estado del tipo de pago con ID {id}", ex);
+            }
+        }
+
+
+        /// <summary>
         /// Actualiza los datos de un tipo de pago.
         /// </summary>
         /// <param name="typePaymentDto">El objeto TypePaymentDto con los datos actualizados del tipo de pago.</param>
@@ -181,7 +226,8 @@ namespace Bussines
                 var typePayment = new TypePayment
                 {
                     Name = typePaymentDto.Name,
-                    Description = typePaymentDto.Description
+                    Description = typePaymentDto.Description,
+                    IsActive = typePaymentDto.IsActive
                 };
 
                 var createdTypePayment = await _typePaymentData.CreateAsync(typePayment);
@@ -224,7 +270,8 @@ namespace Bussines
             {
                 Id = typePayment.Id,
                 Name = typePayment.Name,
-                Description = typePayment.Description
+                Description = typePayment.Description,
+                IsActive = typePayment.IsActive
             };
         }
 

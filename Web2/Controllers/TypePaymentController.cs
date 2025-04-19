@@ -171,6 +171,42 @@ namespace Web2.Controllers
             }
         }
 
+        /// <summary>
+        /// Activa o desactiva un tipo de pago por su ID.
+        /// </summary>
+        /// <param name="id">El ID del tipo de pago.</param>
+        /// <param name="isActive">Estado deseado: true para activar, false para desactivar.</param>
+        /// <returns>Un código de estado indicando el resultado.</returns>
+        [HttpPatch("{id}/active")]
+        [ProducesResponseType(typeof(TypePaymentDto), 200)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(404)]
+        [ProducesResponseType(500)]
+        public async Task<IActionResult> SetActiveStatus(int id, [FromBody] bool isActive)
+        {
+            try
+            {
+                var updatedTypePayment = await _typePaymentBusiness.SetActiveStatusAsync(id, isActive);
+                return Ok(updatedTypePayment);
+            }
+            catch (ValidationException ex)
+            {
+                _logger.LogWarning(ex, "Validación fallida para el ID del tipo de pago: {TypePaymentId}", id);
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (EntityNotFoundException ex)
+            {
+                _logger.LogInformation(ex, "Tipo de pago no encontrado con ID: {TypePaymentId}", id);
+                return NotFound(new { message = ex.Message });
+            }
+            catch (ExternalServiceException ex)
+            {
+                _logger.LogError(ex, "Error al cambiar el estado del tipo de pago con ID: {TypePaymentId}", id);
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
+
+
 
     }
 }

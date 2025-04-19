@@ -208,6 +208,40 @@ namespace Bussines
             }
         }
 
+        public async Task<TypePaymentDto> Update(int id, string Name, string Description)
+        {
+            if (id <= 0 || string.IsNullOrWhiteSpace(Name))
+            {
+                throw new ValidationException("Datos inválidos", "ID debe ser mayor que cero y el mensaje no puede estar vacío");
+            }
+
+            try
+            {
+                var typePayment = await _typePaymentData.GetByIdAsync(id);
+                if ( typePayment == null)
+                {
+                    throw new EntityNotFoundException("typePayment", id);
+                }
+
+                typePayment.Name = Name;
+                typePayment.Description = Description;
+
+                var isUpdated = await _typePaymentData.UpdateAsync(typePayment);
+                if (!isUpdated)
+                {
+                    throw new ExternalServiceException("Base de datos", $"No se pudo actualizar la notificación con ID {id}");
+                }
+
+                return MapToDTO(typePayment);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al actualizar la notificación con ID: {UserNotificationId}", id);
+                throw new ExternalServiceException("Base de datos", $"Error al actualizar la notificación con ID {id}", ex);
+            }
+        }
+
+
 
 
         /// <summary>

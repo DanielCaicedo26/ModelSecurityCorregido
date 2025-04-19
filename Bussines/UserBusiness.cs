@@ -82,6 +82,41 @@ namespace Bussines
             }
         }
 
+        public async Task<UserDto> Updatee(int id, string username, string email, string password)
+        {
+            if (id <= 0 || string.IsNullOrWhiteSpace(username))
+            {
+                throw new ValidationException("Datos inválidos", "El ID debe ser mayor que cero y el nombre de usuario no puede estar vacío.");
+            }
+
+            try
+            {
+                var user = await _userData.GetByIdAsync(id);
+                if (user == null)
+                {
+                    throw new EntityNotFoundException("Usuario", id);
+                }
+
+                user.Username = username;
+                user.Email = email;
+                user.Password = password;
+
+                var isUpdated = await _userData.UpdateAsync(user);
+                if (!isUpdated)
+                {
+                    throw new ExternalServiceException("Base de datos", $"No se pudo actualizar el usuario con ID {id}.");
+                }
+
+                return MapToDTO(user);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al actualizar el usuario con ID: {UserId}", id);
+                throw new ExternalServiceException("Base de datos", $"Error al actualizar el usuario con ID {id}.", ex);
+            }
+        }
+
+
         /// <summary>
         /// Elimina un usuario por su ID.
         /// </summary>

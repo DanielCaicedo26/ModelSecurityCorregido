@@ -171,6 +171,83 @@ namespace Web2.Controllers
             }
         }
 
+        /// <summary>
+        /// Actualiza propiedades específicas de un pago de usuario por su ID.
+        /// </summary>
+        /// <param name="id">El ID del pago de usuario.</param>
+        /// <param name="dto">El objeto PaymentUserDto con las propiedades a actualizar.</param>
+        /// <returns>Un código de estado indicando el resultado.</returns>
+        [HttpPatch("{id}/Amount-PaymentDate")]
+        [ProducesResponseType(typeof(PaymentUserDto), 200)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(404)]
+        [ProducesResponseType(500)]
+        public async Task<IActionResult> UpdatePartial(int id, [FromBody] PaymentUserDto dto)
+        {
+            try
+            {
+                if (id != dto.Id)
+                {
+                    return BadRequest(new { message = "El ID en la URL no coincide con el ID en el cuerpo." });
+                }
+
+                var updatedPaymentUser = await _paymentUserBusiness.UpdatePartialAsync(dto.Id, dto.Amount, dto.PaymentDate);
+                return Ok(updatedPaymentUser);
+            }
+            catch (ValidationException ex)
+            {
+                _logger.LogWarning(ex, "Validación fallida para el ID del pago de usuario: {PaymentUserId}", id);
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (EntityNotFoundException ex)
+            {
+                _logger.LogInformation(ex, "Pago de usuario no encontrado con ID: {PaymentUserId}", id);
+                return NotFound(new { message = ex.Message });
+            }
+            catch (ExternalServiceException ex)
+            {
+                _logger.LogError(ex, "Error al actualizar el pago de usuario con ID: {PaymentUserId}", id);
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Activa o desactiva un pago de usuario por su ID.
+        /// </summary>
+        /// <param name="id">El ID del pago de usuario.</param>
+        /// <param name="isActive">Estado deseado: true para activar, false para desactivar.</param>
+        /// <returns>Un código de estado indicando el resultado.</returns>
+        [HttpPatch("{id}/active")]
+        [ProducesResponseType(typeof(PaymentUserDto), 200)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(404)]
+        [ProducesResponseType(500)]
+        public async Task<IActionResult> SetActiveStatus(int id, [FromBody] bool isActive)
+        {
+            try
+            {
+                var updatedPaymentUser = await _paymentUserBusiness.SetActiveStatusAsync(id, isActive);
+                return Ok(updatedPaymentUser);
+            }
+            catch (ValidationException ex)
+            {
+                _logger.LogWarning(ex, "Validación fallida para el ID del pago de usuario: {PaymentUserId}", id);
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (EntityNotFoundException ex)
+            {
+                _logger.LogInformation(ex, "Pago de usuario no encontrado con ID: {PaymentUserId}", id);
+                return NotFound(new { message = ex.Message });
+            }
+            catch (ExternalServiceException ex)
+            {
+                _logger.LogError(ex, "Error al cambiar el estado del pago de usuario con ID: {PaymentUserId}", id);
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
+
+
+
 
 
     }

@@ -35,7 +35,8 @@ namespace Bussines
             try
             {
                 var paymentHistories = await _paymentHistoryData.GetAllAsync();
-                return MapToDTOList(paymentHistories);
+                var visiblepaymentHistories = paymentHistories.Where(si => si.IsActive);
+                return MapToDTOList(visiblepaymentHistories);
             }
             catch (Exception ex)
             {
@@ -77,6 +78,103 @@ namespace Bussines
                 throw new ExternalServiceException("Base de datos", $"Error al recuperar el historial de pago con ID {id}", ex);
             }
         }
+
+        /// <summary>
+        /// Actualiza las propiedades Amount y PaymentDate de un historial de pago.
+        /// </summary>
+        /// <param name="id">El ID del historial de pago.</param>
+        /// <param name="amount">El nuevo monto del pago.</param>
+        /// <param name="paymentDate">La nueva fecha de pago.</param>
+        /// <returns>El objeto PaymentHistoryDto actualizado.</returns>
+        /// <exception cref="ValidationException">Lanzada si los datos son inválidos.</exception>
+        /// <exception cref="EntityNotFoundException">Lanzada si no se encuentra el historial de pago.</exception>
+        /// <exception cref="ExternalServiceException">Lanzada si ocurre un error al actualizar el historial de pago.</exception>
+        public async Task<PaymentHistoryDto> UpdateAmountAndDateAsync(int id, decimal? amount, DateTime? paymentDate)
+        {
+            if (id <= 0)
+            {
+                _logger.LogWarning("Se intentó actualizar un historial de pago con ID inválido.");
+                throw new ValidationException("id", "El ID debe ser mayor que cero.");
+            }
+
+            try
+            {
+                var existingPaymentHistory = await _paymentHistoryData.GetByIdAsync(id);
+                if (existingPaymentHistory == null)
+                {
+                    throw new EntityNotFoundException("PaymentHistory", id);
+                }
+
+                // Actualizar solo las propiedades proporcionadas
+                if (amount.HasValue && amount.Value > 0)
+                {
+                    existingPaymentHistory.Amount = amount.Value;
+                }
+
+                if (paymentDate.HasValue && paymentDate.Value != default)
+                {
+                    existingPaymentHistory.PaymentDate = paymentDate.Value;
+                }
+
+                var isUpdated = await _paymentHistoryData.UpdateAsync(existingPaymentHistory);
+                if (!isUpdated)
+                {
+                    throw new ExternalServiceException("Base de datos", $"No se pudo actualizar el historial de pago con ID {id}.");
+                }
+
+                return MapToDTO(existingPaymentHistory);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al actualizar el historial de pago con ID: {PaymentHistoryId}", id);
+                throw new ExternalServiceException("Base de datos", $"Error al actualizar el historial de pago con ID {id}.", ex);
+            }
+        }
+
+        /// <summary>
+        /// Activa o desactiva un historial de pago por su ID.
+        /// </summary>
+        /// <param name="id">El ID del historial de pago.</param>
+        /// <param name="isActive">Estado deseado: true para activar, false para desactivar.</param>
+        /// <returns>El objeto PaymentHistoryDto actualizado.</returns>
+        /// <exception cref="ValidationException">Lanzada si el ID es inválido.</exception>
+        /// <exception cref="EntityNotFoundException">Lanzada si no se encuentra el historial de pago.</exception>
+        /// <exception cref="ExternalServiceException">Lanzada si ocurre un error al actualizar el estado.</exception>
+        public async Task<PaymentHistoryDto> SetActiveStatusAsync(int id, bool isActive)
+        {
+            if (id <= 0)
+            {
+                _logger.LogWarning("Se intentó cambiar el estado de un historial de pago con ID inválido.");
+                throw new ValidationException("id", "El ID debe ser mayor que cero.");
+            }
+
+            try
+            {
+                var paymentHistory = await _paymentHistoryData.GetByIdAsync(id);
+                if (paymentHistory == null)
+                {
+                    throw new EntityNotFoundException("PaymentHistory", id);
+                }
+
+                // Actualizar el estado activo
+                paymentHistory.IsActive = isActive;
+
+                var isUpdated = await _paymentHistoryData.UpdateAsync(paymentHistory);
+                if (!isUpdated)
+                {
+                    throw new ExternalServiceException("Base de datos", $"No se pudo cambiar el estado del historial de pago con ID {id}.");
+                }
+
+                return MapToDTO(paymentHistory);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al cambiar el estado del historial de pago con ID: {PaymentHistoryId}", id);
+                throw new ExternalServiceException("Base de datos", $"Error al cambiar el estado del historial de pago con ID {id}.", ex);
+            }
+        }
+
+
 
         /// <summary>
         /// Elimina un historial de pago por su ID de manera asíncrona.
@@ -190,7 +288,8 @@ namespace Bussines
                     UserId = paymentHistoryDto.UserId,
                     Amount = paymentHistoryDto.Amount,
                     PaymentDate = paymentHistoryDto.PaymentDate,
-                    CreatedAt = DateTime.UtcNow
+                    CreatedAt = DateTime.UtcNow,
+                    IsActive= paymentHistoryDto.IsActive
                 };
 
                 var createdPaymentHistory = await _paymentHistoryData.CreateAsync(paymentHistory);
@@ -246,7 +345,8 @@ namespace Bussines
                 Id = paymentHistory.Id,
                 UserId = paymentHistory.UserId,
                 Amount = paymentHistory.Amount,
-                PaymentDate = paymentHistory.PaymentDate
+                PaymentDate = paymentHistory.PaymentDate,
+                IsActive = paymentHistory.IsActive
             };
         }
 

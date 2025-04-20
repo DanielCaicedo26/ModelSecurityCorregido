@@ -171,6 +171,83 @@ namespace Web2.Controllers
             }
         }
 
+        /// <summary>
+        /// Actualiza las propiedades Amount y PaymentDate de un historial de pago por su ID.
+        /// </summary>
+        /// <param name="id">El ID del historial de pago.</param>
+        /// <param name="dto">El objeto PaymentHistoryDto con las propiedades a actualizar.</param>
+        /// <returns>Un código de estado indicando el resultado.</returns>
+        [HttpPatch("{id}/UpdateAmountAndDate")]
+        [ProducesResponseType(typeof(PaymentHistoryDto), 200)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(404)]
+        [ProducesResponseType(500)]
+        public async Task<IActionResult> UpdateAmountAndDate(int id, [FromBody] PaymentHistoryDto dto)
+        {
+            try
+            {
+                if (id != dto.Id)
+                {
+                    return BadRequest(new { message = "El ID en la URL no coincide con el ID en el cuerpo." });
+                }
+
+                var updatedPaymentHistory = await _paymentHistoryBusiness.UpdateAmountAndDateAsync(dto.Id, dto.Amount, dto.PaymentDate);
+                return Ok(updatedPaymentHistory);
+            }
+            catch (ValidationException ex)
+            {
+                _logger.LogWarning(ex, "Validación fallida para el ID del historial de pago: {PaymentHistoryId}", id);
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (EntityNotFoundException ex)
+            {
+                _logger.LogInformation(ex, "Historial de pago no encontrado con ID: {PaymentHistoryId}", id);
+                return NotFound(new { message = ex.Message });
+            }
+            catch (ExternalServiceException ex)
+            {
+                _logger.LogError(ex, "Error al actualizar el historial de pago con ID: {PaymentHistoryId}", id);
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Activa o desactiva un historial de pago por su ID.
+        /// </summary>
+        /// <param name="id">El ID del historial de pago.</param>
+        /// <param name="isActive">Estado deseado: true para activar, false para desactivar.</param>
+        /// <returns>Un código de estado indicando el resultado.</returns>
+        [HttpPatch("{id}/active")]
+        [ProducesResponseType(typeof(PaymentHistoryDto), 200)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(404)]
+        [ProducesResponseType(500)]
+        public async Task<IActionResult> SetActiveStatus(int id, [FromBody] bool isActive)
+        {
+            try
+            {
+                var updatedPaymentHistory = await _paymentHistoryBusiness.SetActiveStatusAsync(id, isActive);
+                return Ok(updatedPaymentHistory);
+            }
+            catch (ValidationException ex)
+            {
+                _logger.LogWarning(ex, "Validación fallida para el ID del historial de pago: {PaymentHistoryId}", id);
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (EntityNotFoundException ex)
+            {
+                _logger.LogInformation(ex, "Historial de pago no encontrado con ID: {PaymentHistoryId}", id);
+                return NotFound(new { message = ex.Message });
+            }
+            catch (ExternalServiceException ex)
+            {
+                _logger.LogError(ex, "Error al cambiar el estado del historial de pago con ID: {PaymentHistoryId}", id);
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
+
+
+
 
     }
 }

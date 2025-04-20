@@ -35,7 +35,8 @@ namespace Bussines
             try
             {
                 var paymentUsers = await _paymentUserData.GetAllAsync();
-                return MapToDTOList(paymentUsers);
+                var visiblepaymentUsers = paymentUsers.Where(si => si.IsActive);
+                return MapToDTOList(visiblepaymentUsers);
             }
             catch (Exception ex)
             {
@@ -121,6 +122,8 @@ namespace Bussines
             }
         }
 
+
+
         /// <summary>
         /// Actualiza los datos de un pago de usuario.
         /// </summary>
@@ -169,6 +172,102 @@ namespace Bussines
                 throw new ExternalServiceException("Base de datos", $"Error al actualizar el pago de usuario con ID {paymentUserDto.Id}.", ex);
             }
         }
+        /// <summary>
+        /// Actualiza propiedades específicas de un pago de usuario.
+        /// </summary>
+        /// <param name="id">El ID del pago de usuario.</param>
+        /// <param name="amount">El nuevo monto del pago.</param>
+        /// <param name="paymentDate">La nueva fecha de pago.</param>
+        /// <returns>El objeto PaymentUserDto actualizado.</returns>
+        /// <exception cref="ValidationException">Lanzada si los datos son inválidos.</exception>
+        /// <exception cref="EntityNotFoundException">Lanzada si no se encuentra el pago de usuario.</exception>
+        /// <exception cref="ExternalServiceException">Lanzada si ocurre un error al actualizar el pago de usuario.</exception>
+        public async Task<PaymentUserDto> UpdatePartialAsync(int id, decimal? amount, DateTime? paymentDate)
+        {
+            if (id <= 0)
+            {
+                _logger.LogWarning("Se intentó actualizar un pago de usuario con ID inválido.");
+                throw new ValidationException("id", "El ID debe ser mayor que cero.");
+            }
+
+            try
+            {
+                var existingPaymentUser = await _paymentUserData.GetByIdAsync(id);
+                if (existingPaymentUser == null)
+                {
+                    throw new EntityNotFoundException("PaymentUser", id);
+                }
+
+                // Actualizar solo las propiedades proporcionadas
+                if (amount.HasValue && amount.Value > 0)
+                {
+                    existingPaymentUser.Amount = amount.Value;
+                }
+
+                if (paymentDate.HasValue && paymentDate.Value != default)
+                {
+                    existingPaymentUser.PaymentDate = paymentDate.Value;
+                }
+
+                var isUpdated = await _paymentUserData.UpdateAsync(existingPaymentUser);
+                if (!isUpdated)
+                {
+                    throw new ExternalServiceException("Base de datos", $"No se pudo actualizar el pago de usuario con ID {id}.");
+                }
+
+                return MapToDTO(existingPaymentUser);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al actualizar el pago de usuario con ID: {PaymentUserId}", id);
+                throw new ExternalServiceException("Base de datos", $"Error al actualizar el pago de usuario con ID {id}.", ex);
+            }
+        }
+
+        /// <summary>
+        /// Activa o desactiva un pago de usuario por su ID.
+        /// </summary>
+        /// <param name="id">El ID del pago de usuario.</param>
+        /// <param name="isActive">Estado deseado: true para activar, false para desactivar.</param>
+        /// <returns>El objeto PaymentUserDto actualizado.</returns>
+        /// <exception cref="ValidationException">Lanzada si el ID es inválido.</exception>
+        /// <exception cref="EntityNotFoundException">Lanzada si no se encuentra el pago de usuario.</exception>
+        /// <exception cref="ExternalServiceException">Lanzada si ocurre un error al actualizar el estado.</exception>
+        public async Task<PaymentUserDto> SetActiveStatusAsync(int id, bool isActive)
+        {
+            if (id <= 0)
+            {
+                _logger.LogWarning("Se intentó cambiar el estado de un pago de usuario con ID inválido.");
+                throw new ValidationException("id", "El ID debe ser mayor que cero.");
+            }
+
+            try
+            {
+                var paymentUser = await _paymentUserData.GetByIdAsync(id);
+                if (paymentUser == null)
+                {
+                    throw new EntityNotFoundException("PaymentUser", id);
+                }
+
+                // Actualizar el estado activo
+                paymentUser.IsActive = isActive;
+
+                var isUpdated = await _paymentUserData.UpdateAsync(paymentUser);
+                if (!isUpdated)
+                {
+                    throw new ExternalServiceException("Base de datos", $"No se pudo cambiar el estado del pago de usuario con ID {id}.");
+                }
+
+                return MapToDTO(paymentUser);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al cambiar el estado del pago de usuario con ID: {PaymentUserId}", id);
+                throw new ExternalServiceException("Base de datos", $"Error al cambiar el estado del pago de usuario con ID {id}.", ex);
+            }
+        }
+
+
 
 
 
@@ -191,7 +290,8 @@ namespace Bussines
                     PersonId = paymentUserDto.PersonId,
                     Amount = paymentUserDto.Amount,
                     PaymentDate = paymentUserDto.PaymentDate,
-                    CreatedAt = DateTime.UtcNow
+                    CreatedAt = DateTime.UtcNow,
+                    IsActive = paymentUserDto.IsActive
                 };
 
                 var createdPaymentUser = await _paymentUserData.CreateAsync(paymentUser);
@@ -247,7 +347,8 @@ namespace Bussines
                 Id = paymentUser.Id,
                 PersonId = paymentUser.PersonId,
                 Amount = paymentUser.Amount,
-                PaymentDate = paymentUser.PaymentDate
+                PaymentDate = paymentUser.PaymentDate,
+                IsActive = paymentUser.IsActive
             };
         }
 

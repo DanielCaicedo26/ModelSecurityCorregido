@@ -7,5 +7,7 @@
         public string? Neighborhood { get; set; }
         public decimal FinanceAmount { get; set; }
         public string? AgreementDescription { get; set; }
+
+        public bool IsActive { get; set; }
     }
 }

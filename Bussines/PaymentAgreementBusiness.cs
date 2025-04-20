@@ -35,7 +35,8 @@ namespace Bussines
             try
             {
                 var paymentAgreements = await _paymentAgreementData.GetAllAsync();
-                return MapToDTOList(paymentAgreements);
+                var visiblepaymentAgreements= paymentAgreements.Where(si => si.IsActive);
+                return MapToDTOList(visiblepaymentAgreements);
             }
             catch (Exception ex)
             {
@@ -122,6 +123,120 @@ namespace Bussines
         }
 
         /// <summary>
+        /// Actualiza propiedades específicas de un acuerdo de pago.
+        /// </summary>
+        /// <param name="id">El ID del acuerdo de pago.</param>
+        /// <param name="address">La nueva dirección del acuerdo de pago.</param>
+        /// <param name="neighborhood">El nuevo vecindario del acuerdo de pago.</param>
+        /// <param name="financeAmount">El nuevo monto financiero del acuerdo de pago.</param>
+        /// <param name="agreementDescription">La nueva descripción del acuerdo de pago.</param>
+        /// <returns>El objeto PaymentAgreementDto actualizado.</returns>
+        /// <exception cref="ValidationException">Lanzada si los datos son inválidos.</exception>
+        /// <exception cref="EntityNotFoundException">Lanzada si no se encuentra el acuerdo de pago.</exception>
+        /// <exception cref="ExternalServiceException">Lanzada si ocurre un error al actualizar el acuerdo de pago.</exception>
+        public async Task<PaymentAgreementDto> UpdatePartialAsync(
+            int id,
+            string? address,
+            string? neighborhood,
+            decimal? financeAmount,
+            string? agreementDescription
+        )
+        {
+            if (id <= 0)
+            {
+                _logger.LogWarning("Se intentó actualizar un acuerdo de pago con ID inválido.");
+                throw new ValidationException("id", "El ID debe ser mayor que cero.");
+            }
+
+            try
+            {
+                var existingPaymentAgreement = await _paymentAgreementData.GetByIdAsync(id);
+                if (existingPaymentAgreement == null)
+                {
+                    throw new EntityNotFoundException("PaymentAgreement", id);
+                }
+
+                // Actualizar solo las propiedades proporcionadas
+                if (!string.IsNullOrWhiteSpace(address))
+                {
+                    existingPaymentAgreement.Address = address;
+                }
+
+                if (!string.IsNullOrWhiteSpace(neighborhood))
+                {
+                    existingPaymentAgreement.Neighborhood = neighborhood;
+                }
+
+                if (financeAmount.HasValue && financeAmount.Value > 0)
+                {
+                    existingPaymentAgreement.FinanceAmount = financeAmount.Value;
+                }
+
+                if (!string.IsNullOrWhiteSpace(agreementDescription))
+                {
+                    existingPaymentAgreement.AgreementDescription = agreementDescription;
+                }
+
+                var isUpdated = await _paymentAgreementData.UpdateAsync(existingPaymentAgreement);
+                if (!isUpdated)
+                {
+                    throw new ExternalServiceException("Base de datos", $"No se pudo actualizar el acuerdo de pago con ID {id}.");
+                }
+
+                return MapToDTO(existingPaymentAgreement);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al actualizar el acuerdo de pago con ID: {PaymentAgreementId}", id);
+                throw new ExternalServiceException("Base de datos", $"Error al actualizar el acuerdo de pago con ID {id}.", ex);
+            }
+        }
+
+        /// <summary>
+        /// Activa o desactiva un historial de pago por su ID.
+        /// </summary>
+        /// <param name="id">El ID del historial de pago.</param>
+        /// <param name="isActive">Estado deseado: true para activar, false para desactivar.</param>
+        /// <returns>El objeto PaymentHistoryDto actualizado.</returns>
+        /// <exception cref="ValidationException">Lanzada si el ID es inválido.</exception>
+        /// <exception cref="EntityNotFoundException">Lanzada si no se encuentra el historial de pago.</exception>
+        /// <exception cref="ExternalServiceException">Lanzada si ocurre un error al actualizar el estado.</exception>
+        public async Task<PaymentAgreementDto> SetActiveStatusAsync(int id, bool isActive)
+        {
+            if (id <= 0)
+            {
+                _logger.LogWarning("Se intentó cambiar el estado de un historial de pago con ID inválido.");
+                throw new ValidationException("id", "El ID debe ser mayor que cero.");
+            }
+
+            try
+            {
+                var paymentAgreement = await _paymentAgreementData.GetByIdAsync(id);
+                if (paymentAgreement == null)
+                {
+                    throw new EntityNotFoundException("PaymentHistory", id);
+                }
+
+                // Actualizar el estado activo
+                paymentAgreement.IsActive = isActive;
+
+                var isUpdated = await _paymentAgreementData.UpdateAsync(paymentAgreement);
+                if (!isUpdated)
+                {
+                    throw new ExternalServiceException("Base de datos", $"No se pudo cambiar el estado del historial de pago con ID {id}.");
+                }
+
+                return MapToDTO(paymentAgreement);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al cambiar el estado del historial de pago con ID: {PaymentHistoryId}", id);
+                throw new ExternalServiceException("Base de datos", $"Error al cambiar el estado del historial de pago con ID {id}.", ex);
+            }
+        }
+
+
+        /// <summary>
         /// Actualiza un acuerdo de pago existente de manera asíncrona.
         /// </summary>
         /// <param name="paymentAgreementDto">El objeto PaymentAgreementDto con los datos actualizados del acuerdo de pago.</param>
@@ -192,7 +307,9 @@ namespace Bussines
                     Address = paymentAgreementDto.Address,
                     Neighborhood = paymentAgreementDto.Neighborhood,
                     FinanceAmount = paymentAgreementDto.FinanceAmount,
-                    AgreementDescription = paymentAgreementDto.AgreementDescription
+                    AgreementDescription = paymentAgreementDto.AgreementDescription,
+                    IsActive = paymentAgreementDto.IsActive
+
                 };
 
                 var createdPaymentAgreement = await _paymentAgreementData.CreateAsync(paymentAgreement);
@@ -243,7 +360,9 @@ namespace Bussines
                 Address = paymentAgreement.Address,
                 Neighborhood = paymentAgreement.Neighborhood,
                 FinanceAmount = paymentAgreement.FinanceAmount,
-                AgreementDescription = paymentAgreement.AgreementDescription
+                AgreementDescription = paymentAgreement.AgreementDescription,
+                IsActive = paymentAgreement.IsActive
+
             };
         }
 

@@ -35,7 +35,8 @@ namespace Bussines
             try
             {
                 var moduloForms = await _moduloFormData.GetAllAsync();
-                return MapToDTOList(moduloForms);
+                var visibelmoduleform = moduloForms.Where(m => m.IsActive);
+                return MapToDTOList(visibelmoduleform);
             }
             catch (Exception ex)
             {
@@ -121,6 +122,83 @@ namespace Bussines
             }
         }
 
+        public async Task<ModuloFormDto> Update(int id, int formId, int moduleId)
+        {
+            if (id <= 0)
+            {
+                throw new ValidationException("Datos inválidos", "ID debe ser mayor que cero y el mensaje no puede estar vacío");
+            }
+
+            try
+            {
+                var userNotification = await _moduloFormData.GetByIdAsync(id);
+                if (userNotification == null)
+                {
+                    throw new EntityNotFoundException("UserNotification", id);
+                }
+
+                userNotification.FormId = formId;
+                userNotification.ModuleId = moduleId;
+
+                var isUpdated = await _moduloFormData.UpdateAsync(userNotification);
+                if (!isUpdated)
+                {
+                    throw new ExternalServiceException("Base de datos", $"No se pudo actualizar la notificación con ID {id}");
+                }
+
+                return MapToDTO(userNotification);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al actualizar la notificación con ID: {UserNotificationId}", id);
+                throw new ExternalServiceException("Base de datos", $"Error al actualizar la notificación con ID {id}", ex);
+            }
+        }
+
+        /// <summary>
+        /// Activa o desactiva un historial de pago por su ID.
+        /// </summary>
+        /// <param name="id">El ID del historial de pago.</param>
+        /// <param name="isActive">Estado deseado: true para activar, false para desactivar.</param>
+        /// <returns>El objeto PaymentHistoryDto actualizado.</returns>
+        /// <exception cref="ValidationException">Lanzada si el ID es inválido.</exception>
+        /// <exception cref="EntityNotFoundException">Lanzada si no se encuentra el historial de pago.</exception>
+        /// <exception cref="ExternalServiceException">Lanzada si ocurre un error al actualizar el estado.</exception>
+        public async Task<ModuloFormDto> SetActiveStatusAsync(int id, bool isActive)
+        {
+            if (id <= 0)
+            {
+                _logger.LogWarning("Se intentó cambiar el estado de un historial de pago con ID inválido.");
+                throw new ValidationException("id", "El ID debe ser mayor que cero.");
+            }
+
+            try
+            {
+                var moduloForm = await _moduloFormData.GetByIdAsync(id);
+                if (moduloForm == null)
+                {
+                    throw new EntityNotFoundException("moduloForm", id);
+                }
+
+                // Actualizar el estado activo
+                moduloForm.IsActive = isActive;
+
+                var isUpdated = await _moduloFormData.UpdateAsync(moduloForm);
+                if (!isUpdated)
+                {
+                    throw new ExternalServiceException("Base de datos", $"No se pudo cambiar el estado del historial de pago con ID {id}.");
+                }
+
+                return MapToDTO( moduloForm);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al cambiar el estado del historial de pago con ID: {PaymentHistoryId}", id);
+                throw new ExternalServiceException("Base de datos", $"Error al cambiar el estado del historial de pago con ID {id}.", ex);
+            }
+        }
+
+
         /// <summary>
         /// Actualiza un formulario de módulo existente de manera asíncrona.
         /// </summary>
@@ -188,7 +266,8 @@ namespace Bussines
                 var moduloForm = new ModuloForm
                 {
                     FormId = moduloFormDto.FormId,
-                    ModuleId = moduloFormDto.ModuleId
+                    ModuleId = moduloFormDto.ModuleId,
+                    IsActive = moduloFormDto.IsActive
                 };
 
                 var createdModuloForm = await _moduloFormData.CreateAsync(moduloForm);
@@ -231,7 +310,8 @@ namespace Bussines
             {
                 Id = moduloForm.Id,
                 FormId = moduloForm.FormId,
-                ModuleId = moduloForm.ModuleId
+                ModuleId = moduloForm.ModuleId,
+                IsActive = moduloForm.IsActive
             };
         }
 

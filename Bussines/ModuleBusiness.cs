@@ -35,7 +35,8 @@ namespace Bussines
             try
             {
                 var modules = await _moduleData.GetAllAsync();
-                return MapToDTOList(modules);
+                var visiblesmodules = modules.Where(n =>n.IsActive);
+                return MapToDTOList(visiblesmodules);
             }
             catch (Exception ex)
             {
@@ -121,6 +122,83 @@ namespace Bussines
             }
         }
 
+        public async Task<ModuleDto> Update(int id, string name, string description, string status)
+        {
+            if (id <= 0)
+            {
+                throw new ValidationException("Datos inválidos", "ID debe ser mayor que cero y el mensaje no puede estar vacío");
+            }
+
+            try
+            {
+                var Module = await _moduleData.GetByIdAsync(id);
+                if (Module == null)
+                {
+                    throw new EntityNotFoundException("Module", id);
+                }
+
+                Module.Name = name;
+                Module.Description = description;
+                Module.Statu = status;
+
+                var isUpdated = await _moduleData.UpdateAsync(Module);
+                if (!isUpdated)
+                {
+                    throw new ExternalServiceException("Base de datos", $"No se pudo actualizar la notificación con ID {id}");
+                }
+
+                return MapToDTO(Module);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al actualizar la notificación con ID: {UserNotificationId}", id);
+                throw new ExternalServiceException("Base de datos", $"Error al actualizar la notificación con ID {id}", ex);
+            }
+        }
+
+        /// <summary>
+        /// Activa o desactiva un historial de pago por su ID.
+        /// </summary>
+        /// <param name="id">El ID del historial de pago.</param>
+        /// <param name="isActive">Estado deseado: true para activar, false para desactivar.</param>
+        /// <returns>El objeto PaymentHistoryDto actualizado.</returns>
+        /// <exception cref="ValidationException">Lanzada si el ID es inválido.</exception>
+        /// <exception cref="EntityNotFoundException">Lanzada si no se encuentra el historial de pago.</exception>
+        /// <exception cref="ExternalServiceException">Lanzada si ocurre un error al actualizar el estado.</exception>
+        public async Task<ModuleDto> SetActiveStatusAsync(int id, bool isActive)
+        {
+            if (id <= 0)
+            {
+                _logger.LogWarning("Se intentó cambiar el estado de un historial de pago con ID inválido.");
+                throw new ValidationException("id", "El ID debe ser mayor que cero.");
+            }
+
+            try
+            {
+                var module = await _moduleData.GetByIdAsync(id);
+                if (module == null)
+                {
+                    throw new EntityNotFoundException("module", id);
+                }
+
+                // Actualizar el estado activo
+                module.IsActive = isActive;
+
+                var isUpdated = await _moduleData.UpdateAsync(module);
+                if (!isUpdated)
+                {
+                    throw new ExternalServiceException("Base de datos", $"No se pudo cambiar el estado del historial de pago con ID {id}.");
+                }
+
+                return MapToDTO(module);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al cambiar el estado del historial de pago con ID: {PaymentHistoryId}", id);
+                throw new ExternalServiceException("Base de datos", $"Error al cambiar el estado del historial de pago con ID {id}.", ex);
+            }
+        }
+
         /// <summary>
         /// Actualiza un módulo existente de manera asíncrona.
         /// </summary>
@@ -189,7 +267,8 @@ namespace Bussines
                 {
                     Name = moduleDto.Name,
                     Description = moduleDto.Description,
-                    Statu = moduleDto.Statu
+                    Statu = moduleDto.Statu,
+                    IsActive = moduleDto.IsActive
                 };
 
                 var createdModule = await _moduleData.CreateAsync(module);
@@ -233,7 +312,8 @@ namespace Bussines
                 Id = module.Id,
                 Name = module.Name,
                 Description = module.Description,
-                Statu = module.Statu
+                Statu = module.Statu,
+                IsActive = module.IsActive
             };
         }
 

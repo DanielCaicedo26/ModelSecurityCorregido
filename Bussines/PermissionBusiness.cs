@@ -35,6 +35,7 @@ namespace Bussines
             try
             {
                 var permissions = await _permissionData.GetAllAsync();
+                var visiblepermissions = permissions.Where(h => h.IsActive);
                 return MapToDTOList(permissions);
             }
             catch (Exception ex)
@@ -122,6 +123,103 @@ namespace Bussines
         }
 
         /// <summary>
+        /// Actualiza propiedades específicas de un permiso.
+        /// </summary>
+        /// <param name="id">El ID del permiso.</param>
+        /// <param name="name">El nuevo nombre del permiso.</param>
+        /// <param name="description">La nueva descripción del permiso.</param>
+        /// <returns>El objeto PermissionDto actualizado.</returns>
+        /// <exception cref="ValidationException">Lanzada si los datos son inválidos.</exception>
+        /// <exception cref="EntityNotFoundException">Lanzada si no se encuentra el permiso.</exception>
+        /// <exception cref="ExternalServiceException">Lanzada si ocurre un error al actualizar el permiso.</exception>
+        public async Task<PermissionDto> UpdatePartialAsync(int id, string? name, string? description)
+        {
+            if (id <= 0)
+            {
+                _logger.LogWarning("Se intentó actualizar un permiso con ID inválido.");
+                throw new ValidationException("id", "El ID debe ser mayor que cero.");
+            }
+
+            try
+            {
+                var existingPermission = await _permissionData.GetByIdAsync(id);
+                if (existingPermission == null)
+                {
+                    throw new EntityNotFoundException("Permission", id);
+                }
+
+                // Actualizar solo las propiedades proporcionadas
+                if (!string.IsNullOrWhiteSpace(name))
+                {
+                    existingPermission.Name = name;
+                }
+
+                if (!string.IsNullOrWhiteSpace(description))
+                {
+                    existingPermission.Description = description;
+                }
+
+                var isUpdated = await _permissionData.UpdateAsync(existingPermission);
+                if (!isUpdated)
+                {
+                    throw new ExternalServiceException("Base de datos", $"No se pudo actualizar el permiso con ID {id}.");
+                }
+
+                return MapToDTO(existingPermission);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al actualizar el permiso con ID: {PermissionId}", id);
+                throw new ExternalServiceException("Base de datos", $"Error al actualizar el permiso con ID {id}.", ex);
+            }
+        }
+
+        /// <summary>
+        /// Activa o desactiva un permiso por su ID.
+        /// </summary>
+        /// <param name="id">El ID del permiso.</param>
+        /// <param name="isActive">Estado deseado: true para activar, false para desactivar.</param>
+        /// <returns>El objeto PermissionDto actualizado.</returns>
+        /// <exception cref="ValidationException">Lanzada si el ID es inválido.</exception>
+        /// <exception cref="EntityNotFoundException">Lanzada si no se encuentra el permiso.</exception>
+        /// <exception cref="ExternalServiceException">Lanzada si ocurre un error al actualizar el estado.</exception>
+        public async Task<PermissionDto> SetActiveStatusAsync(int id, bool isActive)
+        {
+            if (id <= 0)
+            {
+                _logger.LogWarning("Se intentó cambiar el estado de un permiso con ID inválido.");
+                throw new ValidationException("id", "El ID debe ser mayor que cero.");
+            }
+
+            try
+            {
+                var permission = await _permissionData.GetByIdAsync(id);
+                if (permission == null)
+                {
+                    throw new EntityNotFoundException("Permission", id);
+                }
+
+                // Actualizar el estado activo
+                permission.IsActive = isActive;
+
+                var isUpdated = await _permissionData.UpdateAsync(permission);
+                if (!isUpdated)
+                {
+                    throw new ExternalServiceException("Base de datos", $"No se pudo cambiar el estado del permiso con ID {id}.");
+                }
+
+                return MapToDTO(permission);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al cambiar el estado del permiso con ID: {PermissionId}", id);
+                throw new ExternalServiceException("Base de datos", $"Error al cambiar el estado del permiso con ID {id}.", ex);
+            }
+        }
+
+
+
+        /// <summary>
         /// Actualiza los datos de un permiso.
         /// </summary>
         /// <param name="permissionDto">El objeto PermissionDto con los datos actualizados del permiso.</param>
@@ -190,6 +288,7 @@ namespace Bussines
                 {
                     Name = permissionDto.Name,
                     Description = permissionDto.Description,
+                    IsActive=permissionDto.IsActive,
                     CreatedAt = DateTime.UtcNow
                 };
 
@@ -233,7 +332,8 @@ namespace Bussines
             {
                 Id = permission.Id,
                 Name = permission.Name,
-                Description = permission.Description
+                Description = permission.Description,
+                IsActive=permission.IsActive
             };
         }
 

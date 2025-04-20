@@ -171,6 +171,83 @@ namespace Web2.Controllers
             }
         }
 
+        /// <summary>
+        /// Activa o desactiva un usuario de rol por su ID.
+        /// </summary>
+        /// <param name="id">El ID del usuario de rol.</param>
+        /// <param name="isActive">Estado deseado: true para activar, false para desactivar.</param>
+        /// <returns>Un código de estado indicando el resultado.</returns>
+        [HttpPatch("{id}/active")]
+        [ProducesResponseType(typeof(RoleUserDto), 200)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(404)]
+        [ProducesResponseType(500)]
+        public async Task<IActionResult> SetActiveStatus(int id, [FromBody] bool isActive)
+        {
+            try
+            {
+                var updatedRoleUser = await _roleUserBusiness.SetActiveStatusAsync(id, isActive);
+                return Ok(updatedRoleUser);
+            }
+            catch (ValidationException ex)
+            {
+                _logger.LogWarning(ex, "Validación fallida para el ID del usuario de rol: {RoleUserId}", id);
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (EntityNotFoundException ex)
+            {
+                _logger.LogInformation(ex, "Usuario de rol no encontrado con ID: {RoleUserId}", id);
+                return NotFound(new { message = ex.Message });
+            }
+            catch (ExternalServiceException ex)
+            {
+                _logger.LogError(ex, "Error al cambiar el estado del usuario de rol con ID: {RoleUserId}", id);
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Actualiza el RoleId y UserId de un usuario de rol por su ID.
+        /// </summary>
+        /// <param name="id">El ID del usuario de rol.</param>
+        /// <param name="dto">El objeto RoleUserDto con los datos actualizados.</param>
+        /// <returns>Un código de estado indicando el resultado.</returns>
+        [HttpPatch("{id}/RoleId-UserId")]
+        [ProducesResponseType(typeof(RoleUserDto), 200)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(404)]
+        [ProducesResponseType(500)]
+        public async Task<IActionResult> UpdatePartial(int id, [FromBody] RoleUserDto dto)
+        {
+            try
+            {
+                if (id != dto.Id)
+                {
+                    return BadRequest(new { message = "El ID en la URL no coincide con el ID en el cuerpo." });
+                }
+
+                var updated = await _roleUserBusiness.UpdatePartialAsync(dto.Id, dto.RoleId, dto.UserId);
+                return Ok(updated);
+            }
+            catch (ValidationException ex)
+            {
+                _logger.LogWarning(ex, "Validación fallida");
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (EntityNotFoundException ex)
+            {
+                _logger.LogInformation(ex, "Usuario de rol no encontrado con ID: {RoleUserId}", id);
+                return NotFound(new { message = ex.Message });
+            }
+            catch (ExternalServiceException ex)
+            {
+                _logger.LogError(ex, "Error al actualizar el usuario de rol con ID: {RoleUserId}", id);
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
+
+
+
 
     }
 }

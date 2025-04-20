@@ -7,6 +7,8 @@ namespace Entity.Model
         public string RoleName { get; set; } = null!;
         public string? Description { get; set; }
         public DateTime CreatedAt { get; set; }
+
+        public bool IsActive { get; set; }
         public virtual ICollection<RoleUser>? RoleUsers { get; set; }
         public virtual ICollection<RoleFormPermission>? RoleFormPermissions { get; set; }
     }

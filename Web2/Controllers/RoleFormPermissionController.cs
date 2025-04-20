@@ -171,6 +171,83 @@ namespace Web2.Controllers
             }
         }
 
+        /// <summary>
+        /// Actualiza los permisos específicos (CanCreate, CanRead, CanUpdate, CanDelete) de un permiso de formulario de rol.
+        /// </summary>
+        /// <param name="id">El ID del permiso de formulario de rol.</param>
+        /// <param name="dto">El objeto RoleFormPermissionDto con los datos actualizados.</param>
+        /// <returns>Un código de estado indicando el resultado.</returns>
+        [HttpPatch("{id}/permissions")]
+        [ProducesResponseType(typeof(RoleFormPermissionDto), 200)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(404)]
+        [ProducesResponseType(500)]
+        public async Task<IActionResult> UpdatePermissions(int id, [FromBody] RoleFormPermissionDto dto)
+        {
+            try
+            {
+                if (id != dto.Id)
+                {
+                    return BadRequest(new { message = "El ID en la URL no coincide con el ID en el cuerpo." });
+                }
+
+                var updated = await _roleFormPermissionBusiness.UpdatePermissionsAsync(dto.Id, dto.CanCreate, dto.CanRead, dto.CanUpdate, dto.CanDelete);
+                return Ok(updated);
+            }
+            catch (ValidationException ex)
+            {
+                _logger.LogWarning(ex, "Validación fallida");
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (EntityNotFoundException ex)
+            {
+                _logger.LogInformation(ex, "Permiso de formulario de rol no encontrado con ID: {RoleFormPermissionId}", id);
+                return NotFound(new { message = ex.Message });
+            }
+            catch (ExternalServiceException ex)
+            {
+                _logger.LogError(ex, "Error al actualizar los permisos del formulario de rol con ID: {RoleFormPermissionId}", id);
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Activa o desactiva un permiso de formulario de rol por su ID.
+        /// </summary>
+        /// <param name="id">El ID del permiso de formulario de rol.</param>
+        /// <param name="isActive">Estado deseado: true para activar, false para desactivar.</param>
+        /// <returns>Un código de estado indicando el resultado.</returns>
+        [HttpPatch("{id}/active")]
+        [ProducesResponseType(typeof(RoleFormPermissionDto), 200)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(404)]
+        [ProducesResponseType(500)]
+        public async Task<IActionResult> SetActiveStatus(int id, [FromBody] bool isActive)
+        {
+            try
+            {
+                var updatedRoleFormPermission = await _roleFormPermissionBusiness.SetActiveStatusAsync(id, isActive);
+                return Ok(updatedRoleFormPermission);
+            }
+            catch (ValidationException ex)
+            {
+                _logger.LogWarning(ex, "Validación fallida para el ID del permiso de formulario de rol: {RoleFormPermissionId}", id);
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (EntityNotFoundException ex)
+            {
+                _logger.LogInformation(ex, "Permiso de formulario de rol no encontrado con ID: {RoleFormPermissionId}", id);
+                return NotFound(new { message = ex.Message });
+            }
+            catch (ExternalServiceException ex)
+            {
+                _logger.LogError(ex, "Error al cambiar el estado del permiso de formulario de rol con ID: {RoleFormPermissionId}", id);
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
+
+
+
     }
 }
 

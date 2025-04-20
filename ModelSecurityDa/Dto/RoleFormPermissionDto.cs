@@ -10,5 +10,6 @@
         public bool CanDelete { get; set; }
         public int FormId { get; set; }
         public int PermissionId { get; set; }
+        public bool IsActive { get; set; }
     }
 }

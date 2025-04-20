@@ -38,7 +38,8 @@ namespace Bussines
             try
             {
                 var roleFormPermissions = await _roleFormPermissionData.GetAllAsync();
-                return MapToDTOList(roleFormPermissions);
+                var visibleroleFormPermissions = roleFormPermissions.Where(si => si.IsActive);
+                return MapToDTOList(visibleroleFormPermissions);
             }
             catch (Exception ex)
             {
@@ -143,6 +144,99 @@ namespace Bussines
             }
         }
 
+        /// <summary>
+        /// Actualiza los permisos específicos (CanCreate, CanRead, CanUpdate, CanDelete) de un permiso de formulario de rol.
+        /// </summary>
+        /// <param name="id">El ID del permiso de formulario de rol.</param>
+        /// <param name="canCreate">Nuevo valor para CanCreate.</param>
+        /// <param name="canRead">Nuevo valor para CanRead.</param>
+        /// <param name="canUpdate">Nuevo valor para CanUpdate.</param>
+        /// <param name="canDelete">Nuevo valor para CanDelete.</param>
+        /// <returns>El objeto RoleFormPermissionDto actualizado.</returns>
+        /// <exception cref="ValidationException">Lanzada si los datos son inválidos.</exception>
+        /// <exception cref="EntityNotFoundException">Lanzada si no se encuentra el permiso de formulario de rol.</exception>
+        /// <exception cref="ExternalServiceException">Lanzada si ocurre un error al actualizar los permisos.</exception>
+        public async Task<RoleFormPermissionDto> UpdatePermissionsAsync(int id, bool canCreate, bool canRead, bool canUpdate, bool canDelete)
+        {
+            if (id <= 0)
+            {
+                throw new ValidationException("Datos inválidos", "El ID debe ser mayor que cero.");
+            }
+
+            try
+            {
+                var roleFormPermission = await _roleFormPermissionData.GetByIdAsync(id);
+                if (roleFormPermission == null)
+                {
+                    throw new EntityNotFoundException("RoleFormPermission", id);
+                }
+
+                // Actualizar las propiedades específicas
+                roleFormPermission.CanCreate = canCreate;
+                roleFormPermission.CanRead = canRead;
+                roleFormPermission.CanUpdate = canUpdate;
+                roleFormPermission.CanDelete = canDelete;
+
+                var isUpdated = await _roleFormPermissionData.UpdateAsync(roleFormPermission);
+                if (!isUpdated)
+                {
+                    throw new ExternalServiceException("Base de datos", $"No se pudo actualizar los permisos del formulario de rol con ID {id}");
+                }
+
+                return MapToDTO(roleFormPermission);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al actualizar los permisos del formulario de rol con ID: {RoleFormPermissionId}", id);
+                throw new ExternalServiceException("Base de datos", $"Error al actualizar los permisos del formulario de rol con ID {id}", ex);
+            }
+        }
+
+        /// <summary>
+        /// Activa o desactiva un permiso de formulario de rol por su ID.
+        /// </summary>
+        /// <param name="id">El ID del permiso de formulario de rol.</param>
+        /// <param name="isActive">Estado deseado: true para activar, false para desactivar.</param>
+        /// <returns>El objeto RoleFormPermissionDto actualizado.</returns>
+        /// <exception cref="ValidationException">Lanzada si el ID es inválido.</exception>
+        /// <exception cref="EntityNotFoundException">Lanzada si no se encuentra el permiso de formulario de rol.</exception>
+        /// <exception cref="ExternalServiceException">Lanzada si ocurre un error al actualizar el estado.</exception>
+        public async Task<RoleFormPermissionDto> SetActiveStatusAsync(int id, bool isActive)
+        {
+            if (id <= 0)
+            {
+                _logger.LogWarning("Se intentó cambiar el estado de un permiso de formulario de rol con ID inválido: {RoleFormPermissionId}", id);
+                throw new ValidationException("id", "El ID debe ser mayor que cero");
+            }
+
+            try
+            {
+                var roleFormPermission = await _roleFormPermissionData.GetByIdAsync(id);
+                if (roleFormPermission == null)
+                {
+                    throw new EntityNotFoundException("RoleFormPermission", id);
+                }
+
+                // Actualizar el estado activo
+                roleFormPermission.IsActive = isActive;
+
+                var isUpdated = await _roleFormPermissionData.UpdateAsync(roleFormPermission);
+                if (!isUpdated)
+                {
+                    throw new ExternalServiceException("Base de datos", $"No se pudo cambiar el estado del permiso de formulario de rol con ID {id}");
+                }
+
+                return MapToDTO(roleFormPermission);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al cambiar el estado del permiso de formulario de rol con ID: {RoleFormPermissionId}", id);
+                throw new ExternalServiceException("Base de datos", $"Error al cambiar el estado del permiso de formulario de rol con ID {id}", ex);
+            }
+        }
+
+
+
 
 
         /// <summary>
@@ -200,7 +294,8 @@ namespace Bussines
                     CanCreate = roleFormPermissionDto.CanCreate,
                     CanRead = roleFormPermissionDto.CanRead,
                     CanUpdate = roleFormPermissionDto.CanUpdate,
-                    CanDelete = roleFormPermissionDto.CanDelete
+                    CanDelete = roleFormPermissionDto.CanDelete,
+                    IsActive = roleFormPermissionDto.IsActive
                 };
 
                 var createdRoleFormPermission = await _roleFormPermissionData.CreateAsync(roleFormPermission);
@@ -260,7 +355,8 @@ namespace Bussines
                 CanCreate = roleFormPermission.CanCreate,
                 CanRead = roleFormPermission.CanRead,
                 CanUpdate = roleFormPermission.CanUpdate,
-                CanDelete = roleFormPermission.CanDelete
+                CanDelete = roleFormPermission.CanDelete,
+                IsActive = roleFormPermission.IsActive
             };
         }
 

@@ -8,6 +8,8 @@ namespace Entity.Model
         public string? Description { get; set; }
         public DateTime CreatedAt { get; set; }
 
+        public bool IsActive { get; set; }
+
         public virtual ICollection<RoleFormPermission>? RoleFormPermissions { get; set; }
     }
 }

@@ -171,6 +171,83 @@ namespace Web2.Controllers
             }
         }
 
+        /// <summary>
+        /// Actualiza propiedades específicas de una persona por su ID.
+        /// </summary>
+        /// <param name="id">El ID de la persona.</param>
+        /// <param name="dto">El objeto PersonDto con las propiedades a actualizar.</param>
+        /// <returns>Un código de estado indicando el resultado.</returns>
+        [HttpPatch("{id}/FirstName-LastName")]
+        [ProducesResponseType(typeof(PersonDto), 200)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(404)]
+        [ProducesResponseType(500)]
+        public async Task<IActionResult> UpdatePartial(int id, [FromBody] PersonDto dto)
+        {
+            try
+            {
+                if (id != dto.Id)
+                {
+                    return BadRequest(new { message = "El ID en la URL no coincide con el ID en el cuerpo." });
+                }
+
+                var updatedPerson = await _personBusiness.UpdatePartialAsync(dto.Id, dto.FirstName, dto.LastName);
+                return Ok(updatedPerson);
+            }
+            catch (ValidationException ex)
+            {
+                _logger.LogWarning(ex, "Validación fallida para el ID de la persona: {PersonId}", id);
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (EntityNotFoundException ex)
+            {
+                _logger.LogInformation(ex, "Persona no encontrada con ID: {PersonId}", id);
+                return NotFound(new { message = ex.Message });
+            }
+            catch (ExternalServiceException ex)
+            {
+                _logger.LogError(ex, "Error al actualizar la persona con ID: {PersonId}", id);
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Activa o desactiva una persona por su ID.
+        /// </summary>
+        /// <param name="id">El ID de la persona.</param>
+        /// <param name="isActive">Estado deseado: true para activar, false para desactivar.</param>
+        /// <returns>Un código de estado indicando el resultado.</returns>
+        [HttpPatch("{id}/active")]
+        [ProducesResponseType(typeof(PersonDto), 200)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(404)]
+        [ProducesResponseType(500)]
+        public async Task<IActionResult> SetActiveStatus(int id, [FromBody] bool isActive)
+        {
+            try
+            {
+                var updatedPerson = await _personBusiness.SetActiveStatusAsync(id, isActive);
+                return Ok(updatedPerson);
+            }
+            catch (ValidationException ex)
+            {
+                _logger.LogWarning(ex, "Validación fallida para el ID de la persona: {PersonId}", id);
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (EntityNotFoundException ex)
+            {
+                _logger.LogInformation(ex, "Persona no encontrada con ID: {PersonId}", id);
+                return NotFound(new { message = ex.Message });
+            }
+            catch (ExternalServiceException ex)
+            {
+                _logger.LogError(ex, "Error al cambiar el estado de la persona con ID: {PersonId}", id);
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
+
+
+
 
 
 

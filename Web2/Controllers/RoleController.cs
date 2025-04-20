@@ -171,6 +171,83 @@ namespace Web2.Controllers
             }
         }
 
+        /// <summary>
+        /// Activa o desactiva un rol por su ID.
+        /// </summary>
+        /// <param name="id">El ID del rol.</param>
+        /// <param name="isActive">Estado deseado: true para activar, false para desactivar.</param>
+        /// <returns>Un código de estado indicando el resultado.</returns>
+        [HttpPatch("{id}/active")]
+        [ProducesResponseType(typeof(RoleDto), 200)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(404)]
+        [ProducesResponseType(500)]
+        public async Task<IActionResult> SetActiveStatus(int id, [FromBody] bool isActive)
+        {
+            try
+            {
+                var updatedRole = await _roleBusiness.SetActiveStatusAsync(id, isActive);
+                return Ok(updatedRole);
+            }
+            catch (ValidationException ex)
+            {
+                _logger.LogWarning(ex, "Validación fallida para el ID del rol: {RoleId}", id);
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (EntityNotFoundException ex)
+            {
+                _logger.LogInformation(ex, "Rol no encontrado con ID: {RoleId}", id);
+                return NotFound(new { message = ex.Message });
+            }
+            catch (ExternalServiceException ex)
+            {
+                _logger.LogError(ex, "Error al cambiar el estado del rol con ID: {RoleId}", id);
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Actualiza el nombre de un rol por su ID.
+        /// </summary>
+        /// <param name="id">El ID del rol.</param>
+        /// <param name="dto">El objeto RoleDto con el nuevo nombre del rol.</param>
+        /// <returns>Un código de estado indicando el resultado.</returns>
+        [HttpPatch("{id}/RoleName")]
+        [ProducesResponseType(typeof(RoleDto), 200)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(404)]
+        [ProducesResponseType(500)]
+        public async Task<IActionResult> UpdateRoleName(int id, [FromBody] RoleDto dto)
+        {
+            try
+            {
+                if (id != dto.Id)
+                {
+                    return BadRequest(new { message = "El ID en la URL no coincide con el ID en el cuerpo." });
+                }
+
+                var updatedRole = await _roleBusiness.UpdateRoleNameAsync(dto.Id, dto.RoleName);
+                return Ok(updatedRole);
+            }
+            catch (ValidationException ex)
+            {
+                _logger.LogWarning(ex, "Validación fallida para el ID del rol: {RoleId}", id);
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (EntityNotFoundException ex)
+            {
+                _logger.LogInformation(ex, "Rol no encontrado con ID: {RoleId}", id);
+                return NotFound(new { message = ex.Message });
+            }
+            catch (ExternalServiceException ex)
+            {
+                _logger.LogError(ex, "Error al actualizar el nombre del rol con ID: {RoleId}", id);
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
+
+
+
 
     }
 }

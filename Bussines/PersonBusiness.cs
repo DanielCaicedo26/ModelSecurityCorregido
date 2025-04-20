@@ -38,7 +38,8 @@ namespace Bussines
             try
             {
                 var persons = await _personData.GetAllAsync();
-                return MapToDTOList(persons);
+                var visiblepersons = persons.Where(si => si.IsActive);
+                return MapToDTOList(visiblepersons);
             }
             catch (Exception ex)
             {
@@ -139,6 +140,103 @@ namespace Bussines
             }
         }
 
+        /// <summary>
+        /// Actualiza propiedades específicas de una persona.
+        /// </summary>
+        /// <param name="id">El ID de la persona.</param>
+        /// <param name="firstName">El nuevo nombre de la persona.</param>
+        /// <param name="lastName">El nuevo apellido de la persona.</param>
+        /// <returns>El objeto PersonDto actualizado.</returns>
+        /// <exception cref="ValidationException">Lanzada si los datos son inválidos.</exception>
+        /// <exception cref="EntityNotFoundException">Lanzada si no se encuentra la persona.</exception>
+        /// <exception cref="ExternalServiceException">Lanzada si ocurre un error al actualizar la persona.</exception>
+        public async Task<PersonDto> UpdatePartialAsync(int id, string? firstName, string? lastName)
+        {
+            if (id <= 0)
+            {
+                _logger.LogWarning("Se intentó actualizar una persona con ID inválido.");
+                throw new ValidationException("id", "El ID debe ser mayor que cero.");
+            }
+
+            try
+            {
+                var existingPerson = await _personData.GetByIdAsync(id);
+                if (existingPerson == null)
+                {
+                    throw new EntityNotFoundException("Person", id);
+                }
+
+                // Actualizar solo las propiedades proporcionadas
+                if (!string.IsNullOrWhiteSpace(firstName))
+                {
+                    existingPerson.FirstName = firstName;
+                }
+
+                if (!string.IsNullOrWhiteSpace(lastName))
+                {
+                    existingPerson.LastName = lastName;
+                }
+
+                var isUpdated = await _personData.UpdateAsync(existingPerson);
+                if (!isUpdated)
+                {
+                    throw new ExternalServiceException("Base de datos", $"No se pudo actualizar la persona con ID {id}.");
+                }
+
+                return MapToDTO(existingPerson);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al actualizar la persona con ID: {PersonId}", id);
+                throw new ExternalServiceException("Base de datos", $"Error al actualizar la persona con ID {id}.", ex);
+            }
+        }
+
+        /// <summary>
+        /// Activa o desactiva una persona por su ID.
+        /// </summary>
+        /// <param name="id">El ID de la persona.</param>
+        /// <param name="isActive">Estado deseado: true para activar, false para desactivar.</param>
+        /// <returns>El objeto PersonDto actualizado.</returns>
+        /// <exception cref="ValidationException">Lanzada si el ID es inválido.</exception>
+        /// <exception cref="EntityNotFoundException">Lanzada si no se encuentra la persona.</exception>
+        /// <exception cref="ExternalServiceException">Lanzada si ocurre un error al actualizar el estado.</exception>
+        public async Task<PersonDto> SetActiveStatusAsync(int id, bool isActive)
+        {
+            if (id <= 0)
+            {
+                _logger.LogWarning("Se intentó cambiar el estado de una persona con ID inválido.");
+                throw new ValidationException("id", "El ID debe ser mayor que cero.");
+            }
+
+            try
+            {
+                var person = await _personData.GetByIdAsync(id);
+                if (person == null)
+                {
+                    throw new EntityNotFoundException("Person", id);
+                }
+
+                // Actualizar el estado activo
+                person.IsActive = isActive;
+
+                var isUpdated = await _personData.UpdateAsync(person);
+                if (!isUpdated)
+                {
+                    throw new ExternalServiceException("Base de datos", $"No se pudo cambiar el estado de la persona con ID {id}.");
+                }
+
+                return MapToDTO(person);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al cambiar el estado de la persona con ID: {PersonId}", id);
+                throw new ExternalServiceException("Base de datos", $"Error al cambiar el estado de la persona con ID {id}.", ex);
+            }
+        }
+
+
+
 
 
 
@@ -195,7 +293,8 @@ namespace Bussines
                     FirstName = personDto.FirstName,
                     LastName = personDto.LastName,
                     Phone = personDto.Phone,
-                    CreatedAt = DateTime.UtcNow
+                    CreatedAt = DateTime.UtcNow,
+                    IsActive = personDto.IsActive
                 };
 
                 var createdPerson = await _personData.CreateAsync(person);
@@ -245,7 +344,8 @@ namespace Bussines
                 Id = person.Id,
                 FirstName = person.FirstName,
                 LastName = person.LastName,
-                Phone = person.Phone
+                Phone = person.Phone,
+                IsActive = person.IsActive
             };
         }
 

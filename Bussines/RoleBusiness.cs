@@ -38,6 +38,7 @@ namespace Bussines
             try
             {
                 var roles = await _roleData.GetAllAsync();
+                var visibleroles = roles.Where(si =>si.IsActive);
                 return MapToDTOList(roles);
             }
             catch (Exception ex)
@@ -125,6 +126,94 @@ namespace Bussines
         }
 
         /// <summary>
+        /// Activa o desactiva un rol por su ID.
+        /// </summary>
+        /// <param name="id">El ID del rol.</param>
+        /// <param name="isActive">Estado deseado: true para activar, false para desactivar.</param>
+        /// <returns>El objeto RoleDto actualizado.</returns>
+        /// <exception cref="ValidationException">Lanzada si el ID es inválido.</exception>
+        /// <exception cref="EntityNotFoundException">Lanzada si no se encuentra el rol.</exception>
+        /// <exception cref="ExternalServiceException">Lanzada si ocurre un error al actualizar el estado.</exception>
+        public async Task<RoleDto> SetActiveStatusAsync(int id, bool isActive)
+        {
+            if (id <= 0)
+            {
+                _logger.LogWarning("Se intentó cambiar el estado de un rol con ID inválido: {RoleId}", id);
+                throw new ValidationException("id", "El ID debe ser mayor que cero");
+            }
+
+            try
+            {
+                var role = await _roleData.GetByIdAsync(id);
+                if (role == null)
+                {
+                    throw new EntityNotFoundException("Role", id);
+                }
+
+                // Actualizar el estado activo
+                role.IsActive = isActive;
+
+                var isUpdated = await _roleData.UpdateAsync(role);
+                if (!isUpdated)
+                {
+                    throw new ExternalServiceException("Base de datos", $"No se pudo cambiar el estado del rol con ID {id}");
+                }
+
+                return MapToDTO(role);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al cambiar el estado del rol con ID: {RoleId}", id);
+                throw new ExternalServiceException("Base de datos", $"Error al cambiar el estado del rol con ID {id}", ex);
+            }
+        }
+
+        /// <summary>
+        /// Actualiza el nombre de un rol.
+        /// </summary>
+        /// <param name="id">El ID del rol.</param>
+        /// <param name="roleName">El nuevo nombre del rol.</param>
+        /// <returns>El objeto RoleDto actualizado.</returns>
+        /// <exception cref="ValidationException">Lanzada si los datos son inválidos.</exception>
+        /// <exception cref="EntityNotFoundException">Lanzada si no se encuentra el rol.</exception>
+        /// <exception cref="ExternalServiceException">Lanzada si ocurre un error al actualizar el rol.</exception>
+        public async Task<RoleDto> UpdateRoleNameAsync(int id, string roleName)
+        {
+            if (id <= 0 || string.IsNullOrWhiteSpace(roleName))
+            {
+                _logger.LogWarning("Se intentó actualizar un rol con datos inválidos o ID inválido.");
+                throw new ValidationException("id", "El ID debe ser mayor que cero y el nombre del rol no puede estar vacío.");
+            }
+
+            try
+            {
+                var existingRole = await _roleData.GetByIdAsync(id);
+                if (existingRole == null)
+                {
+                    throw new EntityNotFoundException("Role", id);
+                }
+
+                // Actualizar el nombre del rol
+                existingRole.RoleName = roleName;
+
+                var isUpdated = await _roleData.UpdateAsync(existingRole);
+                if (!isUpdated)
+                {
+                    throw new ExternalServiceException("Base de datos", $"No se pudo actualizar el nombre del rol con ID {id}.");
+                }
+
+                return MapToDTO(existingRole);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al actualizar el nombre del rol con ID: {RoleId}", id);
+                throw new ExternalServiceException("Base de datos", $"Error al actualizar el nombre del rol con ID {id}.", ex);
+            }
+        }
+
+
+
+        /// <summary>
         /// Actualiza los datos de un rol.
         /// </summary>
         /// <param name="roleDto">El objeto RoleDto con los datos actualizados del rol.</param>
@@ -189,7 +278,8 @@ namespace Bussines
                 var role = new Role
                 {
                     RoleName = roleDto.RoleName,
-                    CreatedAt = DateTime.UtcNow
+                    CreatedAt = DateTime.UtcNow,
+                    IsActive = roleDto.IsActive
                 };
 
                 var createdRole = await _roleData.CreateAsync(role);
@@ -231,7 +321,8 @@ namespace Bussines
             return new RoleDto
             {
                 Id = role.Id,
-                RoleName = role.RoleName
+                RoleName = role.RoleName,
+                IsActive = role.IsActive
             };
         }
 

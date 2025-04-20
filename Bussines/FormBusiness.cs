@@ -36,7 +36,7 @@ namespace Bussines
             {
                 var forms = await _formData.GetAllAsync();
                 var Visiblesforms = forms.Where(n => n.IsActive);
-                return MapToDTOList(forms);
+                return MapToDTOList(Visiblesforms);
             }
             catch (Exception ex)
             {

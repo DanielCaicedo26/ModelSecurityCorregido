@@ -35,7 +35,8 @@ namespace Bussines
             try
             {
                 var bills = await _billData.GetAllAsync();
-                return MapToDTOList(bills);
+                var visiblebills = bills.Where(n => n.IsActive);
+                return MapToDTOList(visiblebills);
             }
             catch (Exception ex)
             {
@@ -172,6 +173,87 @@ namespace Bussines
             }
         }
 
+        public async Task<BillDto> Update(int id, string barcode, DateTime issueDate, DateTime expirationDate, decimal totalValue, string? state)
+        {
+            if (id <= 0 || string.IsNullOrWhiteSpace(barcode))
+            {
+                throw new ValidationException("Datos inválidos", "El ID debe ser mayor que cero y el código de barras no puede estar vacío.");
+            }
+
+            try
+            {
+                var bill = await _billData.GetByIdAsync(id);
+                if (bill == null)
+                {
+                    throw new EntityNotFoundException("Bill", id);
+                }
+
+                bill.Barcode = barcode;
+                bill.IssueDate = issueDate;
+                bill.ExpirationDate = expirationDate;
+                bill.TotalValue = totalValue;
+                bill.State = state;
+                
+
+                var isUpdated = await _billData.UpdateAsync(bill);
+                if (!isUpdated)
+                {
+                    throw new ExternalServiceException("Base de datos", $"No se pudo actualizar la factura con ID {id}");
+                }
+
+                return MapToDTO(bill);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al actualizar la factura con ID: {BillId}", id);
+                throw new ExternalServiceException("Base de datos", $"Error al actualizar la factura con ID {id}", ex);
+            }
+        }
+
+        /// <summary>
+        /// Activa o desactiva un historial de pago por su ID.
+        /// </summary>
+        /// <param name="id">El ID del historial de pago.</param>
+        /// <param name="isActive">Estado deseado: true para activar, false para desactivar.</param>
+        /// <returns>El objeto PaymentHistoryDto actualizado.</returns>
+        /// <exception cref="ValidationException">Lanzada si el ID es inválido.</exception>
+        /// <exception cref="EntityNotFoundException">Lanzada si no se encuentra el historial de pago.</exception>
+        /// <exception cref="ExternalServiceException">Lanzada si ocurre un error al actualizar el estado.</exception>
+        public async Task<BillDto> SetActiveStatusAsync(int id, bool isActive)
+        {
+            if (id <= 0)
+            {
+                _logger.LogWarning("Se intentó cambiar el estado de un historial de pago con ID inválido.");
+                throw new ValidationException("id", "El ID debe ser mayor que cero.");
+            }
+
+            try
+            {
+                var Bill = await _billData.GetByIdAsync(id);
+                if (Bill == null)
+                {
+                    throw new EntityNotFoundException("module", id);
+                }
+
+                // Actualizar el estado activo
+                Bill.IsActive = isActive;
+
+                var isUpdated = await _billData.UpdateAsync(Bill);
+                if (!isUpdated)
+                {
+                    throw new ExternalServiceException("Base de datos", $"No se pudo cambiar el estado del historial de pago con ID {id}.");
+                }
+
+                return MapToDTO(Bill);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al cambiar el estado del historial de pago con ID: {Bill}", id);
+                throw new ExternalServiceException("Base de datos", $"Error al cambiar el estado del historial de pago con ID {id}.", ex);
+            }
+        }
+
+
 
 
         /// <summary>
@@ -194,6 +276,7 @@ namespace Bussines
                     ExpirationDate = billDto.ExpirationDate,
                     TotalValue = billDto.TotalValue,
                     State = billDto.State,
+                    IsActive = billDto.IsActive
 
                 };
 
@@ -258,7 +341,8 @@ namespace Bussines
                 IssueDate = bill.IssueDate,
                 ExpirationDate = bill.ExpirationDate,
                 TotalValue = bill.TotalValue,
-                State = bill.State
+                State = bill.State,
+                IsActive = bill.IsActive
             };
         }
 

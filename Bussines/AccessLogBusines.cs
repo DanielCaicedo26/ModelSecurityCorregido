@@ -31,6 +31,7 @@ namespace Bussines
             try
             {
                 var accessLogs = await _accessLogData.GetAllAsync();
+                var visibleaccesLogs = accessLogs.Where(m => m.IsActive);
                 return MapToDTOList(accessLogs);
             }
             catch (Exception ex)
@@ -109,6 +110,85 @@ namespace Bussines
             }
         }
 
+        public async Task<AccessLogDto> Update(int id, string action, bool status, string? details)
+        {
+            if (id <= 0 || string.IsNullOrWhiteSpace(action))
+            {
+                throw new ValidationException("Datos inválidos", "El ID debe ser mayor que cero y la acción no puede estar vacía.");
+            }
+
+            try
+            {
+                var accessLog = await _accessLogData.GetByIdAsync(id);
+                if (accessLog == null)
+                {
+                    throw new EntityNotFoundException("AccessLog", id);
+                }
+
+                accessLog.Action = action;
+                accessLog.Status = status;
+                accessLog.Details = details;
+                accessLog.CreatedAt = DateTime.UtcNow; // O la fecha que quieras asignar
+
+                var isUpdated = await _accessLogData.UpdateAsync(accessLog);
+                if (!isUpdated)
+                {
+                    throw new ExternalServiceException("Base de datos", $"No se pudo actualizar el AccessLog con ID {id}");
+                }
+
+                return MapToDTO(accessLog);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al actualizar el AccessLog con ID: {AccessLogId}", id);
+                throw new ExternalServiceException("Base de datos", $"Error al actualizar el AccessLog con ID {id}", ex);
+            }
+        }
+
+        /// <summary>
+        /// Activa o desactiva un historial de pago por su ID.
+        /// </summary>
+        /// <param name="id">El ID del historial de pago.</param>
+        /// <param name="isActive">Estado deseado: true para activar, false para desactivar.</param>
+        /// <returns>El objeto PaymentHistoryDto actualizado.</returns>
+        /// <exception cref="ValidationException">Lanzada si el ID es inválido.</exception>
+        /// <exception cref="EntityNotFoundException">Lanzada si no se encuentra el historial de pago.</exception>
+        /// <exception cref="ExternalServiceException">Lanzada si ocurre un error al actualizar el estado.</exception>
+        public async Task<AccessLogDto> SetActiveStatusAsync(int id, bool isActive)
+        {
+            if (id <= 0)
+            {
+                _logger.LogWarning("Se intentó cambiar el estado de un historial de pago con ID inválido.");
+                throw new ValidationException("id", "El ID debe ser mayor que cero.");
+            }
+
+            try
+            {
+                var accessLog = await _accessLogData.GetByIdAsync(id);
+                if (accessLog == null)
+                {
+                    throw new EntityNotFoundException("module", id);
+                }
+
+                // Actualizar el estado activo
+                accessLog.IsActive = isActive;
+
+                var isUpdated = await _accessLogData.UpdateAsync(accessLog);
+                if (!isUpdated)
+                {
+                    throw new ExternalServiceException("Base de datos", $"No se pudo cambiar el estado del historial de pago con ID {id}.");
+                }
+
+                return MapToDTO(accessLog);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al cambiar el estado del historial de pago con ID: {Bill}", id);
+                throw new ExternalServiceException("Base de datos", $"Error al cambiar el estado del historial de pago con ID {id}.", ex);
+            }
+        }
+
+
 
 
         /// <summary>
@@ -156,6 +236,8 @@ namespace Bussines
                     Status = accessLogDto.Status,
                     Timestamp = DateTime.UtcNow,
                     CreatedAt = DateTime.UtcNow,
+                    Details = accessLogDto.Details,
+                    IsActive = accessLogDto.IsActive
                     
                 };
 
@@ -200,7 +282,9 @@ namespace Bussines
                 Id = accessLog.Id,
                 UserId = accessLog.UserId,
                 Action = accessLog.Action,
-                Status = accessLog.Status
+                Status = accessLog.Status,
+                Details = accessLog.Details,
+                IsActive = accessLog. IsActive
             };
         }
 

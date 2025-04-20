@@ -8,5 +8,7 @@
         public DateTime ExpirationDate { get; set; }
         public decimal TotalValue { get; set; }
         public string? State { get; set; }
+
+        public bool IsActive { get; set; }
     }
 }

@@ -8,6 +8,7 @@
         public DateTime Timestamp { get; set; }
         public bool Status { get; set; } 
         public string? Details { get; set; }
+        public bool IsActive { get; set; }
         public DateTime CreatedAt { get; set; }
         public virtual User User { get; set; } = null!;
     }

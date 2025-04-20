@@ -171,6 +171,85 @@ namespace Web2.Controllers
             }
         }
 
+        [HttpPatch("{id}/Update-Bill-Data")]
+        [ProducesResponseType(typeof(BillDto), 200)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(404)]
+        [ProducesResponseType(500)]
+        public async Task<IActionResult> UpdateBillData(int id, [FromBody] BillDto dto)
+        {
+            try
+            {
+                if (id != dto.Id)
+                {
+                    return BadRequest(new { message = "El ID en la URL no coincide con el ID en el cuerpo." });
+                }
+
+                var updated = await _billBusiness.Update(
+                    dto.Id,
+                    dto.Barcode,
+                    dto.IssueDate,
+                    dto.ExpirationDate,
+                    dto.TotalValue,
+                    dto.State
+                   
+                );
+
+                return Ok(updated);
+            }
+            catch (ValidationException ex)
+            {
+                _logger.LogWarning(ex, "Validación fallida al actualizar factura");
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (EntityNotFoundException ex)
+            {
+                _logger.LogInformation(ex, "Factura no encontrada con ID: {BillId}", id);
+                return NotFound(new { message = ex.Message });
+            }
+            catch (ExternalServiceException ex)
+            {
+                _logger.LogError(ex, "Error al actualizar factura con ID: {BillId}", id);
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Activa o desactiva una notificación de usuario por ID.
+        /// </summary>
+        /// <param name="id">El ID de la notificación de usuario.</param>
+        /// <param name="isActive">Estado deseado: true para activar, false para desactivar.</param>
+        /// <returns>Un código de estado indicando el resultado.</returns>
+        [HttpPatch("{id}/active")]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(404)]
+        [ProducesResponseType(500)]
+        public async Task<IActionResult> SetActiveStatus(int id, [FromBody] bool isActive)
+        {
+            try
+            {
+                var updatedNotification = await _billBusiness.SetActiveStatusAsync(id, isActive);
+                return Ok(updatedNotification);
+            }
+            catch (ValidationException ex)
+            {
+                _logger.LogWarning(ex, "Validación fallida para el ID de la notificación de usuario: {UserNotificationId}", id);
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (EntityNotFoundException ex)
+            {
+                _logger.LogInformation(ex, "Notificación de usuario no encontrada con ID: {UserNotificationId}", id);
+                return NotFound(new { message = ex.Message });
+            }
+            catch (ExternalServiceException ex)
+            {
+                _logger.LogError(ex, "Error al cambiar el estado de la notificación de usuario con ID: {UserNotificationId}", id);
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
+
+
 
     }
 }

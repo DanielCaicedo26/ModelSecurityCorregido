@@ -184,6 +184,47 @@ namespace Web2.Controllers
             }
         }
 
+        [HttpPatch("{id}/Update-Action-Status-Details")]
+        [ProducesResponseType(typeof(AccessLogDto), 200)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(404)]
+        [ProducesResponseType(500)]
+        public async Task<IActionResult> UpdateAccessLogData(int id, [FromBody] AccessLogDto dto)
+        {
+            try
+            {
+                if (id != dto.Id)
+                {
+                    return BadRequest(new { message = "El ID en la URL no coincide con el ID en el cuerpo." });
+                }
+
+                var updated = await _accessLogBusiness.Update(
+                    dto.Id,
+                    dto.Action,
+                    dto.Status,
+                    dto.Details
+                );
+
+                return Ok(updated);
+            }
+            catch (ValidationException ex)
+            {
+                _logger.LogWarning(ex, "Validación fallida al actualizar AccessLog");
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (EntityNotFoundException ex)
+            {
+                _logger.LogInformation(ex, "Registro de AccessLog no encontrado con ID: {AccessLogId}", id);
+                return NotFound(new { message = ex.Message });
+            }
+            catch (ExternalServiceException ex)
+            {
+                _logger.LogError(ex, "Error al actualizar AccessLog con ID: {AccessLogId}", id);
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
+
+
 
 
 

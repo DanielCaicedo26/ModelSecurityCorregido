@@ -35,7 +35,8 @@ namespace Bussines
             try
             {
                 var informationInfractions = await _informationInfractionData.GetAllAsync();
-                return MapToDTOList(informationInfractions);
+                var visbibleinformationInfractions = informationInfractions.Where(n => n.IsActive);
+                return MapToDTOList(visbibleinformationInfractions);
             }
             catch (Exception ex)
             {
@@ -86,6 +87,85 @@ namespace Bussines
                 throw new ExternalServiceException("Base de datos", $"Error al eliminar la infracción de información con ID {id}", ex);
             }
         }
+
+        public async Task<InformationInfractionDto> Update(int id, int numer_smldv, decimal minimumWage, decimal value_smldv, decimal totalValue)
+        {
+            if (id <= 0)
+            {
+                throw new ValidationException("Datos inválidos", "El ID debe ser mayor que cero");
+            }
+
+            try
+            {
+                var informationInfraction = await _informationInfractionData.GetByIdAsync(id);
+                if (informationInfraction == null)
+                {
+                    throw new EntityNotFoundException("InformationInfraction", id);
+                }
+
+                informationInfraction.Numer_smldv = numer_smldv;
+                informationInfraction.MinimumWage = minimumWage;
+                informationInfraction.Value_smldv = value_smldv;
+                informationInfraction.TotalValue = totalValue;
+
+                var isUpdated = await _informationInfractionData.UpdateAsync(informationInfraction);
+                if (!isUpdated)
+                {
+                    throw new ExternalServiceException("Base de datos", $"No se pudo actualizar el registro con ID {id}");
+                }
+
+                return MapToDTO(informationInfraction);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al actualizar la información de infracción con ID: {InformationInfractionId}", id);
+                throw new ExternalServiceException("Base de datos", $"Error al actualizar la información de infracción con ID {id}", ex);
+            }
+        }
+
+        /// <summary>
+        /// Activa o desactiva un historial de pago por su ID.
+        /// </summary>
+        /// <param name="id">El ID del historial de pago.</param>
+        /// <param name="isActive">Estado deseado: true para activar, false para desactivar.</param>
+        /// <returns>El objeto PaymentHistoryDto actualizado.</returns>
+        /// <exception cref="ValidationException">Lanzada si el ID es inválido.</exception>
+        /// <exception cref="EntityNotFoundException">Lanzada si no se encuentra el historial de pago.</exception>
+        /// <exception cref="ExternalServiceException">Lanzada si ocurre un error al actualizar el estado.</exception>
+        public async Task<InformationInfractionDto> SetActiveStatusAsync(int id, bool isActive)
+        {
+            if (id <= 0)
+            {
+                _logger.LogWarning("Se intentó cambiar el estado de un historial de pago con ID inválido.");
+                throw new ValidationException("id", "El ID debe ser mayor que cero.");
+            }
+
+            try
+            {
+                var module = await _informationInfractionData.GetByIdAsync(id);
+                if (module == null)
+                {
+                    throw new EntityNotFoundException("module", id);
+                }
+
+                // Actualizar el estado activo
+                module.IsActive = isActive;
+
+                var isUpdated = await _informationInfractionData.UpdateAsync(module);
+                if (!isUpdated)
+                {
+                    throw new ExternalServiceException("Base de datos", $"No se pudo cambiar el estado del historial de pago con ID {id}.");
+                }
+
+                return MapToDTO(module);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al cambiar el estado del historial de pago con ID: {PaymentHistoryId}", id);
+                throw new ExternalServiceException("Base de datos", $"Error al cambiar el estado del historial de pago con ID {id}.", ex);
+            }
+        }
+
 
         /// <summary>
         /// Actualiza una infracción de información existente de manera asíncrona.
@@ -191,7 +271,8 @@ namespace Bussines
                     Numer_smldv = informationInfractionDto.Numer_smldv,
                     MinimumWage = informationInfractionDto.MinimumWage,
                     Value_smldv = informationInfractionDto.Value_smldv,
-                    TotalValue = informationInfractionDto.TotalValue
+                    TotalValue = informationInfractionDto.TotalValue,
+                    IsActive = informationInfractionDto.IsActive
                 };
 
                 var createdInformationInfraction = await _informationInfractionData.CreateAsync(informationInfraction);
@@ -254,7 +335,8 @@ namespace Bussines
                 Numer_smldv = informationInfraction.Numer_smldv,
                 MinimumWage = informationInfraction.MinimumWage,
                 Value_smldv = informationInfraction.Value_smldv,
-                TotalValue = informationInfraction.TotalValue
+                TotalValue = informationInfraction.TotalValue,
+                IsActive = informationInfraction.IsActive
             };
         }
 

@@ -35,6 +35,7 @@ namespace Bussines
             try
             {
                 var forms = await _formData.GetAllAsync();
+                var Visiblesforms = forms.Where(n => n.IsActive);
                 return MapToDTOList(forms);
             }
             catch (Exception ex)
@@ -121,6 +122,84 @@ namespace Bussines
             }
         }
 
+        public async Task<FormDto> Update(int id, string name, string? description, string? status)
+        {
+            if (id <= 0 || string.IsNullOrWhiteSpace(name))
+            {
+                throw new ValidationException("Datos inválidos", "El ID debe ser mayor que cero y el nombre no puede estar vacío.");
+            }
+
+            try
+            {
+                var form = await _formData.GetByIdAsync(id);
+                if (form == null)
+                {
+                    throw new EntityNotFoundException("Form", id);
+                }
+
+                form.Name = name;
+                form.Description = description;
+                form.Status = status;
+
+                var isUpdated = await _formData.UpdateAsync(form);
+                if (!isUpdated)
+                {
+                    throw new ExternalServiceException("Base de datos", $"No se pudo actualizar el formulario con ID {id}");
+                }
+
+                return MapToDTO(form);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al actualizar el formulario con ID: {FormId}", id);
+                throw new ExternalServiceException("Base de datos", $"Error al actualizar el formulario con ID {id}", ex);
+            }
+        }
+
+        /// <summary>
+        /// Activa o desactiva un historial de pago por su ID.
+        /// </summary>
+        /// <param name="id">El ID del historial de pago.</param>
+        /// <param name="isActive">Estado deseado: true para activar, false para desactivar.</param>
+        /// <returns>El objeto PaymentHistoryDto actualizado.</returns>
+        /// <exception cref="ValidationException">Lanzada si el ID es inválido.</exception>
+        /// <exception cref="EntityNotFoundException">Lanzada si no se encuentra el historial de pago.</exception>
+        /// <exception cref="ExternalServiceException">Lanzada si ocurre un error al actualizar el estado.</exception>
+        public async Task<FormDto> SetActiveStatusAsync(int id, bool isActive)
+        {
+            if (id <= 0)
+            {
+                _logger.LogWarning("Se intentó cambiar el estado de un historial de pago con ID inválido.");
+                throw new ValidationException("id", "El ID debe ser mayor que cero.");
+            }
+
+            try
+            {
+                var Form = await _formData.GetByIdAsync(id);
+                if (Form == null)
+                {
+                    throw new EntityNotFoundException("module", id);
+                }
+
+                // Actualizar el estado activo
+                Form.IsActive = isActive;
+
+                var isUpdated = await _formData.UpdateAsync(Form);
+                if (!isUpdated)
+                {
+                    throw new ExternalServiceException("Base de datos", $"No se pudo cambiar el estado del historial de pago con ID {id}.");
+                }
+
+                return MapToDTO(Form);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al cambiar el estado del historial de pago con ID: {PaymentHistoryId}", id);
+                throw new ExternalServiceException("Base de datos", $"Error al cambiar el estado del historial de pago con ID {id}.", ex);
+            }
+        }
+
+
         /// <summary>
         /// Actualiza un formulario existente de manera asíncrona.
         /// </summary>
@@ -192,7 +271,8 @@ namespace Bussines
                     Name = formDto.Name,
                     Description = formDto.Description,
                     DateCreation = DateTime.UtcNow,
-                    Status = formDto.Status
+                    Status = formDto.Status,
+                    IsActive = formDto.IsActive
                 };
 
                 var createdForm = await _formData.CreateAsync(form);
@@ -237,7 +317,8 @@ namespace Bussines
                 Name = form.Name,
                 Description = form.Description,
                 DateCreation = form.DateCreation,
-                Status = form.Status
+                Status = form.Status,
+                IsActive = form.IsActive
             };
         }
 

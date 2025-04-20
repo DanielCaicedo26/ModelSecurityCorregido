@@ -7,6 +7,8 @@
         public decimal MinimumWage { get; set; }
         public decimal Value_smldv { get; set; }
         public decimal TotalValue { get; set; }
+
+        public bool IsActive { get; set; }
         public virtual ICollection<TypeInfraction>? TypeInfraction { get; set; }
         public virtual ICollection<PaymentHistory>? PaymentHistory { get; set; }
     }

@@ -224,6 +224,41 @@ namespace Web2.Controllers
             }
         }
 
+        /// <summary>
+        /// Activa o desactiva una notificación de usuario por ID.
+        /// </summary>
+        /// <param name="id">El ID de la notificación de usuario.</param>
+        /// <param name="isActive">Estado deseado: true para activar, false para desactivar.</param>
+        /// <returns>Un código de estado indicando el resultado.</returns>
+        [HttpPatch("{id}/active")]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(404)]
+        [ProducesResponseType(500)]
+        public async Task<IActionResult> SetActiveStatus(int id, [FromBody] bool isActive)
+        {
+            try
+            {
+                var updatedNotification = await _accessLogBusiness.SetActiveStatusAsync(id, isActive);
+                return Ok(updatedNotification);
+            }
+            catch (ValidationException ex)
+            {
+                _logger.LogWarning(ex, "Validación fallida para el ID de la notificación de usuario: {accessLogBusiness}", id);
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (EntityNotFoundException ex)
+            {
+                _logger.LogInformation(ex, "Notificación de usuario no encontrada con ID: {accessLogBusiness}", id);
+                return NotFound(new { message = ex.Message });
+            }
+            catch (ExternalServiceException ex)
+            {
+                _logger.LogError(ex, "Error al cambiar el estado de la notificación de usuario con ID: {accessLogBusiness}", id);
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
+
 
 
 

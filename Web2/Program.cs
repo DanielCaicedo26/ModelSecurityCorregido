@@ -3,8 +3,6 @@ using Data;
 using Entity.Context;
 using Microsoft.EntityFrameworkCore;
 
-
-
 var builder = WebApplication.CreateBuilder(args);
 
 // Agregar DbContext
@@ -15,7 +13,6 @@ builder.Services.AddDbContext<ApplicationDbContext>(opciones =>
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-
 
 // Registrar clases de Rol
 builder.Services.AddScoped<AccessLogData>();
@@ -37,6 +34,7 @@ builder.Services.AddScoped<TypeInfractionData>();
 builder.Services.AddScoped<TypePaymentData>();
 builder.Services.AddScoped<UserData>();
 builder.Services.AddScoped<UserNotificationData>();
+
 // Registrar clases de Bussines
 builder.Services.AddScoped<AccessLogBusiness>();
 builder.Services.AddScoped<BillBusiness>();
@@ -58,33 +56,24 @@ builder.Services.AddScoped<TypePaymentBusiness>();
 builder.Services.AddScoped<UserBusiness>();
 builder.Services.AddScoped<UserNotificationBusiness>();
 
-
-
-
-
-// Agregar CORS
+// Configuración de CORS
 var OrigenesPermitidos = builder.Configuration.GetValue<string>("OrigenesPermitidos")!.Split(",");
+
+// Agregar CORS y combinar políticas
 builder.Services.AddCors(opciones =>
 {
-    opciones.AddDefaultPolicy(politica =>
+    opciones.AddPolicy("AllowSpecificOrigins", politica =>
     {
-        politica.WithOrigins(OrigenesPermitidos).AllowAnyHeader().AllowAnyMethod();
+        politica.WithOrigins(OrigenesPermitidos)
+                .WithOrigins("http://127.0.0.1:5500")  // Puedes añadir más orígenes si es necesario
+                .AllowAnyHeader()
+                .AllowAnyMethod();
     });
 });
 
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("AllowFrontend",
-        policy => policy.WithOrigins("http://127.0.0.1:5500")
-                        .AllowAnyHeader()
-                        .AllowAnyMethod());
-});
-
-
-
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// Configurar el pipeline de solicitudes
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -92,6 +81,10 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// Usar la política de CORS combinada
+app.UseCors("AllowSpecificOrigins");
+
 app.UseAuthorization();
 app.MapControllers();
 app.Run();

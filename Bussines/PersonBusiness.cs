@@ -39,7 +39,7 @@ namespace Bussines
             {
                 var persons = await _personData.GetAllAsync();
                 var visiblepersons = persons.Where(si => si.IsActive);
-                return MapToDTOList(visiblepersons);
+                return MapToDTOList(persons);
             }
             catch (Exception ex)
             {

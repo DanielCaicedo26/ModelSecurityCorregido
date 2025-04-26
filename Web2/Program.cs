@@ -65,7 +65,7 @@ builder.Services.AddCors(opciones =>
     opciones.AddPolicy("AllowSpecificOrigins", politica =>
     {
         politica.WithOrigins(OrigenesPermitidos)
-                .WithOrigins("http://127.0.0.1:5500")  // Puedes añadir más orígenes si es necesario
+                .WithOrigins("http://127.0.0.1:5501")  // Puedes añadir más orígenes si es necesario
                 .AllowAnyHeader()
                 .AllowAnyMethod();
     });

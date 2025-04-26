@@ -39,7 +39,7 @@ namespace Bussines
             {
                 var users = await _userData.GetAllAsync();
                 var activeUsers = users.Where(u => u.IsActive); // Excluir usuarios desactivados
-                return MapToDTOList(users);
+                return MapToDTOList(activeUsers);
             }
             catch (Exception ex)
             {

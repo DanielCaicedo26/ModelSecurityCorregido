@@ -32,13 +32,67 @@ namespace Data
         {
             try
             {
-                return await _context.Set<User>()
-                    .Include(u => u.Person)
-                    .Include(u => u.RoleUsers)
-                    .Include(u => u.UserNotifications)
-                    .Include(u => u.PaymentHistories)
+                // Primero obtenemos los usuarios sin incluir propiedades de navegación
+                var users = await _context.Set<User>()
                     .AsNoTracking()
                     .ToListAsync();
+
+                // Asignamos valores predeterminados a campos NULL
+                foreach (var user in users)
+                {
+                    if (user.Username == null)
+                    {
+                        user.Username = $"usuario-{user.Id}";
+                    }
+                    if (user.Email == null)
+                    {
+                        user.Email = $"email-{user.Id}@ejemplo.com";
+                    }
+                    if (user.Password == null)
+                    {
+                        user.Password = "password-placeholder";
+                    }
+                }
+
+                // Cargar las propiedades de navegación
+                var userIds = users.Select(u => u.Id).ToList();
+
+                // Cargar Person
+                var personsWithUsers = await _context.Set<Person>()
+                    .Where(p => p.User != null && userIds.Contains(p.User.Id))
+                    .Include(p => p.User)
+                    .AsNoTracking()
+                    .ToListAsync();
+
+                // Cargar RoleUsers
+                var roleUsers = await _context.Set<RoleUser>()
+                    .Where(ru => userIds.Contains(ru.UserId))
+                    .Include(ru => ru.Role)
+                    .AsNoTracking()
+                    .ToListAsync();
+
+                // Cargar UserNotifications
+                var userNotifications = await _context.Set<UserNotification>()
+                    .Where(un => userIds.Contains(un.UserId))
+                    .AsNoTracking()
+                    .ToListAsync();
+
+                // Cargar PaymentHistories
+                var paymentHistories = await _context.Set<PaymentHistory>()
+                    .Where(ph => userIds.Contains(ph.UserId))
+                    .AsNoTracking()
+                    .ToListAsync();
+
+                // Asociar las propiedades cargadas con los usuarios
+                foreach (var user in users)
+                {
+                    user.Person = personsWithUsers.FirstOrDefault(p => p.User?.Id == user.Id)?.User?.Person;
+                    user.RoleUsers = roleUsers.Where(ru => ru.UserId == user.Id).ToList();
+                    user.UserNotifications = userNotifications.Where(un => un.UserId == user.Id).ToList();
+                    user.PaymentHistories = paymentHistories.Where(ph => ph.UserId == user.Id).ToList();
+                }
+
+                return users;
             }
             catch (Exception ex)
             {
@@ -56,12 +110,45 @@ namespace Data
         {
             try
             {
-                return await _context.Set<User>()
-                    .Include(u => u.Person)
-                    .Include(u => u.RoleUsers)
-                    .Include(u => u.UserNotifications)
-                    .Include(u => u.PaymentHistories)
+                // Primero obtenemos el usuario básico
+                var user = await _context.Set<User>()
                     .FirstOrDefaultAsync(u => u.Id == id);
+
+                if (user != null)
+                {
+                    // Asignamos valores predeterminados a campos NULL
+                    if (user.Username == null)
+                    {
+                        user.Username = $"usuario-{user.Id}";
+                    }
+                    if (user.Email == null)
+                    {
+                        user.Email = $"email-{user.Id}@ejemplo.com";
+                    }
+                    if (user.Password == null)
+                    {
+                        user.Password = "password-placeholder";
+                    }
+
+                    // Cargar manualmente las propiedades de navegación
+                    await _context.Entry(user)
+                        .Reference(u => u.Person)
+                        .LoadAsync();
+
+                    await _context.Entry(user)
+                        .Collection(u => u.RoleUsers)
+                        .LoadAsync();
+
+                    await _context.Entry(user)
+                        .Collection(u => u.UserNotifications)
+                        .LoadAsync();
+
+                    await _context.Entry(user)
+                        .Collection(u => u.PaymentHistories)
+                        .LoadAsync();
+                }
+
+                return user;
             }
             catch (Exception ex)
             {
@@ -79,6 +166,20 @@ namespace Data
         {
             try
             {
+                // Asegurarse de que no haya valores NULL en campos obligatorios
+                if (string.IsNullOrEmpty(user.Username))
+                {
+                    user.Username = $"usuario-{DateTime.Now.Ticks}";
+                }
+                if (string.IsNullOrEmpty(user.Email))
+                {
+                    user.Email = $"email-{DateTime.Now.Ticks}@ejemplo.com";
+                }
+                if (string.IsNullOrEmpty(user.Password))
+                {
+                    user.Password = "password-placeholder";
+                }
+
                 await _context.Set<User>().AddAsync(user);
                 await _context.SaveChangesAsync();
                 return user;
@@ -106,6 +207,21 @@ namespace Data
                     return false;
                 }
 
+                // Asegurarse de que no haya valores NULL en campos obligatorios
+                if (string.IsNullOrEmpty(user.Username))
+                {
+                    user.Username = $"usuario-{user.Id}";
+                }
+                if (string.IsNullOrEmpty(user.Email))
+                {
+                    user.Email = $"email-{user.Id}@ejemplo.com";
+                }
+                if (string.IsNullOrEmpty(user.Password))
+                {
+                    // Mantener la contraseña existente si no se proporciona una nueva
+                    user.Password = existingUser.Password;
+                }
+
                 _context.Entry(existingUser).CurrentValues.SetValues(user);
                 await _context.SaveChangesAsync();
                 return true;
@@ -116,11 +232,16 @@ namespace Data
                 return false;
             }
         }
+
+        /// <summary>
+        /// Verifica si existe una persona con el ID proporcionado.
+        /// </summary>
+        /// <param name="personId">ID de la persona a verificar.</param>
+        /// <returns>True si la persona existe, False en caso contrario.</returns>
         public async Task<bool> PersonExistsAsync(int personId)
         {
             return await _context.Person.AnyAsync(p => p.Id == personId);
         }
-
 
         /// <summary>
         /// Elimina un usuario de la base de datos.
@@ -156,9 +277,3 @@ namespace Data
         }
     }
 }
-
-
-
-
-
-

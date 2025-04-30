@@ -67,6 +67,52 @@ namespace Data
         }
 
         /// <summary>
+        /// Obtiene infracciones por número de documento.
+        /// </summary>
+        /// <param name="documentNumber">Número de documento a buscar.</param>
+        /// <returns>Lista de infracciones con el número de documento especificado.</returns>
+        public async Task<IEnumerable<StateInfraction>> GetByDocumentNumberAsync(string documentNumber)
+        {
+            try
+            {
+                return await _context.Set<StateInfraction>()
+                    .Include(s => s.Person)
+                    .Include(s => s.Infraction)
+                    .Where(s => s.DocumentNumber == documentNumber)
+                    .AsNoTracking()
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener infracciones con número de documento {DocumentNumber}", documentNumber);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Obtiene infracciones por IDs de personas.
+        /// </summary>
+        /// <param name="personIds">Lista de IDs de personas.</param>
+        /// <returns>Lista de infracciones asociadas a las personas especificadas.</returns>
+        public async Task<IEnumerable<StateInfraction>> GetByPersonIdsAsync(IEnumerable<int> personIds)
+        {
+            try
+            {
+                return await _context.Set<StateInfraction>()
+                    .Include(s => s.Person)
+                    .Include(s => s.Infraction)
+                    .Where(s => personIds.Contains(s.PersonId))
+                    .AsNoTracking()
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener infracciones por IDs de personas");
+                throw;
+            }
+        }
+
+        /// <summary>
         /// Crea una nueva infracción de estado en la base de datos.
         /// </summary>
         /// <param name="stateInfraction">Instancia de la infracción de estado a crear.</param>

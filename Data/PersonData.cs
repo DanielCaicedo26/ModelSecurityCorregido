@@ -32,12 +32,41 @@ namespace Data
         {
             try
             {
-                return await _context.Set<Person>()
-                    .Include(p => p.User)
-                    .Include(p => p.StateInfractions)
-                    .Include(p => p.PaymentUsers)
+                // Obtenemos los datos sin incluir las propiedades que pueden causar problemas
+                var persons = await _context.Set<Person>()
                     .AsNoTracking()
                     .ToListAsync();
+
+                // Asignamos valores predeterminados a campos NULL
+                foreach (var person in persons)
+                {
+                    if (person.DocumentNumber == null)
+                    {
+                        person.DocumentNumber = $"SIN-DOCUMENTO-{person.Id}";
+                    }
+                    if (person.DocumentType == null)
+                    {
+                        person.DocumentType = "NO ESPECIFICADO";
+                    }
+                }
+
+                // Cargamos las propiedades de navegación manualmente si es necesario
+                foreach (var person in persons)
+                {
+                    await _context.Entry(person)
+                        .Reference(p => p.User)
+                        .LoadAsync();
+
+                    await _context.Entry(person)
+                        .Collection(p => p.StateInfractions)
+                        .LoadAsync();
+
+                    await _context.Entry(person)
+                        .Collection(p => p.PaymentUsers)
+                        .LoadAsync();
+                }
+
+                return persons;
             }
             catch (Exception ex)
             {
@@ -55,15 +84,94 @@ namespace Data
         {
             try
             {
-                return await _context.Set<Person>()
-                    .Include(p => p.User)
-                    .Include(p => p.StateInfractions)
-                    .Include(p => p.PaymentUsers)
+                // Primero obtenemos la persona sin incluir propiedades que puedan causar problemas
+                var person = await _context.Set<Person>()
                     .FirstOrDefaultAsync(p => p.Id == id);
+
+                if (person != null)
+                {
+                    // Asignamos valores predeterminados a campos NULL
+                    if (person.DocumentNumber == null)
+                    {
+                        person.DocumentNumber = $"SIN-DOCUMENTO-{person.Id}";
+                    }
+                    if (person.DocumentType == null)
+                    {
+                        person.DocumentType = "NO ESPECIFICADO";
+                    }
+
+                    // Cargamos las propiedades de navegación manualmente
+                    await _context.Entry(person)
+                        .Reference(p => p.User)
+                        .LoadAsync();
+
+                    await _context.Entry(person)
+                        .Collection(p => p.StateInfractions)
+                        .LoadAsync();
+
+                    await _context.Entry(person)
+                        .Collection(p => p.PaymentUsers)
+                        .LoadAsync();
+                }
+
+                return person;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al obtener la persona con ID {PersonId}", id);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Obtiene personas por su número de documento.
+        /// </summary>
+        /// <param name="documentNumber">Número de documento a buscar.</param>
+        /// <returns>Lista de personas con el número de documento especificado.</returns>
+        public async Task<IEnumerable<Person>> GetByDocumentNumberAsync(string documentNumber)
+        {
+            try
+            {
+                // Primero obtenemos las personas sin incluir propiedades que puedan causar problemas
+                var persons = await _context.Set<Person>()
+                    .Where(p => p.DocumentNumber == documentNumber)
+                    .AsNoTracking()
+                    .ToListAsync();
+
+                // Asignamos valores predeterminados a campos NULL
+                foreach (var person in persons)
+                {
+                    if (person.DocumentNumber == null)
+                    {
+                        person.DocumentNumber = $"SIN-DOCUMENTO-{person.Id}";
+                    }
+                    if (person.DocumentType == null)
+                    {
+                        person.DocumentType = "NO ESPECIFICADO";
+                    }
+                }
+
+                // Cargamos las propiedades de navegación manualmente si es necesario
+                foreach (var person in persons)
+                {
+                    await _context.Entry(person)
+                        .Reference(p => p.User)
+                        .LoadAsync();
+
+                    await _context.Entry(person)
+                        .Collection(p => p.StateInfractions)
+                        .LoadAsync();
+
+                    await _context.Entry(person)
+                        .Collection(p => p.PaymentUsers)
+                        .LoadAsync();
+                }
+
+                return persons;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener personas con número de documento {DocumentNumber}", documentNumber);
                 throw;
             }
         }
@@ -77,6 +185,16 @@ namespace Data
         {
             try
             {
+                // Asegurarse de que los campos no sean NULL antes de guardar
+                if (person.DocumentNumber == null)
+                {
+                    person.DocumentNumber = $"SIN-DOCUMENTO-{DateTime.Now.Ticks}";
+                }
+                if (person.DocumentType == null)
+                {
+                    person.DocumentType = "NO ESPECIFICADO";
+                }
+
                 await _context.Set<Person>().AddAsync(person);
                 await _context.SaveChangesAsync();
                 return person;
@@ -102,6 +220,16 @@ namespace Data
                 {
                     _logger.LogWarning("No se encontró la persona con ID {PersonId} para actualizar", person.Id);
                     return false;
+                }
+
+                // Asegurarse de que los campos no sean NULL antes de guardar
+                if (person.DocumentNumber == null)
+                {
+                    person.DocumentNumber = $"SIN-DOCUMENTO-{person.Id}";
+                }
+                if (person.DocumentType == null)
+                {
+                    person.DocumentType = "NO ESPECIFICADO";
                 }
 
                 _context.Entry(existingPerson).CurrentValues.SetValues(person);
@@ -149,5 +277,3 @@ namespace Data
         }
     }
 }
-
-

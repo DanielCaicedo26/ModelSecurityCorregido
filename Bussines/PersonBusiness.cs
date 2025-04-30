@@ -49,6 +49,34 @@ namespace Bussines
         }
 
         /// <summary>
+        /// Busca personas por número de documento de manera asíncrona.
+        /// </summary>
+        /// <param name="documentNumber">El número de documento a buscar.</param>
+        /// <returns>Una lista de objetos PersonDto que coinciden con el número de documento.</returns>
+        /// <exception cref="ValidationException">Lanzada cuando el número de documento es inválido.</exception>
+        /// <exception cref="ExternalServiceException">Lanzada cuando ocurre un error al recuperar las personas.</exception>
+        public async Task<IEnumerable<PersonDto>> GetPersonsByDocumentNumberAsync(string documentNumber)
+        {
+            if (string.IsNullOrWhiteSpace(documentNumber))
+            {
+                _logger.LogWarning("Se intentó buscar personas con número de documento vacío");
+                throw new ValidationException("documentNumber", "El número de documento no puede estar vacío");
+            }
+
+            try
+            {
+                var persons = await _personData.GetByDocumentNumberAsync(documentNumber);
+                var visiblePersons = persons.Where(p => p.IsActive);
+                return MapToDTOList(visiblePersons);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al buscar personas con número de documento: {DocumentNumber}", documentNumber);
+                throw new ExternalServiceException("Base de datos", $"Error al buscar personas con número de documento {documentNumber}", ex);
+            }
+        }
+
+        /// <summary>
         /// Actualiza los datos de una persona.
         /// </summary>
         /// <param name="personDto">El objeto PersonDto con los datos actualizados de la persona.</param>
@@ -77,10 +105,34 @@ namespace Bussines
                     throw new EntityNotFoundException("Person", personDto.Id);
                 }
 
+                // Verificar si el número de documento actualizado ya está en uso por otra persona
+                if (!string.IsNullOrWhiteSpace(personDto.DocumentNumber) &&
+                    existingPerson.DocumentNumber != personDto.DocumentNumber)
+                {
+                    var personsWithSameDocument = await _personData.GetByDocumentNumberAsync(personDto.DocumentNumber);
+                    var otherPersonWithSameDocument = personsWithSameDocument.FirstOrDefault(p => p.Id != personDto.Id);
+
+                    if (otherPersonWithSameDocument != null)
+                    {
+                        _logger.LogWarning("Ya existe otra persona con el número de documento: {DocumentNumber}", personDto.DocumentNumber);
+                        throw new ValidationException("DocumentNumber", $"Ya existe otra persona con el número de documento {personDto.DocumentNumber}. Este campo debe ser único para cada persona en el sistema.");
+                    }
+                }
+
+                // Validar que no se esté intentando eliminar el número de documento
+                if (string.IsNullOrWhiteSpace(personDto.DocumentNumber))
+                {
+                    _logger.LogWarning("Se intentó actualizar una persona eliminando su número de documento");
+                    throw new ValidationException("DocumentNumber", "El número de documento es obligatorio y no puede estar vacío");
+                }
+
                 // Actualizar los datos de la persona
                 existingPerson.FirstName = personDto.FirstName;
                 existingPerson.LastName = personDto.LastName;
                 existingPerson.Phone = personDto.Phone;
+                existingPerson.DocumentNumber = personDto.DocumentNumber;
+                existingPerson.DocumentType = personDto.DocumentType;
+                existingPerson.IsActive = personDto.IsActive;
 
                 var isUpdated = await _personData.UpdateAsync(existingPerson);
                 if (!isUpdated)
@@ -193,6 +245,70 @@ namespace Bussines
         }
 
         /// <summary>
+        /// Actualiza propiedades específicas de una persona, incluyendo el documento.
+        /// </summary>
+        /// <param name="id">El ID de la persona.</param>
+        /// <param name="documentNumber">El nuevo número de documento.</param>
+        /// <param name="documentType">El nuevo tipo de documento.</param>
+        /// <returns>El objeto PersonDto actualizado.</returns>
+        /// <exception cref="ValidationException">Lanzada si los datos son inválidos.</exception>
+        /// <exception cref="EntityNotFoundException">Lanzada si no se encuentra la persona.</exception>
+        /// <exception cref="ExternalServiceException">Lanzada si ocurre un error al actualizar la persona.</exception>
+        public async Task<PersonDto> UpdateDocumentAsync(int id, string documentNumber, string? documentType)
+        {
+            if (id <= 0)
+            {
+                _logger.LogWarning("Se intentó actualizar una persona con ID inválido.");
+                throw new ValidationException("id", "El ID debe ser mayor que cero.");
+            }
+
+            if (string.IsNullOrWhiteSpace(documentNumber))
+            {
+                _logger.LogWarning("Se intentó actualizar una persona con número de documento vacío.");
+                throw new ValidationException("documentNumber", "El número de documento no puede estar vacío.");
+            }
+
+            try
+            {
+                var existingPerson = await _personData.GetByIdAsync(id);
+                if (existingPerson == null)
+                {
+                    throw new EntityNotFoundException("Person", id);
+                }
+
+                // Verificar si el número de documento ya existe
+                if (existingPerson.DocumentNumber != documentNumber)
+                {
+                    var personsWithSameDocument = await _personData.GetByDocumentNumberAsync(documentNumber);
+                    if (personsWithSameDocument.Any(p => p.Id != id))
+                    {
+                        throw new ValidationException("documentNumber", $"Ya existe otra persona con el número de documento {documentNumber}");
+                    }
+                }
+
+                // Actualizar el documento
+                existingPerson.DocumentNumber = documentNumber;
+                if (!string.IsNullOrWhiteSpace(documentType))
+                {
+                    existingPerson.DocumentType = documentType;
+                }
+
+                var isUpdated = await _personData.UpdateAsync(existingPerson);
+                if (!isUpdated)
+                {
+                    throw new ExternalServiceException("Base de datos", $"No se pudo actualizar la persona con ID {id}.");
+                }
+
+                return MapToDTO(existingPerson);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al actualizar el documento de la persona con ID: {PersonId}", id);
+                throw new ExternalServiceException("Base de datos", $"Error al actualizar el documento de la persona con ID {id}.", ex);
+            }
+        }
+
+        /// <summary>
         /// Activa o desactiva una persona por su ID.
         /// </summary>
         /// <param name="id">El ID de la persona.</param>
@@ -234,12 +350,6 @@ namespace Bussines
                 throw new ExternalServiceException("Base de datos", $"Error al cambiar el estado de la persona con ID {id}.", ex);
             }
         }
-
-
-
-
-
-
 
         /// <summary>
         /// Obtiene una persona por su ID de manera asíncrona.
@@ -288,10 +398,23 @@ namespace Bussines
             {
                 ValidatePerson(personDto);
 
+                // Verificar si ya existe una persona con el mismo número de documento
+                if (!string.IsNullOrWhiteSpace(personDto.DocumentNumber))
+                {
+                    var existingPersons = await _personData.GetByDocumentNumberAsync(personDto.DocumentNumber);
+                    if (existingPersons.Any())
+                    {
+                        _logger.LogWarning("Ya existe una persona con el número de documento: {DocumentNumber}", personDto.DocumentNumber);
+                        throw new ValidationException("DocumentNumber", $"Ya existe una persona con el número de documento {personDto.DocumentNumber}. El número de documento debe ser único en el sistema.");
+                    }
+                }
+
                 var person = new Person
                 {
                     FirstName = personDto.FirstName,
                     LastName = personDto.LastName,
+                    DocumentNumber = personDto.DocumentNumber,
+                    DocumentType = personDto.DocumentType,
                     Phone = personDto.Phone,
                     CreatedAt = DateTime.UtcNow,
                     IsActive = personDto.IsActive
@@ -330,6 +453,26 @@ namespace Bussines
                 _logger.LogWarning("Se intentó crear una persona con apellido vacío");
                 throw new ValidationException("LastName", "El apellido no puede estar vacío");
             }
+
+            // Validar el número de documento
+            if (string.IsNullOrWhiteSpace(personDto.DocumentNumber))
+            {
+                _logger.LogWarning("Se intentó crear/actualizar una persona sin número de documento");
+                throw new ValidationException("DocumentNumber", "El número de documento es obligatorio y no puede estar vacío");
+            }
+
+            if (personDto.DocumentNumber.Length < 5 || personDto.DocumentNumber.Length > 20)
+            {
+                _logger.LogWarning("Se intentó crear/actualizar una persona con número de documento de longitud inválida");
+                throw new ValidationException("DocumentNumber", "El número de documento debe tener entre 5 y 20 caracteres");
+            }
+
+            // Validar que el número de documento solo contenga caracteres alfanuméricos
+            if (!personDto.DocumentNumber.All(c => char.IsLetterOrDigit(c) || c == '-'))
+            {
+                _logger.LogWarning("Se intentó crear/actualizar una persona con caracteres inválidos en el número de documento");
+                throw new ValidationException("DocumentNumber", "El número de documento solo puede contener letras, números y guiones");
+            }
         }
 
         /// <summary>
@@ -344,6 +487,8 @@ namespace Bussines
                 Id = person.Id,
                 FirstName = person.FirstName,
                 LastName = person.LastName,
+                DocumentNumber = person.DocumentNumber,
+                DocumentType = person.DocumentType,
                 Phone = person.Phone,
                 IsActive = person.IsActive
             };
@@ -365,8 +510,3 @@ namespace Bussines
         }
     }
 }
-
-
-
-
-

@@ -48,6 +48,7 @@ namespace Entity.Context
         public DbSet<TypePayment> TypePayment { get; set; }
         public DbSet<User> User { get; set; }
         public DbSet<UserNotification> UserNotification { get; set; }
+        public DbSet<RefreshToken> RefreshToken { get; set; }
 
 
 
@@ -67,8 +68,13 @@ namespace Entity.Context
                        .WithMany(pa => pa.Bills)
                        .HasForeignKey(b => b.PaymentAgreementId);
 
+            modelBuilder.Entity<RefreshToken>()
+    .HasOne(rt => rt.User)
+    .WithMany()
+    .HasForeignKey(rt => rt.UserId);
 
-                modelBuilder.Entity<User>()
+
+            modelBuilder.Entity<User>()
                         .HasOne(u => u.Person)
                         .WithOne(p => p.User)
                         .HasForeignKey<User>(u => u.PersonId);

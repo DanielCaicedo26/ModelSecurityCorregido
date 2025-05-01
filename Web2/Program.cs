@@ -1,7 +1,12 @@
 using Bussines;
 using Data;
 using Entity.Context;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using Web2.Services;
+using Web2.Services.Web2.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -71,6 +76,35 @@ builder.Services.AddCors(opciones =>
     });
 });
 
+// Configurar autenticación JWT
+var jwtSettings = builder.Configuration.GetSection("JwtSettings");
+var key = Encoding.ASCII.GetBytes(jwtSettings["SecretKey"]);
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.RequireHttpsMetadata = false;
+    options.SaveToken = true;
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(key),
+        ValidateIssuer = !string.IsNullOrEmpty(jwtSettings["Issuer"]),
+        ValidIssuer = jwtSettings["Issuer"],
+        ValidateAudience = !string.IsNullOrEmpty(jwtSettings["Audience"]),
+        ValidAudience = jwtSettings["Audience"],
+        ValidateLifetime = true,
+        ClockSkew = TimeSpan.Zero
+    };
+});
+
+// Registrar el servicio JWT
+builder.Services.AddScoped<JwtAuthService>();
+
 var app = builder.Build();
 
 // Configurar el pipeline de solicitudes
@@ -85,6 +119,9 @@ app.UseHttpsRedirection();
 // Usar la política de CORS combinada
 app.UseCors("AllowSpecificOrigins");
 
+// Añadir middleware de autenticación antes de autorización
+app.UseAuthentication();
 app.UseAuthorization();
+
 app.MapControllers();
 app.Run();

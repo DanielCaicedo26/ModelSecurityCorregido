@@ -64,13 +64,25 @@ builder.Services.AddScoped<UserNotificationBusiness>();
 // Configuración de CORS
 var OrigenesPermitidos = builder.Configuration.GetValue<string>("OrigenesPermitidos")!.Split(",");
 
-// Agregar CORS y combinar políticas
+// Agregar CORS con el nombre correcto para que coincida con el atributo del controlador
 builder.Services.AddCors(opciones =>
 {
-    opciones.AddPolicy("AllowSpecificOrigins", politica =>
+    // Política principal que se usa en el controlador con [EnableCors("AllowOrigin")]
+    opciones.AddPolicy("AllowOrigin", politica =>
     {
-        politica.WithOrigins(OrigenesPermitidos)
-                .WithOrigins("http://127.0.0.1:5501")  // Puedes añadir más orígenes si es necesario
+        politica.WithOrigins("http://localhost:3000",
+                            "http://localhost:5500",
+                            "http://127.0.0.1:5500",
+                            "http://127.0.0.1:5501")
+                .AllowAnyHeader()
+                .AllowAnyMethod()
+                .AllowCredentials();
+    });
+
+    // Política alternativa para uso global si es necesario
+    opciones.AddPolicy("AllowAll", politica =>
+    {
+        politica.AllowAnyOrigin()
                 .AllowAnyHeader()
                 .AllowAnyMethod();
     });
@@ -116,8 +128,8 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-// Usar la política de CORS combinada
-app.UseCors("AllowSpecificOrigins");
+// Usar la política de CORS - debe estar antes de Authentication
+app.UseCors("AllowOrigin");
 
 // Añadir middleware de autenticación antes de autorización
 app.UseAuthentication();

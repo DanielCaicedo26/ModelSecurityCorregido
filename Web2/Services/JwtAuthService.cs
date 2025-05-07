@@ -55,13 +55,13 @@
 
                 // Crear claims para el token
                 var claims = new List<Claim>
-            {
-                new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-                new Claim(JwtRegisteredClaimNames.UniqueName, user.Username),
-                new Claim(JwtRegisteredClaimNames.Email, user.Email),
-                new Claim(JwtRegisteredClaimNames.Jti, jti),
-                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString())
-            };
+                {
+                    new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+                    new Claim(JwtRegisteredClaimNames.UniqueName, user.Username),
+                    new Claim(JwtRegisteredClaimNames.Email, user.Email),
+                    new Claim(JwtRegisteredClaimNames.Jti, jti),
+                    new Claim(ClaimTypes.NameIdentifier, user.Id.ToString())
+                };
 
                 // Agregar claims para los roles del usuario
                 if (user.RoleUsers != null && user.RoleUsers.Any())
@@ -112,6 +112,18 @@
                     .Select(ru => ru.Role.RoleName)
                     .ToArray() ?? Array.Empty<string>();
 
+                // Verificar si el usuario es administrador
+                bool isAdmin = userRoles.Any(r => r.Equals("Administrador", StringComparison.OrdinalIgnoreCase));
+
+                // Crear el DTO de redirección
+                var roleRedirect = new UserRoleRedirectDto
+                {
+                    UserId = user.Id,
+                    Username = user.Username,
+                    IsAdmin = isAdmin,
+                    RedirectUrl = isAdmin ? "http://127.0.0.1:5501/Administrador/html/person.html" : "http://127.0.0.1:5501/Administrador/html/rolUser.html"  // Ajusta estas rutas según tu proyecto
+                };
+
                 // Crear respuesta con token y datos de usuario
                 return new AuthResponseDto
                 {
@@ -126,7 +138,8 @@
                         FirstName = user.Person?.FirstName,
                         LastName = user.Person?.LastName,
                         Roles = userRoles
-                    }
+                    },
+                    RoleRedirection = roleRedirect  // Agregar la información de redirección
                 };
             }
 

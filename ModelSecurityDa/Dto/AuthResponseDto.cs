@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Entity.Dto
+﻿namespace Entity.Dto
 {
     public class AuthResponseDto
     {
@@ -22,6 +16,15 @@ namespace Entity.Dto
         /// Información básica del usuario autenticado
         /// </summary>
         public UserInfoDto User { get; set; }
+
+        /// <summary>
+        /// Token de actualización
+        /// </summary>
         public string RefreshToken { get; set; }
+
+        /// <summary>
+        /// Información de redirección basada en el rol del usuario
+        /// </summary>
+        public UserRoleRedirectDto RoleRedirection { get; set; }
     }
 }

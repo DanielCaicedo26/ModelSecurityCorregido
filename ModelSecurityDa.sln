@@ -16,7 +16,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ddl", "ddl", "{02EA681E-C7D
 		..\..\..\Downloads\esquema_pgadmin.sql = ..\..\..\Downloads\esquema_pgadmin.sql
 		..\..\..\Downloads\esquema_phpmyadmin.sql = ..\..\..\Downloads\esquema_phpmyadmin.sql
 		..\..\..\Downloads\esquema_sqlserver.sql = ..\..\..\Downloads\esquema_sqlserver.sql
-		..\..\..\OneDrive\Documentos\script.sql = ..\..\..\OneDrive\Documentos\script.sql
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Web2", "Web2\Web2.csproj", "{0A6E089C-0544-4EB7-B09C-AD93D9BA7305}"

@@ -121,7 +121,7 @@
                     UserId = user.Id,
                     Username = user.Username,
                     IsAdmin = isAdmin,
-                    RedirectUrl = isAdmin ? "http://127.0.0.1:5501/Administrador/html/person.html" : "http://127.0.0.1:5501/Administrador/html/rolUser.html"  // Ajusta estas rutas según tu proyecto
+                    RedirectUrl = isAdmin ? "http://127.0.0.1:5501/Administrador/html/person.html" : "http://127.0.0.1:5501/Administrador/html/usuario.html"  // Ajusta estas rutas según tu proyecto
                 };
 
                 // Crear respuesta con token y datos de usuario

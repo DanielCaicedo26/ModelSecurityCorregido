@@ -1,5 +1,8 @@
 using Bussines;
+using Bussines.Services;
 using Data;
+using Data.Interfaces;
+using Data.Repositories;
 using Entity.Context;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -20,7 +23,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 // Registrar clases de Rol
-builder.Services.AddScoped<AccessLogData>();
+
 builder.Services.AddScoped<BillData>();
 builder.Services.AddScoped<FormData>();
 builder.Services.AddScoped<InformationInfractionData>();
@@ -41,7 +44,9 @@ builder.Services.AddScoped<UserData>();
 builder.Services.AddScoped<UserNotificationData>();
 
 // Registrar clases de Bussines
+builder.Services.AddScoped<IAccessLogRepository, AccessLogRepository>();
 builder.Services.AddScoped<AccessLogBusiness>();
+
 builder.Services.AddScoped<BillBusiness>();
 builder.Services.AddScoped<FormBusiness>();
 builder.Services.AddScoped<InformationInfractionBusiness>();

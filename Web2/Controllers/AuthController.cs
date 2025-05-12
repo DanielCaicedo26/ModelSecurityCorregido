@@ -1,4 +1,5 @@
 ﻿using Bussines;
+using Bussines.Services;
 using Entity.Context;
 using Entity.Dto;
 using Entity.Model;
@@ -416,16 +417,18 @@ namespace Web2.Controllers
         {
             try
             {
-                await _accessLogBusiness.CreateAccessLogAsync(
-                    new AccessLogDto
-                    {
-                        Action = success ? "Login exitoso" : "Login fallido",
-                        Status = success,
-                        Details = $"{details} - Usuario: {username}",
-                        IsActive = true
-                    },
-                    userId
-                );
+                // Crear el objeto AccessLogDto con todos los datos necesarios
+                var accessLog = new AccessLogDto
+                {
+                    Action = success ? "Login exitoso" : "Login fallido",
+                    Status = success,
+                    Details = $"{details} - Usuario: {username}",
+                    IsActive = true,
+                    UserId = userId // Incluir el userId aquí
+                };
+
+                // Llamar a CreateAsync con un solo argumento
+                await _accessLogBusiness.CreateAsync(accessLog);
             }
             catch (Exception ex)
             {
@@ -433,29 +436,29 @@ namespace Web2.Controllers
             }
         }
 
-        /// <summary>
-        /// Registra un evento en el log de acceso
-        /// </summary>
         private async Task LogEvent(int userId, string action, bool status, string details)
         {
             try
             {
-                await _accessLogBusiness.CreateAccessLogAsync(
-                    new AccessLogDto
-                    {
-                        Action = action,
-                        Status = status,
-                        Details = details,
-                        IsActive = true
-                    },
-                    userId
-                );
+                // Crear el objeto AccessLogDto con todos los datos necesarios
+                var accessLog = new AccessLogDto
+                {
+                    Action = action,
+                    Status = status,
+                    Details = details,
+                    IsActive = true,
+                    UserId = userId // Incluir el userId aquí
+                };
+
+                // Llamar a CreateAsync con un solo argumento
+                await _accessLogBusiness.CreateAsync(accessLog);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al registrar evento");
             }
         }
+
 
         #endregion
     }

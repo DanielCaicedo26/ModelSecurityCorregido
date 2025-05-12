@@ -34,7 +34,7 @@ namespace Entity.Context
         public DbSet<Form> Form { get; set; }
         public DbSet<InformationInfraction> InformationInfraction { get; set; }
         public DbSet<Entity.Model.Module> Module { get; set; }
-        public DbSet<ModuloForm> ModuloForm{ get; set; }
+        public DbSet<ModuloForm> ModuloForm { get; set; }
         public DbSet<PaymentAgreement> PaymentAgreement { get; set; }
         public DbSet<PaymentHistory> PaymentHistory { get; set; }
         public DbSet<PaymentUser> PaymentUser { get; set; }
@@ -63,107 +63,107 @@ namespace Entity.Context
             base.OnModelCreating(modelBuilder);
             modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
 
-                modelBuilder.Entity<Bill>()
-                       .HasOne(b => b.PaymentAgreement)
-                       .WithMany(pa => pa.Bills)
-                       .HasForeignKey(b => b.PaymentAgreementId);
+            modelBuilder.Entity<Bill>()
+                   .HasOne(b => b.PaymentAgreement)
+                   .WithMany(pa => pa.Bills)
+                   .HasForeignKey(b => b.PaymentAgreementId);
 
             modelBuilder.Entity<RefreshToken>()
-    .HasOne(rt => rt.User)
-    .WithMany()
-    .HasForeignKey(rt => rt.UserId);
+           .HasOne(rt => rt.User)
+           .WithMany()
+           .HasForeignKey(rt => rt.UserId);
 
 
             modelBuilder.Entity<User>()
-                        .HasOne(u => u.Person)
-                        .WithOne(p => p.User)
-                        .HasForeignKey<User>(u => u.PersonId);
+                   .HasOne(u => u.Person)
+                   .WithOne(p => p.User)
+                   .HasForeignKey<User>(u => u.PersonId);
 
 
-                modelBuilder.Entity<Person>()
-                 .HasOne(p => p.User)
-                 .WithOne(u => u.Person)
-                 .HasForeignKey<User>(u => u.PersonId);
+            modelBuilder.Entity<Person>()
+             .HasOne(p => p.User)
+             .WithOne(u => u.Person)
+             .HasForeignKey<User>(u => u.PersonId);
 
-                modelBuilder.Entity<AccessLog>()
-                    .HasOne(al => al.User)
-                    .WithMany(u => u.AccessLogs)
-                    .HasForeignKey(al => al.UserId);
+            modelBuilder.Entity<AccessLog>()
+                .HasOne(al => al.User)
+                .WithMany(u => u.AccessLogs)
+                .HasForeignKey(al => al.UserId);
 
-                modelBuilder.Entity<RoleUser>()
-                    .HasOne(ru => ru.User)
-                    .WithMany(u => u.RoleUsers)
-                    .HasForeignKey(ru => ru.UserId);
+            modelBuilder.Entity<RoleUser>()
+                .HasOne(ru => ru.User)
+                .WithMany(u => u.RoleUsers)
+                .HasForeignKey(ru => ru.UserId);
 
-                modelBuilder.Entity<RoleUser>()
-                    .HasOne(ru => ru.Role)
-                    .WithMany(r => r.RoleUsers)
-                    .HasForeignKey(ru => ru.RoleId);
+            modelBuilder.Entity<RoleUser>()
+                .HasOne(ru => ru.Role)
+                .WithMany(r => r.RoleUsers)
+                .HasForeignKey(ru => ru.RoleId);
 
-                modelBuilder.Entity<ModuloForm>()
-                    .HasOne(mf => mf.Form)
-                    .WithMany(f => f.ModuloForms)
-                    .HasForeignKey(mf => mf.FormId);
+            modelBuilder.Entity<ModuloForm>()
+                .HasOne(mf => mf.Form)
+                .WithMany(f => f.ModuloForms)
+                .HasForeignKey(mf => mf.FormId);
 
-                modelBuilder.Entity<ModuloForm>()
-                    .HasOne(mf => mf.Module)
-                    .WithMany(m => m.ModuloForms)
-                    .HasForeignKey(mf => mf.ModuleId);
+            modelBuilder.Entity<ModuloForm>()
+                .HasOne(mf => mf.Module)
+                .WithMany(m => m.ModuloForms)
+                .HasForeignKey(mf => mf.ModuleId);
 
-                modelBuilder.Entity<RoleFormPermission>()
-                    .HasOne(rfp => rfp.Role)
-                    .WithMany(r => r.RoleFormPermissions)
-                    .HasForeignKey(rfp => rfp.RoleId);
+            modelBuilder.Entity<RoleFormPermission>()
+                .HasOne(rfp => rfp.Role)
+                .WithMany(r => r.RoleFormPermissions)
+                .HasForeignKey(rfp => rfp.RoleId);
 
-                modelBuilder.Entity<RoleFormPermission>()
-                    .HasOne(rfp => rfp.Form)
-                    .WithMany(f => f.RoleFormPermissions)
-                    .HasForeignKey(rfp => rfp.FormId);
+            modelBuilder.Entity<RoleFormPermission>()
+                .HasOne(rfp => rfp.Form)
+                .WithMany(f => f.RoleFormPermissions)
+                .HasForeignKey(rfp => rfp.FormId);
 
-                modelBuilder.Entity<RoleFormPermission>()
-                    .HasOne(rfp => rfp.Permission)
-                    .WithMany(p => p.RoleFormPermissions)
-                    .HasForeignKey(rfp => rfp.PermissionId);
+            modelBuilder.Entity<RoleFormPermission>()
+                .HasOne(rfp => rfp.Permission)
+                .WithMany(p => p.RoleFormPermissions)
+                .HasForeignKey(rfp => rfp.PermissionId);
 
-                modelBuilder.Entity<TypeInfraction>()
-                    .HasOne(ti => ti.User)
-                    .WithMany(u => u.TypeInfractions)
-                    .HasForeignKey(ti => ti.UserId);
+            modelBuilder.Entity<TypeInfraction>()
+                .HasOne(ti => ti.User)
+                .WithMany(u => u.TypeInfractions)
+                .HasForeignKey(ti => ti.UserId);
 
-                modelBuilder.Entity<StateInfraction>()
-                    .HasOne(si => si.Infraction)
-                    .WithMany(ti => ti.StateInfraction)
-                    .HasForeignKey(si => si.InfractionId);
+            modelBuilder.Entity<StateInfraction>()
+                .HasOne(si => si.Infraction)
+                .WithMany(ti => ti.StateInfraction)
+                .HasForeignKey(si => si.InfractionId);
 
-                modelBuilder.Entity<StateInfraction>()
-                    .HasOne(si => si.Person)
-                    .WithMany(p => p.StateInfractions)
-                    .HasForeignKey(si => si.PersonId);
+            modelBuilder.Entity<StateInfraction>()
+                .HasOne(si => si.Person)
+                .WithMany(p => p.StateInfractions)
+                .HasForeignKey(si => si.PersonId);
 
-                modelBuilder.Entity<Bill>()
-                    .HasOne(b => b.PaymentAgreement)
-                    .WithMany(pa => pa.Bills)
-                    .HasForeignKey(b => b.PaymentAgreementId);
+            modelBuilder.Entity<Bill>()
+                .HasOne(b => b.PaymentAgreement)
+                .WithMany(pa => pa.Bills)
+                .HasForeignKey(b => b.PaymentAgreementId);
 
-                modelBuilder.Entity<PaymentHistory>()
-                    .HasOne(ph => ph.User)
-                    .WithMany(u => u.PaymentHistories)
-                    .HasForeignKey(ph => ph.UserId);
+            modelBuilder.Entity<PaymentHistory>()
+                .HasOne(ph => ph.User)
+                .WithMany(u => u.PaymentHistories)
+                .HasForeignKey(ph => ph.UserId);
 
-                modelBuilder.Entity<PaymentUser>()
-                    .HasOne(pu => pu.Person)
-                    .WithMany(p => p.PaymentUsers)
-                    .HasForeignKey(pu => pu.PersonId);
+            modelBuilder.Entity<PaymentUser>()
+                .HasOne(pu => pu.Person)
+                .WithMany(p => p.PaymentUsers)
+                .HasForeignKey(pu => pu.PersonId);
 
             modelBuilder.Entity<UserNotification>()
                 .HasOne(un => un.User)
                 .WithMany(u => u.UserNotifications)
                 .HasForeignKey(un => un.UserId);
 
-                    modelBuilder.Entity<PaymentHistory>()
-                    .HasOne(ph => ph.InformationInfraction)
-                    .WithMany(ii => ii.PaymentHistory)
-                    .HasForeignKey(ph => ph.InformationInfractionId);
+            modelBuilder.Entity<PaymentHistory>()
+            .HasOne(ph => ph.InformationInfraction)
+            .WithMany(ii => ii.PaymentHistory)
+            .HasForeignKey(ph => ph.InformationInfractionId);
 
         }
 

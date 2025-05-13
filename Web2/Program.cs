@@ -1,4 +1,5 @@
 using Bussines;
+using Bussines.interfaces;
 using Bussines.Services;
 using Data;
 using Data.Interfaces;
@@ -33,7 +34,6 @@ builder.Services.AddScoped<PaymentAgreementData>();
 builder.Services.AddScoped<PaymentHistoryData>();
 builder.Services.AddScoped<PaymentUserData>();
 builder.Services.AddScoped<PermissionData>();
-builder.Services.AddScoped<PersonData>();
 builder.Services.AddScoped<RoleData>();
 builder.Services.AddScoped<RoleFormPermissionData>();
 builder.Services.AddScoped<RoleUserData>();
@@ -44,9 +44,8 @@ builder.Services.AddScoped<UserData>();
 builder.Services.AddScoped<UserNotificationData>();
 
 // Registrar clases de Bussines
-builder.Services.AddScoped<IAccessLogRepository, AccessLogRepository>();
-builder.Services.AddScoped<AccessLogBusiness>();
 
+builder.Services.AddScoped<AccessLogBusiness>();
 builder.Services.AddScoped<BillBusiness>();
 builder.Services.AddScoped<FormBusiness>();
 builder.Services.AddScoped<InformationInfractionBusiness>();
@@ -56,7 +55,7 @@ builder.Services.AddScoped<PaymentAgreementBusiness>();
 builder.Services.AddScoped<PaymentHistoryBusiness>();
 builder.Services.AddScoped<PaymentUserBusiness>();
 builder.Services.AddScoped<PermissionBusiness>();
-builder.Services.AddScoped<PersonBusiness>();
+builder.Services.AddScoped<IPersonBusiness, PersonBusiness>();
 builder.Services.AddScoped<RoleBusiness>();
 builder.Services.AddScoped<RoleFormPermissionBusiness>();
 builder.Services.AddScoped<RoleUserBusiness>();
@@ -65,6 +64,11 @@ builder.Services.AddScoped<TypeInfractionBusiness>();
 builder.Services.AddScoped<TypePaymentBusiness>();
 builder.Services.AddScoped<UserBusiness>();
 builder.Services.AddScoped<UserNotificationBusiness>();
+
+// Registrar repositorios
+builder.Services.AddScoped<IAccessLogRepository, AccessLogRepository>();
+builder.Services.AddScoped<IPersonRepository, PersonRepository>();
+
 
 // Configuración de CORS
 var OrigenesPermitidos = builder.Configuration.GetValue<string>("OrigenesPermitidos")!.Split(",");

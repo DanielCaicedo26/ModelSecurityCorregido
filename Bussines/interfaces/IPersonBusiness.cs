@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Bussines.interfaces
 {
-   public interface IpersonBusiness: IServiceBase <PersonDto,Person>
+   public interface IPersonBusiness: IServiceBase <PersonDto,Person>
     {
     }
 }

@@ -1,4 +1,7 @@
+using Bussines.Services;
 using Data;
+using Data.Interfaces;
+using Data.Repositories;
 using Entity.Dto;
 using Entity.Model;
 using Microsoft.Extensions.Logging;
@@ -12,22 +15,22 @@ namespace Bussines
     public class StateInfractionBusiness
     {
         private readonly StateInfractionData _stateInfractionData;
-        private readonly PersonData _personData;
+        private readonly IPersonRepository  _personRepository;
         private readonly ILogger<StateInfractionBusiness> _logger;
 
         /// <summary>
         /// Constructor de la clase StateInfractionBusiness.
         /// </summary>
         /// <param name="stateInfractionData">Instancia de StateInfractionData para acceder a los datos de las infracciones de estado.</param>
-        /// <param name="personData">Instancia de PersonData para acceder a los datos de las personas.</param>
+        /// <param name="PersonRepository">Instancia de PersonData para acceder a los datos de las personas.</param>
         /// <param name="logger">Instancia de ILogger para el registro de logs.</param>
         public StateInfractionBusiness(
             StateInfractionData stateInfractionData,
-            PersonData personData,
+            IPersonRepository personRepository,
             ILogger<StateInfractionBusiness> logger)
         {
             _stateInfractionData = stateInfractionData;
-            _personData = personData;
+            _personRepository = personRepository;
             _logger = logger;
         }
 
@@ -71,7 +74,7 @@ namespace Bussines
                 if (!infractions.Any())
                 {
                     // Buscamos personas con ese número de documento
-                    var persons = await _personData.GetByDocumentNumberAsync(documentNumber);
+                    var persons = await _personRepository.GetByDocumentNumberAsync(documentNumber);
 
                     if (persons.Any())
                     {
@@ -233,7 +236,7 @@ namespace Bussines
                 if (!string.IsNullOrWhiteSpace(documentNumber))
                 {
                     // Verificar que exista una persona con ese documento
-                    var persons = await _personData.GetByDocumentNumberAsync(documentNumber);
+                    var persons = await _personRepository.GetByDocumentNumberAsync(documentNumber);
                     if (persons.Any())
                     {
                         var person = persons.First();
@@ -287,7 +290,7 @@ namespace Bussines
                 // Si se proporciona un número de documento, comprobamos que exista una persona con ese documento
                 if (!string.IsNullOrWhiteSpace(stateInfractionDto.DocumentNumber))
                 {
-                    var persons = await _personData.GetByDocumentNumberAsync(stateInfractionDto.DocumentNumber);
+                    var persons = await _personRepository.GetByDocumentNumberAsync(stateInfractionDto.DocumentNumber);
                     var person = persons.FirstOrDefault();
 
                     // Si se encuentra una persona con ese documento, usamos su ID
@@ -350,7 +353,7 @@ namespace Bussines
                 // Si se proporciona un número de documento, comprobamos que exista una persona con ese documento
                 if (!string.IsNullOrWhiteSpace(stateInfractionDto.DocumentNumber))
                 {
-                    var persons = await _personData.GetByDocumentNumberAsync(stateInfractionDto.DocumentNumber);
+                    var persons = await _personRepository.GetByDocumentNumberAsync(stateInfractionDto.DocumentNumber);
                     var person = persons.FirstOrDefault();
 
                     // Si se encuentra una persona con ese documento, usamos su ID
@@ -374,7 +377,7 @@ namespace Bussines
                 else if (stateInfractionDto.PersonId > 0)
                 {
                     // Si no se proporciona documento pero sí un PersonId, obtenemos el documento de la persona
-                    var person = await _personData.GetByIdAsync(stateInfractionDto.PersonId);
+                    var person = await _personRepository.GetByIdAsync(stateInfractionDto.PersonId);
                     if (person != null)
                     {
                         stateInfractionDto.DocumentNumber = person.DocumentNumber;

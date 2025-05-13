@@ -8,9 +8,9 @@ namespace Web2.Controllers
     [Route("api/[controller]")]
     public class PersonController : ControllerBase
     {
-        private readonly IpersonBusiness _personBusiness;
+        private readonly IPersonBusiness _personBusiness;
 
-        public PersonController(IpersonBusiness personBusiness)
+        public PersonController(IPersonBusiness personBusiness)
         {
             _personBusiness = personBusiness;
         }
@@ -62,6 +62,16 @@ namespace Web2.Controllers
                 return NotFound();
 
             return NoContent();
+        }
+
+         /// <summary>
+        /// Cambia el estado activo de un registro.
+        /// </summary>
+        [HttpPatch("{id}/active")]
+        public async Task<IActionResult> SetActiveStatus(int id, [FromBody] bool isActive)
+        {
+            var updatedLog = await _personBusiness.SetActiveStatusAsync(id, isActive);
+            return Ok(updatedLog);
         }
     }
 }

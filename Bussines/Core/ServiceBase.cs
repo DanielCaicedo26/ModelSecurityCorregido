@@ -85,7 +85,7 @@ namespace Bussines.Core
             }
         }
 
-        public virtual async Task<TDto> UpdateAsync(int id, TDto dto)
+        public virtual async Task<TDto> Update(int id, TDto dto)
         {
             try
             {

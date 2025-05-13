@@ -25,7 +25,7 @@ namespace Bussines.Core
         /// <summary>
         /// Actualiza un registro existente a partir de un DTO.
         /// </summary>
-        Task<TDto> UpdateAsync(int id, TDto dto);
+        Task<TDto> Update(int id, TDto dto);
 
         /// <summary>
         /// Elimina permanentemente un registro del sistema.

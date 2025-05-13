@@ -47,7 +47,7 @@ namespace Web2.Controllers
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            var updated = await _personBusiness.UpdateAsync(id, personDto);
+            var updated = await _personBusiness.Update(id, personDto);
             if (updated==null)
                 return NoContent();
 

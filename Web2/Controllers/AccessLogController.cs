@@ -60,7 +60,7 @@ namespace Web2.Controllers
                 return BadRequest(new { message = "El ID del cuerpo no coincide con el ID de la ruta." });
             }
 
-            var updatedLog = await _accessLogBusiness.UpdateAsync( id,accessLogDto);
+            var updatedLog = await _accessLogBusiness.Update( id,accessLogDto);
             return Ok(updatedLog);
         }
 

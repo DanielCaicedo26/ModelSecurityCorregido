@@ -1,4 +1,4 @@
-﻿using Business.Core;
+﻿using Bussines.Core;
 using Entity.Dto;
 using Entity.Model;
 

@@ -1,6 +1,6 @@
 ﻿using Utilities.Exceptions;
 
-namespace Business.Core
+namespace Bussines.Core
 {
     /// <summary>
     /// Define el contrato base para los servicios de la capa de negocio.
@@ -25,7 +25,7 @@ namespace Business.Core
         /// <summary>
         /// Actualiza un registro existente a partir de un DTO.
         /// </summary>
-        Task<TDto> UpdateAsync(TDto dto);
+        Task<TDto> UpdateAsync(int id, TDto dto);
 
         /// <summary>
         /// Elimina permanentemente un registro del sistema.

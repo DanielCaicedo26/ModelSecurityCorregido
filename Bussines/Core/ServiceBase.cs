@@ -1,5 +1,4 @@
-﻿using Business.Core;
-using Data.Core;
+﻿using Data.Core;
 using Mapster;
 using Microsoft.Extensions.Logging;
 using Utilities.Exceptions;
@@ -86,7 +85,7 @@ namespace Bussines.Core
             }
         }
 
-        public virtual async Task<TDto> UpdateAsync(TDto dto)
+        public virtual async Task<TDto> UpdateAsync(int id, TDto dto)
         {
             try
             {

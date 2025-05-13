@@ -1,5 +1,4 @@
-﻿
-using Bussines.Core;
+﻿using Bussines.Core;
 using Bussines.interfaces;
 using Data.Interfaces;
 using Entity.Dto;
@@ -11,9 +10,9 @@ namespace Bussines.Services
     /// <summary>
     /// Implementación del servicio de negocio para los registros de acceso utilizando únicamente métodos genéricos.
     /// </summary>
-    public class AccessLogBusiness : ServiceBase<AccessLogDto, AccessLog>, IAccessLogBusiness
+    public class PersonBusiness : ServiceBase<PersonDto, Person>, IpersonBusiness
     {
-        public AccessLogBusiness(IAccessLogRepository repository, ILogger<AccessLogBusiness> logger)
+        public PersonBusiness(IPersonRepository repository, ILogger<PersonBusiness> logger)
             : base(repository, logger) { }
     }
 }

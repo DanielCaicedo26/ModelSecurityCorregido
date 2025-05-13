@@ -62,12 +62,13 @@ builder.Services.AddScoped<RoleUserBusiness>();
 builder.Services.AddScoped<StateInfractionBusiness>();
 builder.Services.AddScoped<TypeInfractionBusiness>();
 builder.Services.AddScoped<TypePaymentBusiness>();
-builder.Services.AddScoped<UserBusiness>();
+builder.Services.AddScoped<IUserBusiness, UserBusiness>();
 builder.Services.AddScoped<UserNotificationBusiness>();
 
 // Registrar repositorios
 builder.Services.AddScoped<IAccessLogRepository, AccessLogRepository>();
 builder.Services.AddScoped<IPersonRepository, PersonRepository>();
+builder.Services.AddScoped<IUserRepository , UserRepository>();
 
 
 // Configuración de CORS

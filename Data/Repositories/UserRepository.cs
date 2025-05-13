@@ -9,7 +9,7 @@
 
     namespace Data.Repositories
     {
-        public class UserRepository : GenericRepository<User>, IUserBusiness
+        public class UserRepository : GenericRepository<User>, IUserRepository
         {
             public UserRepository(ApplicationDbContext context, ILogger<UserRepository> logger)
                 : base(context, logger)

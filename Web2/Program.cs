@@ -32,7 +32,6 @@ builder.Services.AddScoped<PaymentAgreementData>();
 builder.Services.AddScoped<PaymentHistoryData>();
 builder.Services.AddScoped<PaymentUserData>();
 builder.Services.AddScoped<PermissionData>();
-builder.Services.AddScoped<RoleData>();
 builder.Services.AddScoped<RoleFormPermissionData>();
 builder.Services.AddScoped<RoleUserData>();
 builder.Services.AddScoped<StateInfractionData>();

@@ -1,4 +1,4 @@
-using Bussines;
+using Bussines.interfaces;
 using Entity.Dto;
 using Microsoft.AspNetCore.Mvc;
 using Utilities.Exceptions;
@@ -10,12 +10,12 @@ namespace Web2.Controllers
     [Produces("application/json")]
     public class ModuleFormController : ControllerBase
     {
-        private readonly ModuloFormBusiness _moduloFormBusiness;
+        private readonly IModuloFormBusiness _moduloFormBusiness;
         private readonly ILogger<ModuleFormController> _logger;
 
-        public ModuleFormController(ModuloFormBusiness moduleFormBusiness, ILogger<ModuleFormController> logger)
+        public ModuleFormController(IModuloFormBusiness moduloFormBusiness, ILogger<ModuleFormController> logger)
         {
-            _moduloFormBusiness = moduleFormBusiness;
+            _moduloFormBusiness = moduloFormBusiness;
             _logger = logger;
         }
 
@@ -29,7 +29,7 @@ namespace Web2.Controllers
         {
             try
             {
-                var moduleForms = await _moduloFormBusiness.GetAllModuloFormsAsync();
+                var moduleForms = await _moduloFormBusiness.GetAllAsync();
                 return Ok(moduleForms);
             }
             catch (ExternalServiceException ex)
@@ -51,7 +51,7 @@ namespace Web2.Controllers
         {
             try
             {
-                var moduleForm = await _moduloFormBusiness.GetModuloFormByIdAsync(id);
+                var moduleForm = await _moduloFormBusiness.GetByIdAsync(id);
                 return Ok(moduleForm);
             }
             catch (ValidationException ex)
@@ -82,7 +82,7 @@ namespace Web2.Controllers
         {
             try
             {
-                var created = await _moduloFormBusiness.CreateModuloFormAsync(moduleFormDto);
+                var created = await _moduloFormBusiness.CreateAsync(moduleFormDto);
                 return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
             }
             catch (ValidationException ex)
@@ -111,8 +111,8 @@ namespace Web2.Controllers
         {
             try
             {
-                var deletedModuloForm = await _moduloFormBusiness.DeleteModuloFormAsync(id);
-                return Ok(new { message = "Formulario de módulo eliminado correctamente", data = deletedModuloForm }); // 200 OK
+                var result = await _moduloFormBusiness.DeleteAsync(id);
+                return Ok(new { message = "Formulario de módulo eliminado correctamente", success = result }); // 200 OK
             }
             catch (ValidationException ex)
             {
@@ -151,7 +151,7 @@ namespace Web2.Controllers
 
             try
             {
-                var updatedModuloForm = await _moduloFormBusiness.UpdateModuloFormAsync(moduloFormDto);
+                var updatedModuloForm = await _moduloFormBusiness.Update(id, moduloFormDto);
                 return Ok(new { message = "Formulario de módulo actualizado correctamente", data = updatedModuloForm }); // 200 OK
             }
             catch (ValidationException ex)
@@ -171,12 +171,18 @@ namespace Web2.Controllers
             }
         }
 
+        /// <summary>
+        /// Actualiza el FormId y ModuleId de un formulario de módulo.
+        /// </summary>
+        /// <param name="id">El ID del formulario de módulo.</param>
+        /// <param name="dto">El objeto ModuloFormDto con los datos actualizados.</param>
+        /// <returns>Un código de estado indicando el resultado.</returns>
         [HttpPatch("{id}/Update-FormId-ModuleId")]
         [ProducesResponseType(typeof(ModuloFormDto), 200)]
         [ProducesResponseType(400)]
         [ProducesResponseType(404)]
         [ProducesResponseType(500)]
-        public async Task<IActionResult> Updatee(int id, [FromBody] ModuloFormDto dto)
+        public async Task<IActionResult> UpdateFormModule(int id, [FromBody] ModuloFormDto dto)
         {
             try
             {
@@ -185,7 +191,16 @@ namespace Web2.Controllers
                     return BadRequest(new { message = "El ID en la URL no coincide con el ID en el cuerpo." });
                 }
 
-                var updated = await _moduloFormBusiness.Update(dto.Id, dto.FormId, dto.ModuleId);
+                // Primero obtenemos el objeto completo
+                var currentModuleForm = await _moduloFormBusiness.GetByIdAsync(id);
+
+                // Actualizamos solo los campos específicos
+                currentModuleForm.FormId = dto.FormId;
+                currentModuleForm.ModuleId = dto.ModuleId;
+
+                // Utilizamos el método de actualización estándar
+                var updated = await _moduloFormBusiness.Update(id, currentModuleForm);
+
                 return Ok(updated);
             }
             catch (ValidationException ex)
@@ -195,20 +210,20 @@ namespace Web2.Controllers
             }
             catch (EntityNotFoundException ex)
             {
-                _logger.LogInformation(ex, "Notificación no encontrada con ID: {UserNotificationId}", id);
+                _logger.LogInformation(ex, "Formulario de módulo no encontrado con ID: {ModuloFormId}", id);
                 return NotFound(new { message = ex.Message });
             }
             catch (ExternalServiceException ex)
             {
-                _logger.LogError(ex, "Error al actualizar notificación con ID: {UserNotificationId}", id);
+                _logger.LogError(ex, "Error al actualizar formulario de módulo con ID: {ModuloFormId}", id);
                 return StatusCode(500, new { message = ex.Message });
             }
         }
 
         /// <summary>
-        /// Activa o desactiva una notificación de usuario por ID.
+        /// Activa o desactiva un formulario de módulo por ID.
         /// </summary>
-        /// <param name="id">El ID de la notificación de usuario.</param>
+        /// <param name="id">El ID del formulario de módulo.</param>
         /// <param name="isActive">Estado deseado: true para activar, false para desactivar.</param>
         /// <returns>Un código de estado indicando el resultado.</returns>
         [HttpPatch("{id}/active")]
@@ -220,29 +235,86 @@ namespace Web2.Controllers
         {
             try
             {
-                var updatedNotification = await _moduloFormBusiness.SetActiveStatusAsync(id, isActive);
-                return Ok(updatedNotification);
+                var updatedModuleForm = await _moduloFormBusiness.SetActiveStatusAsync(id, isActive);
+                return Ok(updatedModuleForm);
             }
             catch (ValidationException ex)
             {
-                _logger.LogWarning(ex, "Validación fallida para el ID de la notificación de usuario: {UserNotificationId}", id);
+                _logger.LogWarning(ex, "Validación fallida para el ID del formulario de módulo: {ModuloFormId}", id);
                 return BadRequest(new { message = ex.Message });
             }
             catch (EntityNotFoundException ex)
             {
-                _logger.LogInformation(ex, "Notificación de usuario no encontrada con ID: {UserNotificationId}", id);
+                _logger.LogInformation(ex, "Formulario de módulo no encontrado con ID: {ModuloFormId}", id);
                 return NotFound(new { message = ex.Message });
             }
             catch (ExternalServiceException ex)
             {
-                _logger.LogError(ex, "Error al cambiar el estado de la notificación de usuario con ID: {UserNotificationId}", id);
+                _logger.LogError(ex, "Error al cambiar el estado del formulario de módulo con ID: {ModuloFormId}", id);
                 return StatusCode(500, new { message = ex.Message });
             }
         }
 
+        /// <summary>
+        /// Obtiene todos los formularios de módulo para un formulario específico.
+        /// </summary>
+        /// <param name="formId">ID del formulario.</param>
+        /// <returns>Lista de formularios de módulo asociados al formulario.</returns>
+        [HttpGet("by-form/{formId}")]
+        [ProducesResponseType(typeof(IEnumerable<ModuloFormDto>), 200)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(500)]
+        public async Task<IActionResult> GetByFormId(int formId)
+        {
+            if (formId <= 0)
+            {
+                return BadRequest(new { message = "El ID del formulario debe ser mayor que cero." });
+            }
 
+            try
+            {
+                // Obtenemos todos y filtramos en el controlador
+                var allModuleForms = await _moduloFormBusiness.GetAllAsync();
+                var filteredModuleForms = allModuleForms.Where(mf => mf.FormId == formId);
 
+                return Ok(filteredModuleForms);
+            }
+            catch (ExternalServiceException ex)
+            {
+                _logger.LogError(ex, "Error al obtener formularios de módulo para el formulario con ID: {FormId}", formId);
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
 
+        /// <summary>
+        /// Obtiene todos los formularios de módulo para un módulo específico.
+        /// </summary>
+        /// <param name="moduleId">ID del módulo.</param>
+        /// <returns>Lista de formularios de módulo asociados al módulo.</returns>
+        [HttpGet("by-module/{moduleId}")]
+        [ProducesResponseType(typeof(IEnumerable<ModuloFormDto>), 200)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(500)]
+        public async Task<IActionResult> GetByModuleId(int moduleId)
+        {
+            if (moduleId <= 0)
+            {
+                return BadRequest(new { message = "El ID del módulo debe ser mayor que cero." });
+            }
+
+            try
+            {
+                // Obtenemos todos y filtramos en el controlador
+                var allModuleForms = await _moduloFormBusiness.GetAllAsync();
+                var filteredModuleForms = allModuleForms.Where(mf => mf.ModuleId == moduleId);
+
+                return Ok(filteredModuleForms);
+            }
+            catch (ExternalServiceException ex)
+            {
+                _logger.LogError(ex, "Error al obtener formularios de módulo para el módulo con ID: {ModuleId}", moduleId);
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
     }
 }
-

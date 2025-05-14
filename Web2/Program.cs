@@ -47,7 +47,7 @@ builder.Services.AddScoped<BillBusiness>();
 builder.Services.AddScoped<IFormBusiness, FormBusiness>();
 builder.Services.AddScoped<InformationInfractionBusiness>();
 builder.Services.AddScoped<IModuleBusiness, ModuleBusiness>();
-builder.Services.AddScoped<ModuloFormBusiness>();
+builder.Services.AddScoped<IModuloFormBusiness, ModuloFormBusiness>();
 builder.Services.AddScoped<PaymentAgreementBusiness>();
 builder.Services.AddScoped<PaymentHistoryBusiness>();
 builder.Services.AddScoped<PaymentUserBusiness>();
@@ -72,6 +72,7 @@ builder.Services.AddScoped<IFormRepository, FormRepository>();
 builder.Services.AddScoped<IModuleRepository, ModuleRepository>();
 builder.Services.AddScoped<IRoleRepository, RoleRepository>();
 builder.Services.AddScoped<IRoleUserRepository, RoleUserRepository>();
+builder.Services.AddScoped<IModuloFormRepository, ModuloFormRepository>();
 
 
 

@@ -1,4 +1,5 @@
 using Bussines;
+using Bussines.interfaces;
 using Bussines.Services;
 using Entity.Dto;
 using Microsoft.AspNetCore.Mvc;
@@ -11,10 +12,10 @@ namespace Web2.Controllers
     [Produces("application/json")]
     public class UserController : ControllerBase
     {
-        private readonly UserBusiness _userBusiness;
+        private readonly IUserBusiness _userBusiness;
         private readonly ILogger<UserController> _logger;
 
-        public UserController(UserBusiness userBusiness, ILogger<UserController> logger)
+        public UserController(IUserBusiness userBusiness, ILogger<UserController> logger)
         {
             _userBusiness = userBusiness;
             _logger = logger;

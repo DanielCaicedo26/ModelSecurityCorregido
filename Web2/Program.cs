@@ -40,7 +40,7 @@ builder.Services.AddScoped<RoleUserData>();
 builder.Services.AddScoped<StateInfractionData>();
 builder.Services.AddScoped<TypeInfractionData>();
 builder.Services.AddScoped<TypePaymentData>();
-builder.Services.AddScoped<UserData>();
+
 builder.Services.AddScoped<UserNotificationData>();
 
 // Registrar clases de Bussines

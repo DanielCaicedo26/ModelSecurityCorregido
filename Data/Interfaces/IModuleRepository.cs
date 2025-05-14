@@ -1,4 +1,5 @@
 ﻿using Data.Core;
+using Entity.Dto;
 using Entity.Model;
 using System;
 using System.Collections.Generic;
@@ -12,5 +13,6 @@ namespace Data.Interfaces
 
     {
         Task<IEnumerable<Module>> GetByUserIdAsync(int userId);
+        
     }
 }

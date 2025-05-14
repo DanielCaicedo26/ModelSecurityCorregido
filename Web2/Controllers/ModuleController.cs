@@ -1,4 +1,4 @@
-using Bussines;
+using Bussines.interfaces;
 using Entity.Dto;
 using Microsoft.AspNetCore.Mvc;
 using Utilities.Exceptions;
@@ -10,10 +10,10 @@ namespace Web2.Controllers
     [Produces("application/json")]
     public class ModuleController : ControllerBase
     {
-        private readonly ModuleBusiness _moduleBusiness;
+        private readonly IModuleBusiness _moduleBusiness;
         private readonly ILogger<ModuleController> _logger;
 
-        public ModuleController(ModuleBusiness moduleBusiness, ILogger<ModuleController> logger)
+        public ModuleController(IModuleBusiness moduleBusiness, ILogger<ModuleController> logger)
         {
             _moduleBusiness = moduleBusiness;
             _logger = logger;
@@ -29,7 +29,7 @@ namespace Web2.Controllers
         {
             try
             {
-                var modules = await _moduleBusiness.GetAllModulesAsync();
+                var modules = await _moduleBusiness.GetAllAsync();
                 return Ok(modules);
             }
             catch (ExternalServiceException ex)
@@ -51,7 +51,7 @@ namespace Web2.Controllers
         {
             try
             {
-                var module = await _moduleBusiness.GetModuleByIdAsync(id);
+                var module = await _moduleBusiness.GetByIdAsync(id);
                 return Ok(module);
             }
             catch (ValidationException ex)
@@ -82,7 +82,7 @@ namespace Web2.Controllers
         {
             try
             {
-                var created = await _moduleBusiness.CreateModuleAsync(moduleDto);
+                var created = await _moduleBusiness.CreateAsync(moduleDto);
                 return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
             }
             catch (ValidationException ex)
@@ -111,7 +111,7 @@ namespace Web2.Controllers
         {
             try
             {
-                var deletedModule = await _moduleBusiness.DeleteModuleAsync(id);
+                var deletedModule = await _moduleBusiness.DeleteAsync(id);
                 return Ok(new { message = "Módulo eliminado correctamente", data = deletedModule }); // 200 OK
             }
             catch (ValidationException ex)
@@ -151,7 +151,8 @@ namespace Web2.Controllers
 
             try
             {
-                var updatedModule = await _moduleBusiness.UpdateModuleAsync(moduleDto);
+                // Llamamos a Update con id, name, description, statu
+                var updatedModule = await _moduleBusiness.Update(id, moduleDto.Name, moduleDto.Description, moduleDto.Statu);
                 return Ok(new { message = "Módulo actualizado correctamente", data = updatedModule }); // 200 OK
             }
             catch (ValidationException ex)
@@ -171,12 +172,15 @@ namespace Web2.Controllers
             }
         }
 
+        /// <summary>
+        /// Actualiza nombre, descripción y estado de un módulo.
+        /// </summary>
         [HttpPatch("{id}/Update-Name-Description-Statu")]
-        [ProducesResponseType(typeof(ModuloFormDto), 200)]
+        [ProducesResponseType(typeof(ModuleDto), 200)]
         [ProducesResponseType(400)]
         [ProducesResponseType(404)]
         [ProducesResponseType(500)]
-        public async Task<IActionResult> Updatee(int id, [FromBody] ModuleDto dto)
+        public async Task<IActionResult> UpdateBasicInfo(int id, [FromBody] ModuleDto dto)
         {
             try
             {
@@ -195,20 +199,20 @@ namespace Web2.Controllers
             }
             catch (EntityNotFoundException ex)
             {
-                _logger.LogInformation(ex, "Notificación no encontrada con ID: {UserNotificationId}", id);
+                _logger.LogInformation(ex, "Módulo no encontrado con ID: {ModuleId}", id);
                 return NotFound(new { message = ex.Message });
             }
             catch (ExternalServiceException ex)
             {
-                _logger.LogError(ex, "Error al actualizar notificación con ID: {UserNotificationId}", id);
+                _logger.LogError(ex, "Error al actualizar módulo con ID: {ModuleId}", id);
                 return StatusCode(500, new { message = ex.Message });
             }
         }
 
         /// <summary>
-        /// Activa o desactiva una notificación de usuario por ID.
+        /// Activa o desactiva un módulo por ID.
         /// </summary>
-        /// <param name="id">El ID de la notificación de usuario.</param>
+        /// <param name="id">El ID del módulo.</param>
         /// <param name="isActive">Estado deseado: true para activar, false para desactivar.</param>
         /// <returns>Un código de estado indicando el resultado.</returns>
         [HttpPatch("{id}/active")]
@@ -220,27 +224,24 @@ namespace Web2.Controllers
         {
             try
             {
-                var updatedNotification = await _moduleBusiness.SetActiveStatusAsync(id, isActive);
-                return Ok(updatedNotification);
+                var updatedModule = await _moduleBusiness.SetActiveStatusAsync(id, isActive);
+                return Ok(updatedModule);
             }
             catch (ValidationException ex)
             {
-                _logger.LogWarning(ex, "Validación fallida para el ID de la notificación de usuario: {UserNotificationId}", id);
+                _logger.LogWarning(ex, "Validación fallida para el ID del módulo: {ModuleId}", id);
                 return BadRequest(new { message = ex.Message });
             }
             catch (EntityNotFoundException ex)
             {
-                _logger.LogInformation(ex, "Notificación de usuario no encontrada con ID: {UserNotificationId}", id);
+                _logger.LogInformation(ex, "Módulo no encontrado con ID: {ModuleId}", id);
                 return NotFound(new { message = ex.Message });
             }
             catch (ExternalServiceException ex)
             {
-                _logger.LogError(ex, "Error al cambiar el estado de la notificación de usuario con ID: {UserNotificationId}", id);
+                _logger.LogError(ex, "Error al cambiar el estado del módulo con ID: {ModuleId}", id);
                 return StatusCode(500, new { message = ex.Message });
             }
         }
-
-
     }
 }
-

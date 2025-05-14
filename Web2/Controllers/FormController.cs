@@ -1,4 +1,4 @@
-﻿using Bussines;
+﻿using Bussines.interfaces;
 using Entity.Dto;
 using Microsoft.AspNetCore.Mvc;
 using Utilities.Exceptions;
@@ -10,10 +10,10 @@ namespace Web2.Controllers
     [Produces("application/json")]
     public class FormController : ControllerBase
     {
-        private readonly FormBusiness _formBusiness;
+        private readonly IFormBusiness _formBusiness;
         private readonly ILogger<FormController> _logger;
 
-        public FormController(FormBusiness formBusiness, ILogger<FormController> logger)
+        public FormController(IFormBusiness formBusiness, ILogger<FormController> logger)
         {
             _formBusiness = formBusiness;
             _logger = logger;
@@ -29,7 +29,7 @@ namespace Web2.Controllers
         {
             try
             {
-                var forms = await _formBusiness.GetAllFormsAsync();
+                var forms = await _formBusiness.GetAllAsync();
                 return Ok(forms);
             }
             catch (ExternalServiceException ex)
@@ -51,7 +51,7 @@ namespace Web2.Controllers
         {
             try
             {
-                var form = await _formBusiness.GetFormByIdAsync(id);
+                var form = await _formBusiness.GetByIdAsync(id);
                 return Ok(form);
             }
             catch (ValidationException ex)
@@ -82,7 +82,7 @@ namespace Web2.Controllers
         {
             try
             {
-                var created = await _formBusiness.CreateFormAsync(formDto);
+                var created = await _formBusiness.CreateAsync(formDto);
                 return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
             }
             catch (ValidationException ex)
@@ -100,48 +100,45 @@ namespace Web2.Controllers
         /// <summary>
         /// Elimina un formulario por su ID.
         /// </summary>
-        /// <param name="id">El ID del formulario a eliminar.</param>
-        /// <returns>Un resultado indicando el éxito o fallo de la operación.</returns>
         [HttpDelete("{id}")]
-        [ProducesResponseType(200)] // OK
-        [ProducesResponseType(400)] // Bad Request
-        [ProducesResponseType(404)] // Not Found
-        [ProducesResponseType(500)] // Internal Server Error
+        [ProducesResponseType(200)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(404)]
+        [ProducesResponseType(500)]
         public async Task<IActionResult> Delete(int id)
         {
             try
             {
-                var deletedForm = await _formBusiness.DeleteFormAsync(id);
-                return Ok(new { message = "Formulario eliminado correctamente", data = deletedForm }); // 200 OK
+                var deletedForm = await _formBusiness.DeleteAsync(id);
+                return Ok(new { message = "Formulario eliminado correctamente", data = deletedForm });
             }
             catch (ValidationException ex)
             {
                 _logger.LogWarning(ex, "Validación fallida al eliminar el formulario con ID: {FormId}", id);
-                return BadRequest(new { message = ex.Message }); // 400 Bad Request
+                return BadRequest(new { message = ex.Message });
             }
             catch (EntityNotFoundException ex)
             {
                 _logger.LogInformation(ex, "Formulario no encontrado con ID: {FormId}", id);
-                return NotFound(new { message = ex.Message }); // 404 Not Found
+                return NotFound(new { message = ex.Message });
             }
             catch (ExternalServiceException ex)
             {
                 _logger.LogError(ex, "Error al eliminar el formulario con ID: {FormId}", id);
-                return StatusCode(500, new { message = ex.Message }); // 500 Internal Server Error
+                return StatusCode(500, new { message = ex.Message });
             }
         }
 
         /// <summary>
         /// Actualiza un formulario existente.
+        /// <summary>
+        /// Actualiza un formulario existente.
         /// </summary>
-        /// <param name="id">El ID del formulario a actualizar.</param>
-        /// <param name="formDto">El objeto FormDto con los datos actualizados.</param>
-        /// <returns>Un resultado indicando el éxito o fallo de la operación.</returns>
         [HttpPut("{id}")]
-        [ProducesResponseType(200)] // OK
-        [ProducesResponseType(400)] // Bad Request
-        [ProducesResponseType(404)] // Not Found
-        [ProducesResponseType(500)] // Internal Server Error
+        [ProducesResponseType(200)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(404)]
+        [ProducesResponseType(500)]
         public async Task<IActionResult> Update(int id, [FromBody] FormDto formDto)
         {
             if (id != formDto.Id)
@@ -151,26 +148,30 @@ namespace Web2.Controllers
 
             try
             {
-                var updatedForm = await _formBusiness.UpdateFormAsync(formDto);
-                return Ok(new { message = "Formulario actualizado correctamente", data = updatedForm }); // 200 OK
+                var updatedForm = await _formBusiness.Update(id, formDto);
+                return Ok(new { message = "Formulario actualizado correctamente", data = updatedForm });
             }
             catch (ValidationException ex)
             {
                 _logger.LogWarning(ex, "Validación fallida al actualizar el formulario con ID: {FormId}", id);
-                return BadRequest(new { message = ex.Message }); // 400 Bad Request
+                return BadRequest(new { message = ex.Message });
             }
             catch (EntityNotFoundException ex)
             {
                 _logger.LogInformation(ex, "Formulario no encontrado con ID: {FormId}", id);
-                return NotFound(new { message = ex.Message }); // 404 Not Found
+                return NotFound(new { message = ex.Message });
             }
             catch (ExternalServiceException ex)
             {
                 _logger.LogError(ex, "Error al actualizar el formulario con ID: {FormId}", id);
-                return StatusCode(500, new { message = ex.Message }); // 500 Internal Server Error
+                return StatusCode(500, new { message = ex.Message });
             }
         }
 
+
+        /// <summary>
+        /// Actualiza nombre, descripción y estado de un formulario.
+        /// </summary>
         [HttpPatch("{id}/Update-Name-Description-Status")]
         [ProducesResponseType(typeof(FormDto), 200)]
         [ProducesResponseType(400)]
@@ -185,8 +186,8 @@ namespace Web2.Controllers
                     return BadRequest(new { message = "El ID en la URL no coincide con el ID en el cuerpo." });
                 }
 
-                var updated = await _formBusiness.Update(dto.Id, dto.Name, dto.Description, dto.Status);
-                return Ok(updated);
+                await _formBusiness.Update(dto.Id, dto.Name, dto.Description, dto.Status);
+                return Ok(new { message = "Formulario actualizado correctamente" });
             }
             catch (ValidationException ex)
             {
@@ -205,12 +206,10 @@ namespace Web2.Controllers
             }
         }
 
+
         /// <summary>
-        /// Activa o desactiva una notificación de usuario por ID.
+        /// Activa o desactiva un formulario por ID.
         /// </summary>
-        /// <param name="id">El ID de la notificación de usuario.</param>
-        /// <param name="isActive">Estado deseado: true para activar, false para desactivar.</param>
-        /// <returns>Un código de estado indicando el resultado.</returns>
         [HttpPatch("{id}/active")]
         [ProducesResponseType(200)]
         [ProducesResponseType(400)]
@@ -220,30 +219,24 @@ namespace Web2.Controllers
         {
             try
             {
-                var updatedNotification = await _formBusiness.SetActiveStatusAsync(id, isActive);
-                return Ok(updatedNotification);
+                var updatedForm = await _formBusiness.SetActiveStatusAsync(id, isActive);
+                return Ok(updatedForm);
             }
             catch (ValidationException ex)
             {
-                _logger.LogWarning(ex, "Validación fallida para el ID de la notificación de usuario: {UserNotificationId}", id);
+                _logger.LogWarning(ex, "Validación fallida para el ID del formulario: {FormId}", id);
                 return BadRequest(new { message = ex.Message });
             }
             catch (EntityNotFoundException ex)
             {
-                _logger.LogInformation(ex, "Notificación de usuario no encontrada con ID: {UserNotificationId}", id);
+                _logger.LogInformation(ex, "Formulario no encontrado con ID: {FormId}", id);
                 return NotFound(new { message = ex.Message });
             }
             catch (ExternalServiceException ex)
             {
-                _logger.LogError(ex, "Error al cambiar el estado de la notificación de usuario con ID: {UserNotificationId}", id);
+                _logger.LogError(ex, "Error al cambiar el estado del formulario con ID: {FormId}", id);
                 return StatusCode(500, new { message = ex.Message });
             }
         }
-
-
-
-
-
-
     }
 }

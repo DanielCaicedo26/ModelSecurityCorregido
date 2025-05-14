@@ -55,7 +55,7 @@ builder.Services.AddScoped<PaymentUserBusiness>();
 builder.Services.AddScoped<PermissionBusiness>();
 builder.Services.AddScoped<IPersonBusiness, PersonBusiness>();
 builder.Services.AddScoped<RoleFormPermissionBusiness>();
-builder.Services.AddScoped<RoleUserBusiness>();
+builder.Services.AddScoped< IRoleUserBusiness, RoleUserBusiness>();
 builder.Services.AddScoped<StateInfractionBusiness>();
 builder.Services.AddScoped<TypeInfractionBusiness>();
 builder.Services.AddScoped<TypePaymentBusiness>();
@@ -72,6 +72,7 @@ builder.Services.AddScoped<IUserRepository , UserRepository>();
 builder.Services.AddScoped<IFormRepository, FormRepository>();
 builder.Services.AddScoped<IModuleRepository, ModuleRepository>();
 builder.Services.AddScoped<IRoleRepository, RoleRepository>();
+builder.Services.AddScoped<IRoleUserRepository, RoleUserRepository>();
 
 
 

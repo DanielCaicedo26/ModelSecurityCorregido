@@ -66,27 +66,6 @@ namespace Data.Repositories
         }
 
         /// <summary>
-        /// Verifica si un usuario tiene asignado un rol específico.
-        /// </summary>
-        public async Task<bool> HasRoleAsync(int userId, int roleId)
-        {
-            return await _context.RoleUser
-                .AnyAsync(ru => ru.UserId == userId && ru.RoleId == roleId && ru.IsActive);
-        }
-
-        /// <summary>
-        /// Agrega una nueva asignación de rol.
-        /// </summary>
-        public override async Task<RoleUser> AddAsync(RoleUser roleUser)
-        {
-            roleUser.CreatedAt = DateTime.UtcNow;
-            roleUser.IsActive = true;
-            await _context.RoleUser.AddAsync(roleUser);
-            await _context.SaveChangesAsync();
-            return roleUser;
-        }
-
-        /// <summary>
         /// Actualiza una asignación de rol existente.
         /// </summary>
         public override async Task<bool> UpdateAsync(RoleUser roleUser)

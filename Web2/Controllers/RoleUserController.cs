@@ -1,4 +1,4 @@
-using Bussines;
+using Bussines.interfaces;
 using Entity.Dto;
 using Microsoft.AspNetCore.Mvc;
 using Utilities.Exceptions;
@@ -10,10 +10,10 @@ namespace Web2.Controllers
     [Produces("application/json")]
     public class RoleUserController : ControllerBase
     {
-        private readonly RoleUserBusiness _roleUserBusiness;
+        private readonly IRoleUserBusiness _roleUserBusiness;
         private readonly ILogger<RoleUserController> _logger;
 
-        public RoleUserController(RoleUserBusiness roleUserBusiness, ILogger<RoleUserController> logger)
+        public RoleUserController(IRoleUserBusiness roleUserBusiness, ILogger<RoleUserController> logger)
         {
             _roleUserBusiness = roleUserBusiness;
             _logger = logger;
@@ -29,7 +29,7 @@ namespace Web2.Controllers
         {
             try
             {
-                var roleUsers = await _roleUserBusiness.GetAllRoleUsersAsync();
+                var roleUsers = await _roleUserBusiness.GetAllAsync();
                 return Ok(roleUsers);
             }
             catch (ExternalServiceException ex)
@@ -51,7 +51,7 @@ namespace Web2.Controllers
         {
             try
             {
-                var roleUser = await _roleUserBusiness.GetRoleUserByIdAsync(id);
+                var roleUser = await _roleUserBusiness.GetByIdAsync(id);
                 return Ok(roleUser);
             }
             catch (ValidationException ex)
@@ -82,7 +82,7 @@ namespace Web2.Controllers
         {
             try
             {
-                var created = await _roleUserBusiness.CreateRoleUserAsync(roleUserDto);
+                var created = await _roleUserBusiness.CreateAsync(roleUserDto);
                 return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
             }
             catch (ValidationException ex)
@@ -111,8 +111,8 @@ namespace Web2.Controllers
         {
             try
             {
-                var deletedRoleUser = await _roleUserBusiness.DeleteRoleUserAsync(id);
-                return Ok(new { message = "Usuario de rol eliminado correctamente", data = deletedRoleUser }); // 200 OK
+                var result = await _roleUserBusiness.DeleteAsync(id);
+                return Ok(new { message = "Usuario de rol eliminado correctamente", success = result });
             }
             catch (ValidationException ex)
             {
@@ -146,28 +146,28 @@ namespace Web2.Controllers
         {
             if (id <= 0 || roleUserDto == null || id != roleUserDto.Id)
             {
-                return BadRequest(new { message = "El ID de la ruta no coincide con el ID del cuerpo de la solicitud o los datos son inválidos" }); // 400 Bad Request
+                return BadRequest(new { message = "El ID de la ruta no coincide con el ID del cuerpo de la solicitud o los datos son inválidos" });
             }
 
             try
             {
-                var updatedRoleUser = await _roleUserBusiness.UpdateRoleUserAsync(roleUserDto);
-                return Ok(new { message = "Usuario de rol actualizado correctamente", data = updatedRoleUser }); // 200 OK
+                var updatedRoleUser = await _roleUserBusiness.Update(id, roleUserDto);
+                return Ok(new { message = "Usuario de rol actualizado correctamente", data = updatedRoleUser });
             }
             catch (ValidationException ex)
             {
                 _logger.LogWarning(ex, "Validación fallida al actualizar el usuario de rol con ID: {RoleUserId}", id);
-                return BadRequest(new { message = ex.Message }); // 400 Bad Request
+                return BadRequest(new { message = ex.Message });
             }
             catch (EntityNotFoundException ex)
             {
                 _logger.LogInformation(ex, "Usuario de rol no encontrado con ID: {RoleUserId}", id);
-                return NotFound(new { message = ex.Message }); // 404 Not Found
+                return NotFound(new { message = ex.Message });
             }
             catch (ExternalServiceException ex)
             {
                 _logger.LogError(ex, "Error al actualizar el usuario de rol con ID: {RoleUserId}", id);
-                return StatusCode(500, new { message = ex.Message }); // 500 Internal Server Error
+                return StatusCode(500, new { message = ex.Message });
             }
         }
 
@@ -226,7 +226,17 @@ namespace Web2.Controllers
                     return BadRequest(new { message = "El ID en la URL no coincide con el ID en el cuerpo." });
                 }
 
-                var updated = await _roleUserBusiness.UpdatePartialAsync(dto.Id, dto.RoleId, dto.UserId);
+                // Primero obtenemos el objeto completo
+                var currentRoleUser = await _roleUserBusiness.GetByIdAsync(id);
+
+                // Actualizamos solo los campos específicos
+                // Mantenemos todos los demás campos con sus valores actuales
+                currentRoleUser.RoleId = dto.RoleId;
+                currentRoleUser.UserId = dto.UserId;
+
+                // Utilizamos el método de actualización estándar
+                var updated = await _roleUserBusiness.Update(id, currentRoleUser);
+
                 return Ok(updated);
             }
             catch (ValidationException ex)
@@ -245,14 +255,5 @@ namespace Web2.Controllers
                 return StatusCode(500, new { message = ex.Message });
             }
         }
-
-
-
-
     }
 }
-
-
-
-
-

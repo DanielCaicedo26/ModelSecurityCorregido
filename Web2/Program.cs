@@ -26,9 +26,7 @@ builder.Services.AddSwaggerGen();
 // Registrar clases de Rol
 
 builder.Services.AddScoped<BillData>();
-
 builder.Services.AddScoped<InformationInfractionData>();
-builder.Services.AddScoped<ModuleData>();
 builder.Services.AddScoped<ModuloFormData>();
 builder.Services.AddScoped<PaymentAgreementData>();
 builder.Services.AddScoped<PaymentHistoryData>();
@@ -56,13 +54,14 @@ builder.Services.AddScoped<PaymentHistoryBusiness>();
 builder.Services.AddScoped<PaymentUserBusiness>();
 builder.Services.AddScoped<PermissionBusiness>();
 builder.Services.AddScoped<IPersonBusiness, PersonBusiness>();
-builder.Services.AddScoped<RoleBusiness>();
 builder.Services.AddScoped<RoleFormPermissionBusiness>();
 builder.Services.AddScoped<RoleUserBusiness>();
 builder.Services.AddScoped<StateInfractionBusiness>();
 builder.Services.AddScoped<TypeInfractionBusiness>();
 builder.Services.AddScoped<TypePaymentBusiness>();
 builder.Services.AddScoped<IUserBusiness, UserBusiness>();
+builder.Services.AddScoped<IRoleBusiness, RoleBusiness>();
+
 
 builder.Services.AddScoped<UserNotificationBusiness>();
 
@@ -72,6 +71,7 @@ builder.Services.AddScoped<IPersonRepository, PersonRepository>();
 builder.Services.AddScoped<IUserRepository , UserRepository>();
 builder.Services.AddScoped<IFormRepository, FormRepository>();
 builder.Services.AddScoped<IModuleRepository, ModuleRepository>();
+builder.Services.AddScoped<IRoleRepository, RoleRepository>();
 
 
 

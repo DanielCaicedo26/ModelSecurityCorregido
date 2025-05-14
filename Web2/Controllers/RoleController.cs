@@ -1,4 +1,4 @@
-using Bussines;
+using Bussines.interfaces;
 using Entity.Dto;
 using Microsoft.AspNetCore.Mvc;
 using Utilities.Exceptions;
@@ -10,10 +10,10 @@ namespace Web2.Controllers
     [Produces("application/json")]
     public class RoleController : ControllerBase
     {
-        private readonly RoleBusiness _roleBusiness;
+        private readonly IRoleBusiness _roleBusiness;
         private readonly ILogger<RoleController> _logger;
 
-        public RoleController(RoleBusiness roleBusiness, ILogger<RoleController> logger)
+        public RoleController(IRoleBusiness roleBusiness, ILogger<RoleController> logger)
         {
             _roleBusiness = roleBusiness;
             _logger = logger;
@@ -29,7 +29,7 @@ namespace Web2.Controllers
         {
             try
             {
-                var roles = await _roleBusiness.GetAllRolesAsync();
+                var roles = await _roleBusiness.GetAllAsync();
                 return Ok(roles);
             }
             catch (ExternalServiceException ex)
@@ -51,7 +51,7 @@ namespace Web2.Controllers
         {
             try
             {
-                var role = await _roleBusiness.GetRoleByIdAsync(id);
+                var role = await _roleBusiness.GetByIdAsync(id);
                 return Ok(role);
             }
             catch (ValidationException ex)
@@ -72,6 +72,63 @@ namespace Web2.Controllers
         }
 
         /// <summary>
+        /// Obtiene un rol por su nombre.
+        /// </summary>
+        [HttpGet("by-name/{roleName}")]
+        [ProducesResponseType(typeof(RoleDto), 200)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(404)]
+        [ProducesResponseType(500)]
+        public async Task<IActionResult> GetByName(string roleName)
+        {
+            try
+            {
+                var role = await _roleBusiness.GetByNameAsync(roleName);
+                if (role == null)
+                {
+                    return NotFound(new { message = $"No se encontró ningún rol con nombre: {roleName}" });
+                }
+                return Ok(role);
+            }
+            catch (ValidationException ex)
+            {
+                _logger.LogWarning(ex, "Validación fallida para el nombre del rol: {RoleName}", roleName);
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (ExternalServiceException ex)
+            {
+                _logger.LogError(ex, "Error al obtener el rol con nombre: {RoleName}", roleName);
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Obtiene todos los roles de un usuario por su ID.
+        /// </summary>
+        [HttpGet("by-user/{userId}")]
+        [ProducesResponseType(typeof(IEnumerable<RoleDto>), 200)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(500)]
+        public async Task<IActionResult> GetByUserId(int userId)
+        {
+            try
+            {
+                var roles = await _roleBusiness.GetByUserIdAsync(userId);
+                return Ok(roles);
+            }
+            catch (ValidationException ex)
+            {
+                _logger.LogWarning(ex, "Validación fallida para el ID del usuario: {UserId}", userId);
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (ExternalServiceException ex)
+            {
+                _logger.LogError(ex, "Error al obtener los roles del usuario con ID: {UserId}", userId);
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
+
+        /// <summary>
         /// Crea un nuevo rol.
         /// </summary>
         [HttpPost]
@@ -82,7 +139,7 @@ namespace Web2.Controllers
         {
             try
             {
-                var created = await _roleBusiness.CreateRoleAsync(roleDto);
+                var created = await _roleBusiness.CreateAsync(roleDto);
                 return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
             }
             catch (ValidationException ex)
@@ -100,85 +157,118 @@ namespace Web2.Controllers
         /// <summary>
         /// Elimina un rol por su ID.
         /// </summary>
-        /// <param name="id">El ID del rol a eliminar.</param>
-        /// <returns>Un resultado indicando el éxito o fallo de la operación.</returns>
         [HttpDelete("{id}")]
-        [ProducesResponseType(200)] // OK
-        [ProducesResponseType(400)] // Bad Request
-        [ProducesResponseType(404)] // Not Found
-        [ProducesResponseType(500)] // Internal Server Error
+        [ProducesResponseType(200)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(404)]
+        [ProducesResponseType(500)]
         public async Task<IActionResult> Delete(int id)
         {
             try
             {
-                var deletedRole = await _roleBusiness.DeleteRoleAsync(id);
-                return Ok(new { message = "Rol eliminado correctamente", data = deletedRole }); // 200 OK
+                var deleted = await _roleBusiness.DeleteAsync(id);
+                if (!deleted)
+                {
+                    return NotFound(new { message = $"No se encontró ningún rol con ID: {id}" });
+                }
+                return Ok(new { message = "Rol eliminado correctamente" });
             }
             catch (ValidationException ex)
             {
                 _logger.LogWarning(ex, "Validación fallida al eliminar el rol con ID: {RoleId}", id);
-                return BadRequest(new { message = ex.Message }); // 400 Bad Request
+                return BadRequest(new { message = ex.Message });
             }
             catch (EntityNotFoundException ex)
             {
                 _logger.LogInformation(ex, "Rol no encontrado con ID: {RoleId}", id);
-                return NotFound(new { message = ex.Message }); // 404 Not Found
+                return NotFound(new { message = ex.Message });
             }
             catch (ExternalServiceException ex)
             {
                 _logger.LogError(ex, "Error al eliminar el rol con ID: {RoleId}", id);
-                return StatusCode(500, new { message = ex.Message }); // 500 Internal Server Error
+                return StatusCode(500, new { message = ex.Message });
             }
         }
 
         /// <summary>
         /// Actualiza un rol existente.
         /// </summary>
-        /// <param name="id">El ID del rol a actualizar.</param>
-        /// <param name="roleDto">El objeto RoleDto con los datos actualizados.</param>
-        /// <returns>Un resultado indicando el éxito o fallo de la operación.</returns>
         [HttpPut("{id}")]
-        [ProducesResponseType(200)] // OK
-        [ProducesResponseType(400)] // Bad Request
-        [ProducesResponseType(404)] // Not Found
-        [ProducesResponseType(500)] // Internal Server Error
+        [ProducesResponseType(200)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(404)]
+        [ProducesResponseType(500)]
         public async Task<IActionResult> Update(int id, [FromBody] RoleDto roleDto)
         {
-            if (id <= 0 || roleDto == null || id != roleDto.Id)
+            if (id != roleDto.Id)
             {
-                return BadRequest(new { message = "El ID de la ruta no coincide con el ID del cuerpo de la solicitud o los datos son inválidos" }); // 400 Bad Request
+                return BadRequest(new { message = "El ID en la URL no coincide con el ID en el cuerpo de la solicitud" });
             }
 
             try
             {
-                var updatedRole = await _roleBusiness.UpdateRoleAsync(roleDto);
-                return Ok(new { message = "Rol actualizado correctamente", data = updatedRole }); // 200 OK
+                var updatedRole = await _roleBusiness.Update(id, roleDto);
+                return Ok(new { message = "Rol actualizado correctamente", data = updatedRole });
             }
             catch (ValidationException ex)
             {
                 _logger.LogWarning(ex, "Validación fallida al actualizar el rol con ID: {RoleId}", id);
-                return BadRequest(new { message = ex.Message }); // 400 Bad Request
+                return BadRequest(new { message = ex.Message });
             }
             catch (EntityNotFoundException ex)
             {
                 _logger.LogInformation(ex, "Rol no encontrado con ID: {RoleId}", id);
-                return NotFound(new { message = ex.Message }); // 404 Not Found
+                return NotFound(new { message = ex.Message });
             }
             catch (ExternalServiceException ex)
             {
                 _logger.LogError(ex, "Error al actualizar el rol con ID: {RoleId}", id);
-                return StatusCode(500, new { message = ex.Message }); // 500 Internal Server Error
+                return StatusCode(500, new { message = ex.Message });
             }
         }
 
         /// <summary>
-        /// Activa o desactiva un rol por su ID.
+        /// Actualiza el nombre y la descripción de un rol.
         /// </summary>
-        /// <param name="id">El ID del rol.</param>
-        /// <param name="isActive">Estado deseado: true para activar, false para desactivar.</param>
-        /// <returns>Un código de estado indicando el resultado.</returns>
-        [HttpPatch("{id}/active")]
+        [HttpPatch("{id}/update-name-description")]
         [ProducesResponseType(typeof(RoleDto), 200)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(404)]
+        [ProducesResponseType(500)]
+        public async Task<IActionResult> UpdateNameAndDescription(int id, [FromBody] RoleDto dto)
+        {
+            try
+            {
+                if (id != dto.Id)
+                {
+                    return BadRequest(new { message = "El ID en la URL no coincide con el ID en el cuerpo." });
+                }
+
+                var updatedRole = await _roleBusiness.Update(id, dto.RoleName, dto.Description);
+                return Ok(new { message = "Rol actualizado correctamente", data = updatedRole });
+            }
+            catch (ValidationException ex)
+            {
+                _logger.LogWarning(ex, "Validación fallida al actualizar el rol");
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (EntityNotFoundException ex)
+            {
+                _logger.LogInformation(ex, "Rol no encontrado con ID: {RoleId}", id);
+                return NotFound(new { message = ex.Message });
+            }
+            catch (ExternalServiceException ex)
+            {
+                _logger.LogError(ex, "Error al actualizar el rol con ID: {RoleId}", id);
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Activa o desactiva un rol por ID.
+        /// </summary>
+        [HttpPatch("{id}/active")]
+        [ProducesResponseType(200)]
         [ProducesResponseType(400)]
         [ProducesResponseType(404)]
         [ProducesResponseType(500)]
@@ -205,53 +295,5 @@ namespace Web2.Controllers
                 return StatusCode(500, new { message = ex.Message });
             }
         }
-
-        /// <summary>
-        /// Actualiza el nombre de un rol por su ID.
-        /// </summary>
-        /// <param name="id">El ID del rol.</param>
-        /// <param name="dto">El objeto RoleDto con el nuevo nombre del rol.</param>
-        /// <returns>Un código de estado indicando el resultado.</returns>
-        [HttpPatch("{id}/RoleName")]
-        [ProducesResponseType(typeof(RoleDto), 200)]
-        [ProducesResponseType(400)]
-        [ProducesResponseType(404)]
-        [ProducesResponseType(500)]
-        public async Task<IActionResult> UpdateRoleName(int id, [FromBody] RoleDto dto)
-        {
-            try
-            {
-                if (id != dto.Id)
-                {
-                    return BadRequest(new { message = "El ID en la URL no coincide con el ID en el cuerpo." });
-                }
-
-                var updatedRole = await _roleBusiness.UpdateRoleNameAsync(dto.Id, dto.RoleName);
-                return Ok(updatedRole);
-            }
-            catch (ValidationException ex)
-            {
-                _logger.LogWarning(ex, "Validación fallida para el ID del rol: {RoleId}", id);
-                return BadRequest(new { message = ex.Message });
-            }
-            catch (EntityNotFoundException ex)
-            {
-                _logger.LogInformation(ex, "Rol no encontrado con ID: {RoleId}", id);
-                return NotFound(new { message = ex.Message });
-            }
-            catch (ExternalServiceException ex)
-            {
-                _logger.LogError(ex, "Error al actualizar el nombre del rol con ID: {RoleId}", id);
-                return StatusCode(500, new { message = ex.Message });
-            }
-        }
-
-
-
-
     }
 }
-
-
-
-

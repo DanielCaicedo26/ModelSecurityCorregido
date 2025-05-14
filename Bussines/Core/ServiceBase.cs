@@ -8,10 +8,10 @@ namespace Bussines.Core
     public abstract class ServiceBase<TDto, TEntity> : IServiceBase<TDto, TEntity>
         where TEntity : class
     {
-        protected readonly IRepository<TEntity> _repository;
+        protected readonly IServiceBase<TEntity> _repository;
         protected readonly ILogger _logger;
 
-        protected ServiceBase(IRepository<TEntity> repository, ILogger logger)
+        protected ServiceBase(IServiceBase<TEntity> repository, ILogger logger)
         {
             _repository = repository;
             _logger = logger;

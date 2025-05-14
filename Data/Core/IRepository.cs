@@ -4,7 +4,7 @@
     /// Define los métodos genéricos para acceder y manipular datos en el repositorio.
     /// </summary>
     /// <typeparam name="T">El tipo de entidad sobre el cual se aplican las operaciones.</typeparam>
-    public interface IRepository<T> where T : class
+    public interface IServiceBase<T> where T : class
     {
         /// <summary>
         /// Obtiene todos los registros de la entidad T.

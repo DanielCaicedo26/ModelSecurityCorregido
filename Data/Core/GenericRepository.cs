@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Data.Core
 {
-    public class GenericRepository<T> : IRepository<T> where T : class
+    public class GenericRepository<T> : IServiceBase<T> where T : class
     {
         protected readonly ApplicationDbContext _context;
         protected readonly ILogger _logger;

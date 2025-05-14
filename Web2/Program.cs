@@ -49,7 +49,7 @@ builder.Services.AddScoped<AccessLogBusiness>();
 builder.Services.AddScoped<BillBusiness>();
 builder.Services.AddScoped<IFormBusiness, FormBusiness>();
 builder.Services.AddScoped<InformationInfractionBusiness>();
-builder.Services.AddScoped<ModuleBusiness>();
+builder.Services.AddScoped<IModuleBusiness, ModuleBusiness>();
 builder.Services.AddScoped<ModuloFormBusiness>();
 builder.Services.AddScoped<PaymentAgreementBusiness>();
 builder.Services.AddScoped<PaymentHistoryBusiness>();

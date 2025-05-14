@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Data.Interfaces
 {
-    public interface IModuloRepository : IRepository<Module>
+    public interface IModuleRepository : IServiceBase<Module>
 
     {
         Task<IEnumerable<Module>> GetByUserIdAsync(int userId);

@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Data.Interfaces
 {
-    public interface IUserRepository: IRepository <User>
+    public interface IUserRepository: IServiceBase <User>
     {
         Task<IEnumerable<User>> GetByUserIdAsync(int userId);
         

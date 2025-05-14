@@ -1,4 +1,4 @@
-using Bussines;
+using Bussines.interfaces;
 using Entity.Dto;
 using Microsoft.AspNetCore.Mvc;
 using Utilities.Exceptions;
@@ -10,10 +10,10 @@ namespace Web2.Controllers
     [Produces("application/json")]
     public class PermissionController : ControllerBase
     {
-        private readonly PermissionBusiness _permissionBusiness;
+        private readonly IPermissionBusiness _permissionBusiness;
         private readonly ILogger<PermissionController> _logger;
 
-        public PermissionController(PermissionBusiness permissionBusiness, ILogger<PermissionController> logger)
+        public PermissionController(IPermissionBusiness permissionBusiness, ILogger<PermissionController> logger)
         {
             _permissionBusiness = permissionBusiness;
             _logger = logger;
@@ -29,7 +29,7 @@ namespace Web2.Controllers
         {
             try
             {
-                var permissions = await _permissionBusiness.GetAllPermissionsAsync();
+                var permissions = await _permissionBusiness.GetAllAsync();
                 return Ok(permissions);
             }
             catch (ExternalServiceException ex)
@@ -51,7 +51,7 @@ namespace Web2.Controllers
         {
             try
             {
-                var permission = await _permissionBusiness.GetPermissionByIdAsync(id);
+                var permission = await _permissionBusiness.GetByIdAsync(id);
                 return Ok(permission);
             }
             catch (ValidationException ex)
@@ -82,7 +82,7 @@ namespace Web2.Controllers
         {
             try
             {
-                var created = await _permissionBusiness.CreatePermissionAsync(permissionDto);
+                var created = await _permissionBusiness.CreateAsync(permissionDto);
                 return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
             }
             catch (ValidationException ex)
@@ -100,103 +100,58 @@ namespace Web2.Controllers
         /// <summary>
         /// Elimina un permiso por su ID.
         /// </summary>
-        /// <param name="id">El ID del permiso a eliminar.</param>
-        /// <returns>Un resultado indicando el éxito o fallo de la operación.</returns>
         [HttpDelete("{id}")]
-        [ProducesResponseType(200)] // OK
-        [ProducesResponseType(400)] // Bad Request
-        [ProducesResponseType(404)] // Not Found
-        [ProducesResponseType(500)] // Internal Server Error
+        [ProducesResponseType(200)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(404)]
+        [ProducesResponseType(500)]
         public async Task<IActionResult> Delete(int id)
         {
             try
             {
-                var deletedPermission = await _permissionBusiness.DeletePermissionAsync(id);
-                return Ok(new { message = "Permiso eliminado correctamente", data = deletedPermission }); // 200 OK
+                var result = await _permissionBusiness.DeleteAsync(id);
+                return Ok(new { message = "Permiso eliminado correctamente", success = result });
             }
             catch (ValidationException ex)
             {
                 _logger.LogWarning(ex, "Validación fallida al eliminar el permiso con ID: {PermissionId}", id);
-                return BadRequest(new { message = ex.Message }); // 400 Bad Request
+                return BadRequest(new { message = ex.Message });
             }
             catch (EntityNotFoundException ex)
             {
                 _logger.LogInformation(ex, "Permiso no encontrado con ID: {PermissionId}", id);
-                return NotFound(new { message = ex.Message }); // 404 Not Found
+                return NotFound(new { message = ex.Message });
             }
             catch (ExternalServiceException ex)
             {
                 _logger.LogError(ex, "Error al eliminar el permiso con ID: {PermissionId}", id);
-                return StatusCode(500, new { message = ex.Message }); // 500 Internal Server Error
+                return StatusCode(500, new { message = ex.Message });
             }
         }
 
         /// <summary>
         /// Actualiza un permiso existente.
         /// </summary>
-        /// <param name="id">El ID del permiso a actualizar.</param>
-        /// <param name="permissionDto">El objeto PermissionDto con los datos actualizados.</param>
-        /// <returns>Un resultado indicando el éxito o fallo de la operación.</returns>
         [HttpPut("{id}")]
-        [ProducesResponseType(200)] // OK
-        [ProducesResponseType(400)] // Bad Request
-        [ProducesResponseType(404)] // Not Found
-        [ProducesResponseType(500)] // Internal Server Error
+        [ProducesResponseType(200)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(404)]
+        [ProducesResponseType(500)]
         public async Task<IActionResult> Update(int id, [FromBody] PermissionDto permissionDto)
         {
-            if (id <= 0 || permissionDto == null || id != permissionDto.Id)
+            if (id != permissionDto.Id)
             {
-                return BadRequest(new { message = "El ID de la ruta no coincide con el ID del cuerpo de la solicitud o los datos son inválidos" }); // 400 Bad Request
+                return BadRequest(new { message = "El ID en la URL no coincide con el ID en el cuerpo de la solicitud" });
             }
 
             try
             {
-                var updatedPermission = await _permissionBusiness.UpdatePermissionAsync(permissionDto);
-                return Ok(new { message = "Permiso actualizado correctamente", data = updatedPermission }); // 200 OK
+                var updatedPermission = await _permissionBusiness.Update(id, permissionDto);
+                return Ok(new { message = "Permiso actualizado correctamente", data = updatedPermission });
             }
             catch (ValidationException ex)
             {
                 _logger.LogWarning(ex, "Validación fallida al actualizar el permiso con ID: {PermissionId}", id);
-                return BadRequest(new { message = ex.Message }); // 400 Bad Request
-            }
-            catch (EntityNotFoundException ex)
-            {
-                _logger.LogInformation(ex, "Permiso no encontrado con ID: {PermissionId}", id);
-                return NotFound(new { message = ex.Message }); // 404 Not Found
-            }
-            catch (ExternalServiceException ex)
-            {
-                _logger.LogError(ex, "Error al actualizar el permiso con ID: {PermissionId}", id);
-                return StatusCode(500, new { message = ex.Message }); // 500 Internal Server Error
-            }
-        }
-
-        /// <summary>
-        /// Actualiza propiedades específicas de un permiso por su ID.
-        /// </summary>
-        /// <param name="id">El ID del permiso.</param>
-        /// <param name="dto">El objeto PermissionDto con las propiedades a actualizar.</param>
-        /// <returns>Un código de estado indicando el resultado.</returns>
-        [HttpPatch("{id}/Name-Description")]
-        [ProducesResponseType(typeof(PermissionDto), 200)]
-        [ProducesResponseType(400)]
-        [ProducesResponseType(404)]
-        [ProducesResponseType(500)]
-        public async Task<IActionResult> UpdatePartial(int id, [FromBody] PermissionDto dto)
-        {
-            try
-            {
-                if (id != dto.Id)
-                {
-                    return BadRequest(new { message = "El ID en la URL no coincide con el ID en el cuerpo." });
-                }
-
-                var updatedPermission = await _permissionBusiness.UpdatePartialAsync(dto.Id, dto.Name, dto.Description);
-                return Ok(updatedPermission);
-            }
-            catch (ValidationException ex)
-            {
-                _logger.LogWarning(ex, "Validación fallida para el ID del permiso: {PermissionId}", id);
                 return BadRequest(new { message = ex.Message });
             }
             catch (EntityNotFoundException ex)
@@ -212,11 +167,54 @@ namespace Web2.Controllers
         }
 
         /// <summary>
-        /// Activa o desactiva un permiso por su ID.
+        /// Actualiza el nombre y descripción de un permiso.
         /// </summary>
-        /// <param name="id">El ID del permiso.</param>
-        /// <param name="isActive">Estado deseado: true para activar, false para desactivar.</param>
-        /// <returns>Un código de estado indicando el resultado.</returns>
+        [HttpPatch("{id}/Update-Name-Description")]
+        [ProducesResponseType(typeof(PermissionDto), 200)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(404)]
+        [ProducesResponseType(500)]
+        public async Task<IActionResult> UpdateNameDescription(int id, [FromBody] PermissionDto dto)
+        {
+            try
+            {
+                if (id != dto.Id)
+                {
+                    return BadRequest(new { message = "El ID en la URL no coincide con el ID en el cuerpo." });
+                }
+
+                // Primero obtenemos el objeto completo
+                var currentPermission = await _permissionBusiness.GetByIdAsync(id);
+
+                // Actualizamos solo los campos específicos
+                currentPermission.Name = dto.Name;
+                currentPermission.Description = dto.Description;
+
+                // Utilizamos el método de actualización estándar
+                var updated = await _permissionBusiness.Update(id, currentPermission);
+
+                return Ok(updated);
+            }
+            catch (ValidationException ex)
+            {
+                _logger.LogWarning(ex, "Validación fallida");
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (EntityNotFoundException ex)
+            {
+                _logger.LogInformation(ex, "Permiso no encontrado con ID: {PermissionId}", id);
+                return NotFound(new { message = ex.Message });
+            }
+            catch (ExternalServiceException ex)
+            {
+                _logger.LogError(ex, "Error al actualizar permiso con ID: {PermissionId}", id);
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Activa o desactiva un permiso por ID.
+        /// </summary>
         [HttpPatch("{id}/active")]
         [ProducesResponseType(typeof(PermissionDto), 200)]
         [ProducesResponseType(400)]
@@ -245,14 +243,5 @@ namespace Web2.Controllers
                 return StatusCode(500, new { message = ex.Message });
             }
         }
-
-
-
-
-
-
     }
 }
-
-
-

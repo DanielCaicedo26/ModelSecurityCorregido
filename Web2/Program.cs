@@ -26,7 +26,7 @@ builder.Services.AddSwaggerGen();
 // Registrar clases de Rol
 
 builder.Services.AddScoped<BillData>();
-builder.Services.AddScoped<FormData>();
+
 builder.Services.AddScoped<InformationInfractionData>();
 builder.Services.AddScoped<ModuleData>();
 builder.Services.AddScoped<ModuloFormData>();
@@ -47,7 +47,7 @@ builder.Services.AddScoped<UserNotificationData>();
 
 builder.Services.AddScoped<AccessLogBusiness>();
 builder.Services.AddScoped<BillBusiness>();
-builder.Services.AddScoped<FormBusiness>();
+builder.Services.AddScoped<IFormBusiness, FormBusiness>();
 builder.Services.AddScoped<InformationInfractionBusiness>();
 builder.Services.AddScoped<ModuleBusiness>();
 builder.Services.AddScoped<ModuloFormBusiness>();
@@ -63,12 +63,14 @@ builder.Services.AddScoped<StateInfractionBusiness>();
 builder.Services.AddScoped<TypeInfractionBusiness>();
 builder.Services.AddScoped<TypePaymentBusiness>();
 builder.Services.AddScoped<IUserBusiness, UserBusiness>();
+
 builder.Services.AddScoped<UserNotificationBusiness>();
 
 // Registrar repositorios
 builder.Services.AddScoped<IAccessLogRepository, AccessLogRepository>();
 builder.Services.AddScoped<IPersonRepository, PersonRepository>();
 builder.Services.AddScoped<IUserRepository , UserRepository>();
+builder.Services.AddScoped<IFormRepository, FormRepository>();
 
 
 // Configuración de CORS

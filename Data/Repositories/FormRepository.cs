@@ -1,152 +1,82 @@
-﻿using Entity.Context;
+﻿// Ensure FormRepository implements IFormRepository
+using Data.Interfaces;
+using Entity.Context;
+using Entity.Dto;
 using Entity.Model;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace Data.Repositories
 {
-    /// <summary>
-    /// Repositorio encargado de la gestión de la entidad Form en la base de datos.
-    /// </summary>
-    public class FormRepository
+    public class FormRepository : IFormRepository
     {
         private readonly ApplicationDbContext _context;
         private readonly ILogger<FormRepository> _logger;
 
-        /// <summary>
-        /// Constructor que recibe el contexto de base de datos.
-        /// </summary>
-        /// <param name="context">Instancia de <see cref="ApplicationDbContext"/> para la conexión con la base de datos.</param>
-        /// <param name="logger">Instancia de <see cref="ILogger{FormRepository}"/> para el registro de logs.</param>
         public FormRepository(ApplicationDbContext context, ILogger<FormRepository> logger)
         {
             _context = context;
             _logger = logger;
         }
 
-        /// <summary>
-        /// Obtiene todos los formularios almacenados en la base de datos.
-        /// </summary>
-        /// <returns>Lista de formularios.</returns>
         public async Task<IEnumerable<Form>> GetAllAsync()
         {
-            try
-            {
-                return await _context.Set<Form>()
-                    .Include(f => f.RoleFormPermissions)
-                    .Include(f => f.ModuloForms)
-                    .AsNoTracking()
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error al obtener todos los formularios");
-                throw;
-            }
+            return await _context.Form.ToListAsync();
         }
 
-        /// <summary>
-        /// Obtiene un formulario específico por su identificador.
-        /// </summary>
-        /// <param name="id">Identificador del formulario.</param>
-        /// <returns>El formulario encontrado o null si no existe.</returns>
         public async Task<Form?> GetByIdAsync(int id)
         {
-            try
-            {
-                return await _context.Set<Form>()
-                    .Include(f => f.RoleFormPermissions)
-                    .Include(f => f.ModuloForms)
-                    .FirstOrDefaultAsync(f => f.Id == id);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error al obtener el formulario con ID {FormId}", id);
-                throw;
-            }
+            return await _context.Form.FindAsync(id);
         }
 
-        /// <summary>
-        /// Crea un nuevo formulario en la base de datos.
-        /// </summary>
-        /// <param name="form">Instancia del formulario a crear.</param>
-        /// <returns>El formulario creado.</returns>
-        public async Task<Form> CreateAsync(Form form)
+        public async Task<Form> AddAsync(Form form)
         {
-            try
-            {
-                await _context.Set<Form>().AddAsync(form);
-                await _context.SaveChangesAsync();
-                return form;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error al crear el formulario");
-                throw;
-            }
+            _context.Form.Add(form);
+            await _context.SaveChangesAsync();
+            return form;
         }
 
-        /// <summary>
-        /// Actualiza un formulario existente en la base de datos.
-        /// </summary>
-        /// <param name="form">Objeto con la información actualizada.</param>
-        /// <returns>True si la operación fue exitosa, False en caso contrario.</returns>
         public async Task<bool> UpdateAsync(Form form)
         {
-            try
-            {
-                var existingForm = await _context.Set<Form>().FindAsync(form.Id);
-                if (existingForm == null)
-                {
-                    _logger.LogWarning("No se encontró el formulario con ID {FormId} para actualizar", form.Id);
-                    return false;
-                }
-
-                _context.Entry(existingForm).CurrentValues.SetValues(form);
-                await _context.SaveChangesAsync();
-                return true;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error al actualizar el formulario");
-                return false;
-            }
+            _context.Form.Update(form);
+            return await _context.SaveChangesAsync() > 0;
         }
 
-        /// <summary>
-        /// Elimina un formulario de la base de datos.
-        /// </summary>
-        /// <param name="id">Identificador único del formulario a eliminar.</param>
-        /// <returns>True si la eliminación fue exitosa, False en caso contrario.</returns>
         public async Task<bool> DeleteAsync(int id)
         {
-            if (id <= 0)
-            {
-                _logger.LogWarning("Se intentó eliminar un formulario con ID inválido: {FormId}", id);
-                return false;
-            }
+            var form = await _context.Form.FindAsync(id);
+            if (form == null) return false;
 
-            try
-            {
-                var form = await _context.Set<Form>().FindAsync(id);
-                if (form == null)
-                {
-                    _logger.LogInformation("No se encontró ningún formulario con ID: {FormId}", id);
-                    return false;
-                }
+            _context.Form.Remove(form);
+            return await _context.SaveChangesAsync() > 0;
+        }
 
-                _context.Set<Form>().Remove(form);
-                await _context.SaveChangesAsync();
-                return true;
-            }
-            catch (Exception ex)
+        public async Task<bool> DeleteLogicalAsync(int id)
+        {
+            var form = await _context.Form.FindAsync(id);
+            if (form == null) return false;
+
+            form.IsActive = false;
+            return await _context.SaveChangesAsync() > 0;
+        }
+
+        public async Task<FormDto> Update(int id, string name, string? description, string? status)
+        {
+            var form = await _context.Form.FindAsync(id);
+            if (form == null) throw new KeyNotFoundException("Form not found");
+
+            form.Name = name;
+            form.Description = description;
+            form.Status = status;
+            await _context.SaveChangesAsync();
+
+            return new FormDto
             {
-                _logger.LogError(ex, "Error al eliminar el formulario con ID {FormId}", id);
-                return false;
-            }
+                Id = form.Id,
+                Name = form.Name,
+                Description = form.Description,
+                Status = form.Status
+            };
         }
     }
 }

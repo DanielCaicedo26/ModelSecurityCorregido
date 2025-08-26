@@ -1,22 +1,51 @@
-sqlserver:
-  image: mcr.microsoft.com/mssql/server:2022-latest
-  container_name: web2-sqlserver
-  environment:
-    - ACCEPT_EULA=Y
-    - SA_PASSWORD=StrongPwd!123
-    - MSSQL_PID=Developer
-  ports:
-    - "14330:1433"
-  volumes:
-    - sqlserver_data:/var/opt/mssql/data
-    - sqlserver_logs:/var/opt/mssql/log
-    - ./init.sql:/docker-entrypoint-initdb.d/init.sql
-  networks:
-    - security-network
-  healthcheck:
-    test: [ "CMD-SHELL", "/opt/mssql-tools/bin/sqlcmd -S 127.0.0.1 -U sa -P StrongPwd!123 -Q 'SELECT 1'" ]
-    interval: 10s
-    timeout: 5s
-    retries: 10
-    start_period: 60s
-  restart: unless-stopped
+﻿version: '3.8'
+
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: web2-sqlserver
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=StrongPwd!123
+      - MSSQL_PID=Developer
+    ports:
+      - "14330:1433"
+    volumes:
+      - sqlserver_data:/var/opt/mssql/data
+      - sqlserver_logs:/var/opt/mssql/log
+      - ./docker/ModelSecurityDa.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - security-network
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P 'StrongPwd!123' -Q 'SELECT 1' || exit 1"]
+      interval: 30s
+      timeout: 20s
+      retries: 10
+      start_period: 40s
+    restart: unless-stopped
+
+  web2-api:
+    build: 
+      context: .
+      dockerfile: Web2/Dockerfile
+    container_name: web2-api
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
+      - ConnectionStrings__DefaultConnection=Server=sqlserver,1433;Database=ModelSecurityDa;User Id=sa;Password=StrongPwd!123;Encrypt=True;TrustServerCertificate=True;Connection Timeout=60;
+    ports:
+      - "5112:8080"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    networks:
+      - security-network
+    restart: unless-stopped
+
+volumes:
+  sqlserver_data:
+  sqlserver_logs:
+
+networks:
+  security-network:
+    driver: bridge

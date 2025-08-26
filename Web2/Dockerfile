@@ -1,8 +1,7 @@
 # Etapa base para runtime
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
-WORKDIR /daniel
+WORKDIR /app
 EXPOSE 8080
-EXPOSE 8081
 
 # Etapa de construcción
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
@@ -33,10 +32,20 @@ RUN dotnet publish "Web2.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseA
 # Etapa final
 FROM base AS final
 WORKDIR /app
+
+# Instalar curl para health checks (opcional pero útil)
+RUN apt-get update && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copiar archivos publicados
 COPY --from=publish /app/publish .
 
 # Crear usuario no-root para seguridad
-RUN adduser --disabled-password --gecos "" appuser && chown -R appuser /app
+RUN adduser --disabled-password --gecos "" appuser
 USER appuser
+
+# Healthcheck opcional (si tienes /health en tu API)
+# HEALTHCHECK --interval=30s --timeout=10s --start-period=20s --retries=3 \
+#   CMD curl --fail http://localhost:8080/health || exit 1
 
 ENTRYPOINT ["dotnet", "Web2.dll"]

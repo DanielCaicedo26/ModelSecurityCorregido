@@ -1,0 +1,22 @@
+sqlserver:
+  image: mcr.microsoft.com/mssql/server:2022-latest
+  container_name: web2-sqlserver
+  environment:
+    - ACCEPT_EULA=Y
+    - SA_PASSWORD=StrongPwd!123
+    - MSSQL_PID=Developer
+  ports:
+    - "14330:1433"
+  volumes:
+    - sqlserver_data:/var/opt/mssql/data
+    - sqlserver_logs:/var/opt/mssql/log
+    - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+  networks:
+    - security-network
+  healthcheck:
+    test: [ "CMD-SHELL", "/opt/mssql-tools/bin/sqlcmd -S 127.0.0.1 -U sa -P StrongPwd!123 -Q 'SELECT 1'" ]
+    interval: 10s
+    timeout: 5s
+    retries: 10
+    start_period: 60s
+  restart: unless-stopped

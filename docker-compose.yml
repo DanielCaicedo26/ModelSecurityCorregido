@@ -3,49 +3,39 @@
 services:
   sqlserver:
     image: mcr.microsoft.com/mssql/server:2022-latest
-    container_name: web2-sqlserver
+    container_name: sqlserver2022
     environment:
       - ACCEPT_EULA=Y
       - SA_PASSWORD=StrongPwd!123
       - MSSQL_PID=Developer
     ports:
-      - "14330:1433"
+      - "1433:1433"
     volumes:
       - sqlserver_data:/var/opt/mssql/data
-      - sqlserver_logs:/var/opt/mssql/log
-      - ./docker/ModelSecurityDa.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
-      - security-network
-    healthcheck:
-      test: ["CMD-SHELL", "/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P 'StrongPwd!123' -Q 'SELECT 1' || exit 1"]
-      interval: 30s
-      timeout: 20s
-      retries: 10
-      start_period: 40s
+      - app-network
     restart: unless-stopped
 
-  web2-api:
+  web-api:
     build: 
       context: .
       dockerfile: Web2/Dockerfile
-    container_name: web2-api
+    container_name: modelsecurityda
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:8080
-      - ConnectionStrings__DefaultConnection=Server=sqlserver,1433;Database=ModelSecurityDa;User Id=sa;Password=StrongPwd!123;Encrypt=True;TrustServerCertificate=True;Connection Timeout=60;
+      - ConnectionStrings__DefaultConnection=Server=sqlserver2022,1433;Database=ModelSecurityDa;User Id=sa;Password=StrongPwd!123;Encrypt=True;TrustServerCertificate=True;Connection Timeout=60;
     ports:
       - "5112:8080"
     depends_on:
-      sqlserver:
-        condition: service_healthy
+      - sqlserver
     networks:
-      - security-network
+      - app-network
     restart: unless-stopped
 
 volumes:
   sqlserver_data:
-  sqlserver_logs:
 
 networks:
-  security-network:
+  app-network:
     driver: bridge

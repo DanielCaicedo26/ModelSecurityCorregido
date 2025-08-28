@@ -14,17 +14,56 @@ using Web2.Services.Web2.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Agregar DbContext
+// Configurar logging para debug
+builder.Logging.AddConsole();
+builder.Logging.SetMinimumLevel(LogLevel.Information);
+
+// Agregar DbContext - CORREGIR: usar GetConnectionString en lugar de "name="
 builder.Services.AddDbContext<ApplicationDbContext>(opciones =>
-    opciones.UseSqlServer("name=DefaultConnection"));
+    opciones.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Add services to the container.
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+    {
+        Title = "ModelSecurityDa API",
+        Version = "v1",
+        Description = "API para gestión de seguridad y facturación"
+    });
 
-// Registrar clases de Rol
+    // Configuración para JWT en Swagger
+    c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+    {
+        Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
+        Name = "Authorization",
+        In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+        Type = Microsoft.OpenApi.Models.SecuritySchemeType.ApiKey,
+        Scheme = "Bearer"
+    });
 
+    c.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement()
+    {
+        {
+            new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+            {
+                Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                {
+                    Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                },
+                Scheme = "oauth2",
+                Name = "Bearer",
+                In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+            },
+            new List<string>()
+        }
+    });
+});
+
+// Registrar clases de Data
 builder.Services.AddScoped<BillData>();
 builder.Services.AddScoped<InformationInfractionData>();
 builder.Services.AddScoped<ModuloFormData>();
@@ -37,11 +76,9 @@ builder.Services.AddScoped<RoleUserData>();
 builder.Services.AddScoped<StateInfractionData>();
 builder.Services.AddScoped<TypeInfractionData>();
 builder.Services.AddScoped<TypePaymentData>();
-
 builder.Services.AddScoped<UserNotificationData>();
 
-// Registrar clases de Bussines
-
+// Registrar clases de Business
 builder.Services.AddScoped<AccessLogBusiness>();
 builder.Services.AddScoped<BillBusiness>();
 builder.Services.AddScoped<IFormBusiness, FormBusiness>();
@@ -51,41 +88,31 @@ builder.Services.AddScoped<IModuloFormBusiness, ModuloFormBusiness>();
 builder.Services.AddScoped<PaymentAgreementBusiness>();
 builder.Services.AddScoped<PaymentHistoryBusiness>();
 builder.Services.AddScoped<PaymentUserBusiness>();
-
 builder.Services.AddScoped<IPersonBusiness, PersonBusiness>();
 builder.Services.AddScoped<RoleFormPermissionBusiness>();
-builder.Services.AddScoped< IRoleUserBusiness, RoleUserBusiness>();
+builder.Services.AddScoped<IRoleUserBusiness, RoleUserBusiness>();
 builder.Services.AddScoped<StateInfractionBusiness>();
 builder.Services.AddScoped<TypeInfractionBusiness>();
 builder.Services.AddScoped<TypePaymentBusiness>();
 builder.Services.AddScoped<IUserBusiness, UserBusiness>();
 builder.Services.AddScoped<IRoleBusiness, RoleBusiness>();
-
-
 builder.Services.AddScoped<UserNotificationBusiness>();
+builder.Services.AddScoped<IPermissionBusiness, PermissionBusiness>();
 
 // Registrar repositorios
 builder.Services.AddScoped<IAccessLogRepository, AccessLogRepository>();
 builder.Services.AddScoped<IPersonRepository, PersonRepository>();
-builder.Services.AddScoped<IUserRepository , UserRepository>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IFormRepository, FormRepository>();
 builder.Services.AddScoped<IModuleRepository, ModuleRepository>();
 builder.Services.AddScoped<IRoleRepository, RoleRepository>();
 builder.Services.AddScoped<IRoleUserRepository, RoleUserRepository>();
 builder.Services.AddScoped<IModuloFormRepository, ModuloFormRepository>();
 builder.Services.AddScoped<IPermissionRepository, PermissionRepository>();
-builder.Services.AddScoped<IPermissionBusiness, PermissionBusiness>();
-
-
-
 
 // Configuración de CORS
-var OrigenesPermitidos = builder.Configuration.GetValue<string>("OrigenesPermitidos")!.Split(",");
-
-// Agregar CORS con el nombre correcto para que coincida con el atributo del controlador
 builder.Services.AddCors(opciones =>
 {
-    // Política principal que se usa en el controlador con [EnableCors("AllowOrigin")]
     opciones.AddPolicy("AllowOrigin", politica =>
     {
         politica.WithOrigins("http://localhost:3000",
@@ -97,7 +124,6 @@ builder.Services.AddCors(opciones =>
                 .AllowCredentials();
     });
 
-    // Política alternativa para uso global si es necesario
     opciones.AddPolicy("AllowAll", politica =>
     {
         politica.AllowAnyOrigin()
@@ -108,7 +134,14 @@ builder.Services.AddCors(opciones =>
 
 // Configurar autenticación JWT
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
-var key = Encoding.ASCII.GetBytes(jwtSettings["SecretKey"]);
+var secretKey = jwtSettings["SecretKey"];
+
+if (string.IsNullOrEmpty(secretKey))
+{
+    throw new InvalidOperationException("JWT SecretKey no está configurada");
+}
+
+var key = Encoding.UTF8.GetBytes(secretKey); // Cambiar a UTF8
 
 builder.Services.AddAuthentication(options =>
 {
@@ -117,7 +150,7 @@ builder.Services.AddAuthentication(options =>
 })
 .AddJwtBearer(options =>
 {
-    options.RequireHttpsMetadata = false;
+    options.RequireHttpsMetadata = false; // Para desarrollo
     options.SaveToken = true;
     options.TokenValidationParameters = new TokenValidationParameters
     {
@@ -137,14 +170,45 @@ builder.Services.AddScoped<JwtAuthService>();
 
 var app = builder.Build();
 
+// Log de inicio
+var logger = app.Services.GetRequiredService<ILogger<Program>>();
+logger.LogInformation("Iniciando aplicación ModelSecurityDa...");
+
+// Verificar conexión a base de datos al inicio
+try
+{
+    using (var scope = app.Services.CreateScope())
+    {
+        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var canConnect = await context.Database.CanConnectAsync();
+        logger.LogInformation($"Conexión a base de datos: {(canConnect ? "ÉXITO" : "FALLIDA")}");
+
+        if (!canConnect)
+        {
+            logger.LogError("No se pudo conectar a la base de datos. Verificar cadena de conexión.");
+        }
+    }
+}
+catch (Exception ex)
+{
+    logger.LogError(ex, "Error al verificar conexión a base de datos");
+}
+
 // Configurar el pipeline de solicitudes
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "ModelSecurityDa API V1");
+        c.RoutePrefix = "swagger";
+        c.DisplayRequestDuration();
+    });
+    logger.LogInformation("Swagger habilitado en: /swagger");
 }
 
-app.UseHttpsRedirection();
+// REMOVER UseHttpsRedirection en Docker para evitar problemas
+// app.UseHttpsRedirection();
 
 // Usar la política de CORS - debe estar antes de Authentication
 app.UseCors("AllowOrigin");
@@ -153,5 +217,35 @@ app.UseCors("AllowOrigin");
 app.UseAuthentication();
 app.UseAuthorization();
 
+// Endpoint de health check
+app.MapGet("/", () => Results.Ok(new
+{
+    status = "OK",
+    timestamp = DateTime.UtcNow,
+    version = "1.0.0",
+    message = "ModelSecurityDa API is running"
+}));
+
+app.MapGet("/health", async (ApplicationDbContext context) =>
+{
+    try
+    {
+        var canConnect = await context.Database.CanConnectAsync();
+        return Results.Ok(new
+        {
+            status = canConnect ? "Healthy" : "Unhealthy",
+            database = canConnect ? "Connected" : "Disconnected",
+            timestamp = DateTime.UtcNow
+        });
+    }
+    catch (Exception ex)
+    {
+        return Results.Problem($"Health check failed: {ex.Message}");
+    }
+});
+
 app.MapControllers();
+
+logger.LogInformation("Aplicación configurada. Esperando requests...");
+
 app.Run();

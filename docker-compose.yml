@@ -1,21 +1,6 @@
 ﻿version: '3.8'
 
 services:
-  sqlserver:
-    image: mcr.microsoft.com/mssql/server:2022-latest
-    container_name: sqlserver2022
-    environment:
-      - ACCEPT_EULA=Y
-      - SA_PASSWORD=StrongPwd!123
-      - MSSQL_PID=Developer
-    ports:
-      - "1433:1433"
-    volumes:
-      - sqlserver_data:/var/opt/mssql/data
-    networks:
-      - app-network
-    restart: unless-stopped
-
   web-api:
     build: 
       context: .
@@ -24,18 +9,13 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:8080
-      - ConnectionStrings__DefaultConnection=Server=localhost,1433;Database=ModelSecurityDa;User Id=sa;Password=StrongPwd!123;Encrypt=True;TrustServerCertificate=True;Connection Timeout=60;
+      - ConnectionStrings__DefaultConnection=Server=nombre-contenedor-bd,1433;Database=ModelSecurityDa;User Id=sa;Password=StrongPwd!123;Encrypt=True;TrustServerCertificate=True;Connection Timeout=60;
     ports:
       - "5112:8080"
-    depends_on:
-      - sqlserver
     networks:
-      - app-network
+      - nombre-de-tu-red-existente
     restart: unless-stopped
 
-volumes:
-  sqlserver_data:
-
 networks:
-  app-network:
-    driver: bridge
+  nombre-de-tu-red-existente:
+    external: true

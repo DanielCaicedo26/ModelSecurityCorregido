@@ -133,12 +133,14 @@ namespace Entity.Context
             modelBuilder.Entity<StateInfraction>()
                 .HasOne(si => si.Infraction)
                 .WithMany(ti => ti.StateInfraction)
-                .HasForeignKey(si => si.InfractionId);
+                .HasForeignKey(si => si.InfractionId)
+                .OnDelete(DeleteBehavior.NoAction);
 
             modelBuilder.Entity<StateInfraction>()
                 .HasOne(si => si.Person)
                 .WithMany(p => p.StateInfractions)
-                .HasForeignKey(si => si.PersonId);
+                .HasForeignKey(si => si.PersonId)
+                .OnDelete(DeleteBehavior.NoAction);
 
             modelBuilder.Entity<Bill>()
                 .HasOne(b => b.PaymentAgreement)

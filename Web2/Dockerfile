@@ -1,3 +1,4 @@
+
 # Etapa base para runtime
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
 WORKDIR /app
@@ -33,19 +34,44 @@ RUN dotnet publish "Web2.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseA
 FROM base AS final
 WORKDIR /app
 
-# Instalar curl para health checks (opcional pero útil)
-RUN apt-get update && apt-get install -y --no-install-recommends curl \
+# Instalar herramientas necesarias para migraciones y .NET SDK para EF Tools
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    gnupg \
+    unixodbc-dev \
+    ca-certificates \
+    wget \
+    && curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor -o /usr/share/keyrings/microsoft-prod.gpg \
+    && echo "deb [arch=amd64,arm64,armhf signed-by=/usr/share/keyrings/microsoft-prod.gpg] https://packages.microsoft.com/repos/microsoft-debian-bookworm-prod bookworm main" > /etc/apt/sources.list.d/mssql-release.list \
+    && apt-get update \
+    && ACCEPT_EULA=Y apt-get install -y mssql-tools18 \
     && rm -rf /var/lib/apt/lists/*
+
+# Instalar .NET SDK para herramientas EF
+RUN wget https://packages.microsoft.com/config/debian/12/packages-microsoft-prod.deb -O packages-microsoft-prod.deb \
+    && dpkg -i packages-microsoft-prod.deb \
+    && rm packages-microsoft-prod.deb \
+    && apt-get update \
+    && apt-get install -y dotnet-sdk-9.0 \
+    && dotnet tool install --global dotnet-ef \
+    && rm -rf /var/lib/apt/lists/*
+
+# Configurar PATH para herramientas
+ENV PATH="${PATH}:/opt/mssql-tools18/bin:/root/.dotnet/tools"
 
 # Copiar archivos publicados
 COPY --from=publish /app/publish .
 
-# Crear usuario no-root para seguridad
-RUN adduser --disabled-password --gecos "" appuser
-USER appuser
+# Copiar el script de entrada
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
 
-# Healthcheck opcional (si tienes /health en tu API)
-# HEALTHCHECK --interval=30s --timeout=10s --start-period=20s --retries=3 \
-#   CMD curl --fail http://localhost:8080/health || exit 1
+# Crear usuario no-root para seguridad (después de configurar herramientas)
+RUN adduser --disabled-password --gecos "" appuser \
+    && chown -R appuser:appuser /app
 
-ENTRYPOINT ["dotnet", "Web2.dll"]
+# Healthcheck opcional
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=5 \
+   CMD curl --fail http://localhost:8080/health || exit 1
+
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh", "dotnet", "Web2.dll"]

@@ -7,14 +7,16 @@ services:
       dockerfile: Web2/Dockerfile
     container_name: modelsecurityda
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - ASPNETCORE_URLS=http://+:8080
-      - ConnectionStrings__DefaultConnection=Server=nombre-contenedor-bd,1433;Database=ModelSecurityDa;User Id=sa;Password=StrongPwd!123;Encrypt=True;TrustServerCertificate=True;Connection Timeout=60;
-      # Variables para el script de migraciones
-      - DB_SERVER=nombre-contenedor-bd
-      - DB_NAME=ModelSecurityDa
-      - DB_USER=sa
-      - DB_PASSWORD=StrongPwd!123
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__SqlServer: Server=nombre-contenedor-bd,1433;Database=ModelSecurityDa;User Id=sa;Password=StrongPwd!123;Encrypt=True;TrustServerCertificate=True;Connection Timeout=60;
+      ConnectionStrings__Postgres: Host=postgres-db;Port=5432;Database=modelsecurityda;Username=postgres;Password=StrongPwd!123;
+      ConnectionStrings__MySql: Server=mysql-db;Port=3306;Database=modelsecurityda;User=mysqluser;Password=StrongPwd!123;
+      DB_ENGINE: sqlserver
+      DB_SERVER: nombre-contenedor-bd
+      DB_NAME: ModelSecurityDa
+      DB_USER: sa
+      DB_PASSWORD: StrongPwd!123
     ports:
       - "5112:8080"
     networks:
@@ -29,6 +31,7 @@ services:
       timeout: 10s
       retries: 5
       start_period: 60s
+
 
   # Servicio de SQL Server
   sql-server:
@@ -52,8 +55,56 @@ services:
       retries: 10
       start_period: 30s
 
+  # Servicio de PostgreSQL
+  postgres:
+    image: postgres:16
+    container_name: postgres-db
+    environment:
+      - POSTGRES_DB=modelsecurityda
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=StrongPwd!123
+    ports:
+      - "5433:5432"
+    networks:
+      - nombre-de-tu-red-existente
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  # Servicio de MySQL
+  mysql:
+    image: mysql:8.4
+    container_name: mysql-db
+    environment:
+      - MYSQL_DATABASE=modelsecurityda
+      - MYSQL_USER=mysqluser
+      - MYSQL_PASSWORD=StrongPwd!123
+      - MYSQL_ROOT_PASSWORD=StrongPwd!123
+    ports:
+      - "3307:3306"
+    networks:
+      - nombre-de-tu-red-existente
+    volumes:
+      - mysql_data:/var/lib/mysql
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -pStrongPwd!123"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+
 volumes:
   sql_data:
+  postgres_data:
+  mysql_data:
 
 networks:
   nombre-de-tu-red-existente:

@@ -20,12 +20,13 @@ namespace Entity.Context
         protected readonly IConfiguration _configuration;
 
         /// <summary>
-        /// Constructor del contexto de la base de datos.
+        /// Constructor genérico del contexto de la base de datos.
         /// </summary>
+        /// <typeparam name="T">Tipo de contexto hijo.</typeparam>
         /// <param name="options">Opciones de configuración para el contexto de base de datos.</param>
         /// <param name="configuration">Instancia de IConfiguration para acceder a la configuración de la aplicación.</param>
-        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options, IConfiguration configuration)
-        : base(options)
+        public ApplicationDbContext(DbContextOptions options, IConfiguration configuration)
+            : base(options)
         {
             _configuration = configuration;
         }
@@ -223,7 +224,7 @@ namespace Entity.Context
         /// <returns>Una colección de objetos del tipo especificado.</returns>
         public async Task<IEnumerable<T>> QueryAsync<T>(string text, object? parameters = null, int? timeout = null, CommandType? type = null)
         {
-            using var command = new DapperEFCoreCommand(this, text, parameters, timeout, type, CancellationToken.None);
+            using var command = new DapperEFCoreCommand(this, text, parameters ?? new { }, timeout, type, CancellationToken.None);
             var connection = Database.GetDbConnection();
             return await connection.QueryAsync<T>(command.Definition);
         }
@@ -239,9 +240,9 @@ namespace Entity.Context
         /// <returns>Un objeto del tipo especificado o su valor predeterminado.</returns>
         public async Task<T> QueryFirstOrDefaultAsync<T>(string text, object? parameters = null, int? timeout = null, CommandType? type = null)
         {
-            using var command = new DapperEFCoreCommand(this, text, parameters, timeout, type, CancellationToken.None);
+            using var command = new DapperEFCoreCommand(this, text, parameters ?? new { }, timeout, type, CancellationToken.None);
             var connection = Database.GetDbConnection();
-            return await connection.QueryFirstOrDefaultAsync<T>(command.Definition);
+            return await connection.QueryFirstOrDefaultAsync<T>(command.Definition) ?? default!;
         }
 
         /// <summary>

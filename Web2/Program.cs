@@ -18,9 +18,24 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Logging.AddConsole();
 builder.Logging.SetMinimumLevel(LogLevel.Information);
 
-// Agregar DbContext - CORREGIR: usar GetConnectionString en lugar de "name="
+
+// Registrar tres DbContext, uno para cada motor
 builder.Services.AddDbContext<ApplicationDbContext>(opciones =>
-    opciones.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    opciones.UseSqlServer(builder.Configuration.GetConnectionString("SqlServer")),
+    contextLifetime: ServiceLifetime.Scoped,
+    optionsLifetime: ServiceLifetime.Scoped);
+
+builder.Services.AddDbContext<ApplicationDbContextPostgres>(opciones =>
+    opciones.UseNpgsql(builder.Configuration.GetConnectionString("Postgres")),
+    contextLifetime: ServiceLifetime.Scoped,
+    optionsLifetime: ServiceLifetime.Scoped);
+
+builder.Services.AddDbContext<ApplicationDbContextMySql>(opciones =>
+    opciones.UseMySql(
+        builder.Configuration.GetConnectionString("MySql"),
+        ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("MySql"))),
+    contextLifetime: ServiceLifetime.Scoped,
+    optionsLifetime: ServiceLifetime.Scoped);
 
 // Add services to the container.
 builder.Services.AddControllers();
@@ -31,10 +46,10 @@ builder.Services.AddSwaggerGen(c =>
     {
         Title = "ModelSecurityDa API",
         Version = "v1",
-        Description = "API para gestión de seguridad y facturación"
+        Description = "API para gestiï¿½n de seguridad y facturaciï¿½n"
     });
 
-    // Configuración para JWT en Swagger
+    // Configuraciï¿½n para JWT en Swagger
     c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
     {
         Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
@@ -110,7 +125,7 @@ builder.Services.AddScoped<IRoleUserRepository, RoleUserRepository>();
 builder.Services.AddScoped<IModuloFormRepository, ModuloFormRepository>();
 builder.Services.AddScoped<IPermissionRepository, PermissionRepository>();
 
-// Configuración de CORS
+// Configuraciï¿½n de CORS
 builder.Services.AddCors(opciones =>
 {
     opciones.AddPolicy("AllowOrigin", politica =>
@@ -132,13 +147,13 @@ builder.Services.AddCors(opciones =>
     });
 });
 
-// Configurar autenticación JWT
+// Configurar autenticaciï¿½n JWT
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 var secretKey = jwtSettings["SecretKey"];
 
 if (string.IsNullOrEmpty(secretKey))
 {
-    throw new InvalidOperationException("JWT SecretKey no está configurada");
+    throw new InvalidOperationException("JWT SecretKey no estï¿½ configurada");
 }
 
 var key = Encoding.UTF8.GetBytes(secretKey); // Cambiar a UTF8
@@ -172,26 +187,26 @@ var app = builder.Build();
 
 // Log de inicio
 var logger = app.Services.GetRequiredService<ILogger<Program>>();
-logger.LogInformation("Iniciando aplicación ModelSecurityDa...");
+logger.LogInformation("Iniciando aplicaciï¿½n ModelSecurityDa...");
 
-// Verificar conexión a base de datos al inicio
+// Verificar conexiï¿½n a base de datos al inicio
 try
 {
     using (var scope = app.Services.CreateScope())
     {
         var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         var canConnect = await context.Database.CanConnectAsync();
-        logger.LogInformation($"Conexión a base de datos: {(canConnect ? "ÉXITO" : "FALLIDA")}");
+        logger.LogInformation($"Conexiï¿½n a base de datos: {(canConnect ? "ï¿½XITO" : "FALLIDA")}");
 
         if (!canConnect)
         {
-            logger.LogError("No se pudo conectar a la base de datos. Verificar cadena de conexión.");
+            logger.LogError("No se pudo conectar a la base de datos. Verificar cadena de conexiï¿½n.");
         }
     }
 }
 catch (Exception ex)
 {
-    logger.LogError(ex, "Error al verificar conexión a base de datos");
+    logger.LogError(ex, "Error al verificar conexiï¿½n a base de datos");
 }
 
 // Configurar el pipeline de solicitudes
@@ -210,10 +225,10 @@ if (app.Environment.IsDevelopment())
 // REMOVER UseHttpsRedirection en Docker para evitar problemas
 // app.UseHttpsRedirection();
 
-// Usar la política de CORS - debe estar antes de Authentication
+// Usar la polï¿½tica de CORS - debe estar antes de Authentication
 app.UseCors("AllowOrigin");
 
-// Añadir middleware de autenticación antes de autorización
+// Aï¿½adir middleware de autenticaciï¿½n antes de autorizaciï¿½n
 app.UseAuthentication();
 app.UseAuthorization();
 
@@ -246,6 +261,6 @@ app.MapGet("/health", async (ApplicationDbContext context) =>
 
 app.MapControllers();
 
-logger.LogInformation("Aplicación configurada. Esperando requests...");
+logger.LogInformation("Aplicaciï¿½n configurada. Esperando requests...");
 
 app.Run();

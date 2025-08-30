@@ -34,13 +34,18 @@ RUN dotnet publish "Web2.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseA
 FROM base AS final
 WORKDIR /app
 
-# Instalar herramientas necesarias para migraciones y .NET SDK para EF Tools
+
+# Instalar herramientas necesarias para SQL Server, PostgreSQL y MySQL, y .NET EF Tools
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     gnupg \
-    unixodbc-dev \
     ca-certificates \
     wget \
+    unixodbc-dev \
+    postgresql-client \
+    libpq-dev \
+    mariadb-client \
+    libmariadb-dev-compat \
     && curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor -o /usr/share/keyrings/microsoft-prod.gpg \
     && echo "deb [arch=amd64,arm64,armhf signed-by=/usr/share/keyrings/microsoft-prod.gpg] https://packages.microsoft.com/repos/microsoft-debian-bookworm-prod bookworm main" > /etc/apt/sources.list.d/mssql-release.list \
     && apt-get update \

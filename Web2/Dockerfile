@@ -67,10 +67,6 @@ ENV PATH="${PATH}:/opt/mssql-tools18/bin:/root/.dotnet/tools"
 # Copiar archivos publicados
 COPY --from=publish /app/publish .
 
-# Copiar el script de entrada
-COPY entrypoint.sh /usr/local/bin/entrypoint.sh
-RUN chmod +x /usr/local/bin/entrypoint.sh
-
 # Crear usuario no-root para seguridad (después de configurar herramientas)
 RUN adduser --disabled-password --gecos "" appuser \
     && chown -R appuser:appuser /app
@@ -79,4 +75,7 @@ RUN adduser --disabled-password --gecos "" appuser \
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=5 \
    CMD curl --fail http://localhost:8080/health || exit 1
 
-ENTRYPOINT ["/usr/local/bin/entrypoint.sh", "dotnet", "Web2.dll"]
+# Cambiar al usuario no-root
+USER appuser
+
+ENTRYPOINT ["dotnet", "Web2.dll"]

@@ -25,7 +25,13 @@ namespace Entity.Context
         /// <typeparam name="T">Tipo de contexto hijo.</typeparam>
         /// <param name="options">Opciones de configuración para el contexto de base de datos.</param>
         /// <param name="configuration">Instancia de IConfiguration para acceder a la configuración de la aplicación.</param>
-        public ApplicationDbContext(DbContextOptions options, IConfiguration configuration)
+        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options, IConfiguration configuration)
+            : base(options)
+        {
+            _configuration = configuration;
+        }
+
+        protected ApplicationDbContext(DbContextOptions options, IConfiguration configuration)
             : base(options)
         {
             _configuration = configuration;

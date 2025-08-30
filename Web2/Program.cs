@@ -33,7 +33,7 @@ builder.Services.AddDbContext<ApplicationDbContextPostgres>(opciones =>
 builder.Services.AddDbContext<ApplicationDbContextMySql>(opciones =>
     opciones.UseMySql(
         builder.Configuration.GetConnectionString("MySql"),
-        ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("MySql"))),
+        ServerVersion.Parse("8.4.0")),
     contextLifetime: ServiceLifetime.Scoped,
     optionsLifetime: ServiceLifetime.Scoped);
 
@@ -183,18 +183,33 @@ builder.Services.AddAuthentication(options =>
 // Registrar el servicio JWT
 builder.Services.AddScoped<JwtAuthService>();
 
+// Registrar el servicio de selección de base de datos
+builder.Services.AddSingleton<IDatabaseSelectorService, DatabaseSelectorService>();
+
+// Registrar servicio dinámico de personas
+builder.Services.AddScoped<IDynamicPersonService, DynamicPersonService>();
+
 var app = builder.Build();
 
 // Log de inicio
 var logger = app.Services.GetRequiredService<ILogger<Program>>();
 logger.LogInformation("Iniciando aplicaci�n ModelSecurityDa...");
 
-// Verificar conexi�n a base de datos al inicio
+// Aplicar migraciones y verificar conexi�n a base de datos al inicio
 try
 {
     using (var scope = app.Services.CreateScope())
     {
-        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        // Usar el servicio de selección de base de datos
+        var databaseSelector = scope.ServiceProvider.GetRequiredService<IDatabaseSelectorService>();
+        var context = databaseSelector.GetCurrentContext(scope.ServiceProvider);
+        logger.LogInformation($"Usando {databaseSelector.CurrentEngine} como motor de base de datos");
+        
+        logger.LogInformation("Aplicando migraciones de Entity Framework...");
+        await context.Database.MigrateAsync();
+        logger.LogInformation("Migraciones aplicadas exitosamente");
+
+        // Verificar conexi�n
         var canConnect = await context.Database.CanConnectAsync();
         logger.LogInformation($"Conexi�n a base de datos: {(canConnect ? "�XITO" : "FALLIDA")}");
 
@@ -206,7 +221,7 @@ try
 }
 catch (Exception ex)
 {
-    logger.LogError(ex, "Error al verificar conexi�n a base de datos");
+    logger.LogError(ex, "Error al aplicar migraciones o verificar conexi�n a base de datos");
 }
 
 // Configurar el pipeline de solicitudes

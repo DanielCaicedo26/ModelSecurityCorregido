@@ -12,10 +12,10 @@ services:
       ConnectionStrings__SqlServer: Server=nombre-contenedor-bd,1433;Database=ModelSecurityDa;User Id=sa;Password=StrongPwd!123;Encrypt=True;TrustServerCertificate=True;Connection Timeout=60;
       ConnectionStrings__Postgres: Host=postgres-db;Port=5432;Database=modelsecurityda;Username=postgres;Password=StrongPwd!123;
       ConnectionStrings__MySql: Server=mysql-db;Port=3306;Database=modelsecurityda;User=mysqluser;Password=StrongPwd!123;
-      DB_ENGINE: sqlserver
-      DB_SERVER: nombre-contenedor-bd
-      DB_NAME: ModelSecurityDa
-      DB_USER: sa
+      DB_ENGINE: mysql
+      DB_SERVER: mysql-db
+      DB_NAME: modelsecurityda
+      DB_USER: mysqluser
       DB_PASSWORD: StrongPwd!123
     ports:
       - "5112:8080"

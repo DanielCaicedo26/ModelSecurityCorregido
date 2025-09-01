@@ -1,18 +1,17 @@
-﻿using Data.Core;
+using Data.Core;
 using Data.Interfaces;
 using Entity.Context;
 using Entity.Model;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Entity.Services;
-
+using Web2.Services;
 
 namespace Data.Repositories
 {
     public class PersonRepository : GenericRepository<Person>, IPersonRepository
     {
-        public PersonRepository(IDynamicDbContextService dynamicContext, ILogger<PersonRepository> logger)
-            : base(dynamicContext, logger)
+        public PersonRepository(IDbContextProvider dbContextProvider, ILogger<PersonRepository> logger)
+            : base(dbContextProvider, logger)
         {
         }
 
@@ -125,8 +124,3 @@ namespace Data.Repositories
         }
     }
 }
-
-    
-
-
-

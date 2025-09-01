@@ -2,34 +2,23 @@ using Entity.Context;
 using Entity.Model;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Entity.Services;
+using Web2.Services;
 
 namespace Data
 {
-    /// <summary>
-    /// Repositorio encargado de la gesti�n de la entidad PaymentUser en la base de datos.
-    /// </summary>
     public class PaymentUserData
     {
-        private readonly IDynamicDbContextService _dynamicContext;
-        private ApplicationDbContext _context => _dynamicContext.GetCurrentApplicationContext();
+        private readonly IDbContextProvider _dbContextProvider;
         private readonly ILogger<PaymentUserData> _logger;
 
-        /// <summary>
-        /// Constructor que recibe el contexto de base de datos.
-        /// </summary>
-        /// <param name="context">Instancia de <see cref="ApplicationDbContext"/> para la conexi�n con la base de datos.</param>
-        /// <param name="logger">Instancia de <see cref="ILogger{PaymentUserData}"/> para el registro de logs.</param>
-        public PaymentUserData(IDynamicDbContextService dynamicContext, ILogger<PaymentUserData> logger)
+        public PaymentUserData(IDbContextProvider dbContextProvider, ILogger<PaymentUserData> logger)
         {
-            _dynamicContext = dynamicContext;
+            _dbContextProvider = dbContextProvider;
             _logger = logger;
         }
 
-        /// <summary>
-        /// Obtiene todos los usuarios de pago almacenados en la base de datos.
-        /// </summary>
-        /// <returns>Lista de usuarios de pago.</returns>
+        private ApplicationDbContext _context => _dbContextProvider.GetDbContext();
+
         public async Task<IEnumerable<PaymentUser>> GetAllAsync()
         {
             try
@@ -46,11 +35,6 @@ namespace Data
             }
         }
 
-        /// <summary>
-        /// Obtiene un usuario de pago espec�fico por su identificador.
-        /// </summary>
-        /// <param name="id">Identificador del usuario de pago.</param>
-        /// <returns>El usuario de pago encontrado o null si no existe.</returns>
         public async Task<PaymentUser?> GetByIdAsync(int id)
         {
             try
@@ -66,11 +50,6 @@ namespace Data
             }
         }
 
-        /// <summary>
-        /// Crea un nuevo usuario de pago en la base de datos.
-        /// </summary>
-        /// <param name="paymentUser">Instancia del usuario de pago a crear.</param>
-        /// <returns>El usuario de pago creado.</returns>
         public async Task<PaymentUser> CreateAsync(PaymentUser paymentUser)
         {
             try
@@ -86,11 +65,6 @@ namespace Data
             }
         }
 
-        /// <summary>
-        /// Actualiza un usuario de pago existente en la base de datos.
-        /// </summary>
-        /// <param name="paymentUser">Objeto con la informaci�n actualizada.</param>
-        /// <returns>True si la operaci�n fue exitosa, False en caso contrario.</returns>
         public async Task<bool> UpdateAsync(PaymentUser paymentUser)
         {
             try
@@ -98,7 +72,7 @@ namespace Data
                 var existingPaymentUser = await _context.Set<PaymentUser>().FindAsync(paymentUser.Id);
                 if (existingPaymentUser == null)
                 {
-                    _logger.LogWarning("No se encontr� el usuario de pago con ID {PaymentUserId} para actualizar", paymentUser.Id);
+                    _logger.LogWarning("No se encontró el usuario de pago con ID {PaymentUserId} para actualizar", paymentUser.Id);
                     return false;
                 }
 
@@ -113,16 +87,11 @@ namespace Data
             }
         }
 
-        /// <summary>
-        /// Elimina un usuario de pago de la base de datos.
-        /// </summary>
-        /// <param name="id">Identificador �nico del usuario de pago a eliminar.</param>
-        /// <returns>True si la eliminaci�n fue exitosa, False en caso contrario.</returns>
         public async Task<bool> DeleteAsync(int id)
         {
             if (id <= 0)
             {
-                _logger.LogWarning("Se intent� eliminar un usuario de pago con ID inv�lido: {PaymentUserId}", id);
+                _logger.LogWarning("Se intentó eliminar un usuario de pago con ID inválido: {PaymentUserId}", id);
                 return false;
             }
 
@@ -131,7 +100,7 @@ namespace Data
                 var paymentUser = await _context.Set<PaymentUser>().FindAsync(id);
                 if (paymentUser == null)
                 {
-                    _logger.LogInformation("No se encontr� ning�n usuario de pago con ID: {PaymentUserId}", id);
+                    _logger.LogInformation("No se encontró ningún usuario de pago con ID: {PaymentUserId}", id);
                     return false;
                 }
 

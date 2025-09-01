@@ -2,34 +2,23 @@ using Entity.Context;
 using Entity.Model;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Entity.Services;
+using Web2.Services;
 
 namespace Data
 {
-    /// <summary>
-    /// Repositorio encargado de la gesti�n de la entidad RoleFormPermission en la base de datos.
-    /// </summary>
     public class RoleFormPermissionData
     {
-        private readonly IDynamicDbContextService _dynamicContext;
-        private ApplicationDbContext _context => _dynamicContext.GetCurrentApplicationContext();
+        private readonly IDbContextProvider _dbContextProvider;
         private readonly ILogger<RoleFormPermissionData> _logger;
 
-        /// <summary>
-        /// Constructor que recibe el contexto de base de datos.
-        /// </summary>
-        /// <param name="context">Instancia de <see cref="ApplicationDbContext"/> para la conexi�n con la base de datos.</param>
-        /// <param name="logger">Instancia de <see cref="ILogger{RoleFormPermissionData}"/> para el registro de logs.</param>
-        public RoleFormPermissionData(IDynamicDbContextService dynamicContext, ILogger<RoleFormPermissionData> logger)
+        public RoleFormPermissionData(IDbContextProvider dbContextProvider, ILogger<RoleFormPermissionData> logger)
         {
-            _dynamicContext = dynamicContext;
+            _dbContextProvider = dbContextProvider;
             _logger = logger;
         }
 
-        /// <summary>
-        /// Obtiene todos los permisos de formulario de rol almacenados en la base de datos.
-        /// </summary>
-        /// <returns>Lista de permisos de formulario de rol.</returns>
+        private ApplicationDbContext _context => _dbContextProvider.GetDbContext();
+
         public async Task<IEnumerable<RoleFormPermission>> GetAllAsync()
         {
             try
@@ -48,11 +37,6 @@ namespace Data
             }
         }
 
-        /// <summary>
-        /// Obtiene un permiso de formulario de rol espec�fico por su identificador.
-        /// </summary>
-        /// <param name="id">Identificador del permiso de formulario de rol.</param>
-        /// <returns>El permiso de formulario de rol encontrado o null si no existe.</returns>
         public async Task<RoleFormPermission?> GetByIdAsync(int id)
         {
             try
@@ -70,11 +54,6 @@ namespace Data
             }
         }
 
-        /// <summary>
-        /// Crea un nuevo permiso de formulario de rol en la base de datos.
-        /// </summary>
-        /// <param name="roleFormPermission">Instancia del permiso de formulario de rol a crear.</param>
-        /// <returns>El permiso de formulario de rol creado.</returns>
         public async Task<RoleFormPermission> CreateAsync(RoleFormPermission roleFormPermission)
         {
             try
@@ -90,11 +69,6 @@ namespace Data
             }
         }
 
-        /// <summary>
-        /// Actualiza un permiso de formulario de rol existente en la base de datos.
-        /// </summary>
-        /// <param name="roleFormPermission">Objeto con la informaci�n actualizada.</param>
-        /// <returns>True si la operaci�n fue exitosa, False en caso contrario.</returns>
         public async Task<bool> UpdateAsync(RoleFormPermission roleFormPermission)
         {
             try
@@ -102,7 +76,7 @@ namespace Data
                 var existingRoleFormPermission = await _context.Set<RoleFormPermission>().FindAsync(roleFormPermission.Id);
                 if (existingRoleFormPermission == null)
                 {
-                    _logger.LogWarning("No se encontr� el permiso de formulario de rol con ID {RoleFormPermissionId} para actualizar", roleFormPermission.Id);
+                    _logger.LogWarning("No se encontró el permiso de formulario de rol con ID {RoleFormPermissionId} para actualizar", roleFormPermission.Id);
                     return false;
                 }
 
@@ -117,16 +91,11 @@ namespace Data
             }
         }
 
-        /// <summary>
-        /// Elimina un permiso de formulario de rol de la base de datos.
-        /// </summary>
-        /// <param name="id">Identificador �nico del permiso de formulario de rol a eliminar.</param>
-        /// <returns>True si la eliminaci�n fue exitosa, False en caso contrario.</returns>
         public async Task<bool> DeleteAsync(int id)
         {
             if (id <= 0)
             {
-                _logger.LogWarning("Se intent� eliminar un permiso de formulario de rol con ID inv�lido: {RoleFormPermissionId}", id);
+                _logger.LogWarning("Se intentó eliminar un permiso de formulario de rol con ID inválido: {RoleFormPermissionId}", id);
                 return false;
             }
 
@@ -135,7 +104,7 @@ namespace Data
                 var roleFormPermission = await _context.Set<RoleFormPermission>().FindAsync(id);
                 if (roleFormPermission == null)
                 {
-                    _logger.LogInformation("No se encontr� ning�n permiso de formulario de rol con ID: {RoleFormPermissionId}", id);
+                    _logger.LogInformation("No se encontró ningún permiso de formulario de rol con ID: {RoleFormPermissionId}", id);
                     return false;
                 }
 
@@ -151,6 +120,3 @@ namespace Data
         }
     }
 }
-
-
-

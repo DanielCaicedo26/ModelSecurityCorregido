@@ -1,35 +1,24 @@
-﻿using Entity.Context;
+using Entity.Context;
 using Entity.Model;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Entity.Services;
+using Web2.Services;
 
 namespace Data
 {
-    /// <summary>
-    /// Repositorio encargado de la gestión de la entidad InformationInfraction en la base de datos.
-    /// </summary>
     public class InformationInfractionData
     {
-        private readonly IDynamicDbContextService _dynamicContext;
-        private ApplicationDbContext _context => _dynamicContext.GetCurrentApplicationContext();
+        private readonly IDbContextProvider _dbContextProvider;
         private readonly ILogger<InformationInfractionData> _logger;
 
-        /// <summary>
-        /// Constructor que recibe el contexto de base de datos.
-        /// </summary>
-        /// <param name="context">Instancia de <see cref="ApplicationDbContext"/> para la conexión con la base de datos.</param>
-        /// <param name="logger">Instancia de <see cref="ILogger{InformationInfractionData}"/> para el registro de logs.</param>
-        public InformationInfractionData(IDynamicDbContextService dynamicContext, ILogger<InformationInfractionData> logger)
+        public InformationInfractionData(IDbContextProvider dbContextProvider, ILogger<InformationInfractionData> logger)
         {
-            _dynamicContext = dynamicContext;
+            _dbContextProvider = dbContextProvider;
             _logger = logger;
         }
 
-        /// <summary>
-        /// Obtiene todas las infracciones de información almacenadas en la base de datos.
-        /// </summary>
-        /// <returns>Lista de infracciones de información.</returns>
+        private ApplicationDbContext _context => _dbContextProvider.GetDbContext();
+
         public async Task<IEnumerable<InformationInfraction>> GetAllAsync()
         {
             try
@@ -47,11 +36,6 @@ namespace Data
             }
         }
 
-        /// <summary>
-        /// Obtiene una infracción de información específica por su identificador.
-        /// </summary>
-        /// <param name="id">Identificador de la infracción de información.</param>
-        /// <returns>La infracción de información encontrada o null si no existe.</returns>
         public async Task<InformationInfraction?> GetByIdAsync(int id)
         {
             try
@@ -68,11 +52,6 @@ namespace Data
             }
         }
 
-        /// <summary>
-        /// Crea una nueva infracción de información en la base de datos.
-        /// </summary>
-        /// <param name="informationInfraction">Instancia de la infracción de información a crear.</param>
-        /// <returns>La infracción de información creada.</returns>
         public async Task<InformationInfraction> CreateAsync(InformationInfraction informationInfraction)
         {
             try
@@ -88,11 +67,6 @@ namespace Data
             }
         }
 
-        /// <summary>
-        /// Actualiza una infracción de información existente en la base de datos.
-        /// </summary>
-        /// <param name="informationInfraction">Objeto con la información actualizada.</param>
-        /// <returns>True si la operación fue exitosa, False en caso contrario.</returns>
         public async Task<bool> UpdateAsync(InformationInfraction informationInfraction)
         {
             try
@@ -115,11 +89,6 @@ namespace Data
             }
         }
 
-        /// <summary>
-        /// Elimina una infracción de información de la base de datos.
-        /// </summary>
-        /// <param name="id">Identificador único de la infracción de información a eliminar.</param>
-        /// <returns>True si la eliminación fue exitosa, False en caso contrario.</returns>
         public async Task<bool> DeleteAsync(int id)
         {
             if (id <= 0)

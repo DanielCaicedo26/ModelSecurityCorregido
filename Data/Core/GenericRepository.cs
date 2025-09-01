@@ -1,22 +1,22 @@
-﻿using Entity.Context;
+using Entity.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Entity.Services;
+using Web2.Services; // Forced rebuild comment
 
 namespace Data.Core
 {
     public class GenericRepository<T> : IServiceBase<T> where T : class
     {
-        protected readonly IDynamicDbContextService _dynamicContext;
+        protected readonly IDbContextProvider _dbContextProvider;
         protected readonly ILogger _logger;
-        
-        protected ApplicationDbContext _context => _dynamicContext.GetCurrentApplicationContext();
 
-        public GenericRepository(IDynamicDbContextService dynamicContext, ILogger logger)
+        public GenericRepository(IDbContextProvider dbContextProvider, ILogger<GenericRepository<T>> logger)
         {
-            _dynamicContext = dynamicContext;
+            _dbContextProvider = dbContextProvider;
             _logger = logger;
         }
+
+        protected ApplicationDbContext _context => _dbContextProvider.GetDbContext();
 
         public virtual async Task<IEnumerable<T>> GetAllAsync()
         {

@@ -1,26 +1,20 @@
-﻿using Data.Core;
+using Data.Core;
 using Data.Interfaces;
 using Entity.Context;
 using Entity.Model;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Entity.Services;
+using Web2.Services;
 
 namespace Data.Repositories
 {
-    /// <summary>
-    /// Implementación del repositorio para la entidad RoleUser.
-    /// </summary>
     public class RoleUserRepository : GenericRepository<RoleUser>, IRoleUserRepository
     {
-        public RoleUserRepository(IDynamicDbContextService dynamicContext, ILogger<RoleUserRepository> logger)
-            : base(dynamicContext, logger)
+        public RoleUserRepository(IDbContextProvider dbContextProvider, ILogger<RoleUserRepository> logger)
+            : base(dbContextProvider, logger)
         {
         }
 
-        /// <summary>
-        /// Obtiene todas las asignaciones de roles con sus relaciones.
-        /// </summary>
         public override async Task<IEnumerable<RoleUser>> GetAllAsync()
         {
             return await _context.RoleUser
@@ -30,9 +24,6 @@ namespace Data.Repositories
                 .ToListAsync();
         }
 
-        /// <summary>
-        /// Obtiene una asignación de rol por su ID con sus relaciones.
-        /// </summary>
         public override async Task<RoleUser?> GetByIdAsync(int id)
         {
             return await _context.RoleUser
@@ -41,9 +32,6 @@ namespace Data.Repositories
                 .FirstOrDefaultAsync(ru => ru.Id == id);
         }
 
-        /// <summary>
-        /// Obtiene asignaciones de roles por ID de usuario.
-        /// </summary>
         public async Task<IEnumerable<RoleUser>> GetByUserIdAsync(int userId)
         {
             return await _context.RoleUser
@@ -53,9 +41,6 @@ namespace Data.Repositories
                 .ToListAsync();
         }
 
-        /// <summary>
-        /// Obtiene asignaciones de roles por ID de rol.
-        /// </summary>
         public async Task<IEnumerable<RoleUser>> GetByRoleIdAsync(int roleId)
         {
             return await _context.RoleUser
@@ -66,9 +51,6 @@ namespace Data.Repositories
                 .ToListAsync();
         }
 
-        /// <summary>
-        /// Actualiza una asignación de rol existente.
-        /// </summary>
         public override async Task<bool> UpdateAsync(RoleUser roleUser)
         {
             var existingRoleUser = await _context.RoleUser.FindAsync(roleUser.Id);
@@ -78,7 +60,6 @@ namespace Data.Repositories
                 return false;
             }
 
-            // Preservar la fecha de creación original
             roleUser.CreatedAt = existingRoleUser.CreatedAt;
 
             _context.Entry(existingRoleUser).CurrentValues.SetValues(roleUser);
@@ -86,9 +67,6 @@ namespace Data.Repositories
             return true;
         }
 
-        /// <summary>
-        /// Elimina una asignación de rol físicamente.
-        /// </summary>
         public override async Task<bool> DeleteAsync(int id)
         {
             var roleUser = await _context.RoleUser.FindAsync(id);
@@ -100,9 +78,6 @@ namespace Data.Repositories
             return true;
         }
 
-        /// <summary>
-        /// Realiza una eliminación lógica de la asignación de rol.
-        /// </summary>
         public override async Task<bool> DeleteLogicalAsync(int id)
         {
             var roleUser = await _context.RoleUser.FindAsync(id);

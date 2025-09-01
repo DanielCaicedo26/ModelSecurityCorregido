@@ -2,44 +2,31 @@ using Entity.Context;
 using Entity.Model;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Entity.Services;
+using Web2.Services;
 
 namespace Data
 {
-    /// <summary>
-    /// Repositorio encargado de la gesti�n de la entidad Person en la base de datos.
-    /// </summary>
     public class PersonData
     {
-        private readonly IDynamicDbContextService _dynamicContext;
-        private ApplicationDbContext _context => _dynamicContext.GetCurrentApplicationContext();
+        private readonly IDbContextProvider _dbContextProvider;
         private readonly ILogger<PersonData> _logger;
 
-        /// <summary>
-        /// Constructor que recibe el contexto de base de datos.
-        /// </summary>
-        /// <param name="context">Instancia de <see cref="ApplicationDbContext"/> para la conexi�n con la base de datos.</param>
-        /// <param name="logger">Instancia de <see cref="ILogger{PersonData}"/> para el registro de logs.</param>
-        public PersonData(IDynamicDbContextService dynamicContext, ILogger<PersonData> logger)
+        public PersonData(IDbContextProvider dbContextProvider, ILogger<PersonData> logger)
         {
-            _dynamicContext = dynamicContext;
+            _dbContextProvider = dbContextProvider;
             _logger = logger;
         }
 
-        /// <summary>
-        /// Obtiene todas las personas almacenadas en la base de datos.
-        /// </summary>
-        /// <returns>Lista de personas.</returns>
+        private ApplicationDbContext _context => _dbContextProvider.GetDbContext();
+
         public async Task<IEnumerable<Person>> GetAllAsync()
         {
             try
             {
-                // Obtenemos los datos sin incluir las propiedades que pueden causar problemas
                 var persons = await _context.Set<Person>()
                     .AsNoTracking()
                     .ToListAsync();
 
-                // Asignamos valores predeterminados a campos NULL
                 foreach (var person in persons)
                 {
                     if (person.DocumentNumber == null)
@@ -52,7 +39,6 @@ namespace Data
                     }
                 }
 
-                // Cargamos las propiedades de navegaci�n manualmente si es necesario
                 foreach (var person in persons)
                 {
                     await _context.Entry(person)
@@ -77,22 +63,15 @@ namespace Data
             }
         }
 
-        /// <summary>
-        /// Obtiene una persona espec�fica por su identificador.
-        /// </summary>
-        /// <param name="id">Identificador de la persona.</param>
-        /// <returns>La persona encontrada o null si no existe.</returns>
         public async Task<Person?> GetByIdAsync(int id)
         {
             try
             {
-                // Primero obtenemos la persona sin incluir propiedades que puedan causar problemas
                 var person = await _context.Set<Person>()
                     .FirstOrDefaultAsync(p => p.Id == id);
 
                 if (person != null)
                 {
-                    // Asignamos valores predeterminados a campos NULL
                     if (person.DocumentNumber == null)
                     {
                         person.DocumentNumber = $"SIN-DOCUMENTO-{person.Id}";
@@ -102,7 +81,6 @@ namespace Data
                         person.DocumentType = "NO ESPECIFICADO";
                     }
 
-                    // Cargamos las propiedades de navegaci�n manualmente
                     await _context.Entry(person)
                         .Reference(p => p.User)
                         .LoadAsync();
@@ -125,22 +103,15 @@ namespace Data
             }
         }
 
-        /// <summary>
-        /// Obtiene personas por su n�mero de documento.
-        /// </summary>
-        /// <param name="documentNumber">N�mero de documento a buscar.</param>
-        /// <returns>Lista de personas con el n�mero de documento especificado.</returns>
         public async Task<IEnumerable<Person>> GetByDocumentNumberAsync(string documentNumber)
         {
             try
             {
-                // Primero obtenemos las personas sin incluir propiedades que puedan causar problemas
                 var persons = await _context.Set<Person>()
                     .Where(p => p.DocumentNumber == documentNumber)
                     .AsNoTracking()
                     .ToListAsync();
 
-                // Asignamos valores predeterminados a campos NULL
                 foreach (var person in persons)
                 {
                     if (person.DocumentNumber == null)
@@ -153,7 +124,6 @@ namespace Data
                     }
                 }
 
-                // Cargamos las propiedades de navegaci�n manualmente si es necesario
                 foreach (var person in persons)
                 {
                     await _context.Entry(person)
@@ -173,21 +143,15 @@ namespace Data
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al obtener personas con n�mero de documento {DocumentNumber}", documentNumber);
+                _logger.LogError(ex, "Error al obtener personas con número de documento {DocumentNumber}", documentNumber);
                 throw;
             }
         }
 
-        /// <summary>
-        /// Crea una nueva persona en la base de datos.
-        /// </summary>
-        /// <param name="person">Instancia de la persona a crear.</param>
-        /// <returns>La persona creada.</returns>
         public async Task<Person> CreateAsync(Person person)
         {
             try
             {
-                // Asegurarse de que los campos no sean NULL antes de guardar
                 if (person.DocumentNumber == null)
                 {
                     person.DocumentNumber = $"SIN-DOCUMENTO-{DateTime.Now.Ticks}";
@@ -208,11 +172,6 @@ namespace Data
             }
         }
 
-        /// <summary>
-        /// Actualiza una persona existente en la base de datos.
-        /// </summary>
-        /// <param name="person">Objeto con la informaci�n actualizada.</param>
-        /// <returns>True si la operaci�n fue exitosa, False en caso contrario.</returns>
         public async Task<bool> UpdateAsync(Person person)
         {
             try
@@ -220,11 +179,10 @@ namespace Data
                 var existingPerson = await _context.Set<Person>().FindAsync(person.Id);
                 if (existingPerson == null)
                 {
-                    _logger.LogWarning("No se encontr� la persona con ID {PersonId} para actualizar", person.Id);
+                    _logger.LogWarning("No se encontró la persona con ID {PersonId} para actualizar", person.Id);
                     return false;
                 }
 
-                // Asegurarse de que los campos no sean NULL antes de guardar
                 if (person.DocumentNumber == null)
                 {
                     person.DocumentNumber = $"SIN-DOCUMENTO-{person.Id}";
@@ -245,16 +203,11 @@ namespace Data
             }
         }
 
-        /// <summary>
-        /// Elimina una persona de la base de datos.
-        /// </summary>
-        /// <param name="id">Identificador �nico de la persona a eliminar.</param>
-        /// <returns>True si la eliminaci�n fue exitosa, False en caso contrario.</returns>
         public async Task<bool> DeleteAsync(int id)
         {
             if (id <= 0)
             {
-                _logger.LogWarning("Se intent� eliminar una persona con ID inv�lido: {PersonId}", id);
+                _logger.LogWarning("Se intentó eliminar una persona con ID inválido: {PersonId}", id);
                 return false;
             }
 
@@ -263,7 +216,7 @@ namespace Data
                 var person = await _context.Set<Person>().FindAsync(id);
                 if (person == null)
                 {
-                    _logger.LogInformation("No se encontr� ninguna persona con ID: {PersonId}", id);
+                    _logger.LogInformation("No se encontró ninguna persona con ID: {PersonId}", id);
                     return false;
                 }
 

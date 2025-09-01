@@ -8,8 +8,8 @@ using Entity.Context;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using System.Text;
-using Entity.Services;
 using Web2.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -18,60 +18,62 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Logging.AddConsole();
 builder.Logging.SetMinimumLevel(LogLevel.Information);
 
+// --- NEW: Register all three DbContexts ---
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("SqlServer")));
 
-// Registrar tres DbContext, uno para cada motor
-builder.Services.AddDbContext<ApplicationDbContext>(opciones =>
-    opciones.UseSqlServer(builder.Configuration.GetConnectionString("SqlServer")),
-    contextLifetime: ServiceLifetime.Scoped,
-    optionsLifetime: ServiceLifetime.Scoped);
+builder.Services.AddDbContext<ApplicationDbContextPostgres>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("Postgres")));
 
-builder.Services.AddDbContext<ApplicationDbContextPostgres>(opciones =>
-    opciones.UseNpgsql(builder.Configuration.GetConnectionString("Postgres")),
-    contextLifetime: ServiceLifetime.Scoped,
-    optionsLifetime: ServiceLifetime.Scoped);
+builder.Services.AddDbContext<ApplicationDbContextMySql>(options =>
+    options.UseMySql(builder.Configuration.GetConnectionString("MySql"), ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("MySql"))));
 
-builder.Services.AddDbContext<ApplicationDbContextMySql>(opciones =>
-    opciones.UseMySql(
-        builder.Configuration.GetConnectionString("MySql"),
-        ServerVersion.Parse("8.4.0")),
-    contextLifetime: ServiceLifetime.Scoped,
-    optionsLifetime: ServiceLifetime.Scoped);
+// --- NEW: Register services for per-request DB switching ---
+builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+builder.Services.AddScoped<IDbContextProvider, PerRequestDbContextProvider>();
+
 
 // Add services to the container.
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
+
+// --- NEW: Update Swagger to include custom header ---
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+    c.SwaggerDoc("v1", new OpenApiInfo
     {
         Title = "ModelSecurityDa API",
         Version = "v1",
-        Description = "API para gesti�n de seguridad y facturaci�n"
+        Description = "API para gestión de seguridad y facturación. Use the 'X-Database-Engine' header to choose 'sqlserver', 'postgres', or 'mysql'."
     });
 
-    // Configuraci�n para JWT en Swagger
-    c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+    // Add custom header for database selection
+    c.OperationFilter<AddRequiredHeaderParameter>();
+
+
+    // Configuración para JWT en Swagger
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
         Name = "Authorization",
-        In = Microsoft.OpenApi.Models.ParameterLocation.Header,
-        Type = Microsoft.OpenApi.Models.SecuritySchemeType.ApiKey,
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.ApiKey,
         Scheme = "Bearer"
     });
 
-    c.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement()
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement()
     {
         {
-            new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+            new OpenApiSecurityScheme
             {
-                Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                Reference = new OpenApiReference
                 {
-                    Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                    Type = ReferenceType.SecurityScheme,
                     Id = "Bearer"
                 },
                 Scheme = "oauth2",
                 Name = "Bearer",
-                In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+                In = ParameterLocation.Header,
             },
             new List<string>()
         }
@@ -125,7 +127,7 @@ builder.Services.AddScoped<IRoleUserRepository, RoleUserRepository>();
 builder.Services.AddScoped<IModuloFormRepository, ModuloFormRepository>();
 builder.Services.AddScoped<IPermissionRepository, PermissionRepository>();
 
-// Configuraci�n de CORS
+// Configuración de CORS
 builder.Services.AddCors(opciones =>
 {
     opciones.AddPolicy("AllowOrigin", politica =>
@@ -147,16 +149,16 @@ builder.Services.AddCors(opciones =>
     });
 });
 
-// Configurar autenticaci�n JWT
+// Configurar autenticación JWT
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 var secretKey = jwtSettings["SecretKey"];
 
 if (string.IsNullOrEmpty(secretKey))
 {
-    throw new InvalidOperationException("JWT SecretKey no est� configurada");
+    throw new InvalidOperationException("JWT SecretKey no está configurada");
 }
 
-var key = Encoding.UTF8.GetBytes(secretKey); // Cambiar a UTF8
+var key = Encoding.UTF8.GetBytes(secretKey);
 
 builder.Services.AddAuthentication(options =>
 {
@@ -180,52 +182,67 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-// Registrar el servicio JWT
 builder.Services.AddScoped<JwtAuthService>();
-
-// Registrar el servicio de selección de base de datos
-builder.Services.AddSingleton<IDatabaseSelectorService, DatabaseSelectorService>();
-
-// Registrar el servicio de contexto dinámico
-builder.Services.AddScoped<IDynamicDbContextService, DynamicDbContextServiceImpl>();
-
-// Registrar servicio dinámico de personas
-builder.Services.AddScoped<IDynamicPersonService, DynamicPersonService>();
 
 var app = builder.Build();
 
 // Log de inicio
 var logger = app.Services.GetRequiredService<ILogger<Program>>();
-logger.LogInformation("Iniciando aplicaci�n ModelSecurityDa...");
+logger.LogInformation("Iniciando aplicación ModelSecurityDa...");
 
-// Aplicar migraciones y verificar conexi�n a base de datos al inicio
+// --- NEW: Migration logic for all three databases ---
 try
 {
     using (var scope = app.Services.CreateScope())
     {
-        // Usar el servicio de selección de base de datos
-        var databaseSelector = scope.ServiceProvider.GetRequiredService<IDatabaseSelectorService>();
-        var context = databaseSelector.GetCurrentContext(scope.ServiceProvider);
-        logger.LogInformation($"Usando {databaseSelector.CurrentEngine} como motor de base de datos");
-        
-        logger.LogInformation("Aplicando migraciones de Entity Framework...");
-        await context.Database.MigrateAsync();
-        logger.LogInformation("Migraciones aplicadas exitosamente");
+        var serviceProvider = scope.ServiceProvider;
+        var mainLogger = serviceProvider.GetRequiredService<ILogger<Program>>();
 
-        // Verificar conexi�n
-        var canConnect = await context.Database.CanConnectAsync();
-        logger.LogInformation($"Conexi�n a base de datos: {(canConnect ? "�XITO" : "FALLIDA")}");
-
-        if (!canConnect)
+        // Migrate SQL Server
+        try
         {
-            logger.LogError("No se pudo conectar a la base de datos. Verificar cadena de conexi�n.");
+            mainLogger.LogInformation("Applying SQL Server migrations...");
+            var sqlContext = serviceProvider.GetRequiredService<ApplicationDbContext>();
+            await sqlContext.Database.MigrateAsync();
+            mainLogger.LogInformation("SQL Server migrations applied successfully.");
+        }
+        catch (Exception ex)
+        {
+            mainLogger.LogError(ex, "Error applying SQL Server migrations.");
+        }
+
+        // Migrate PostgreSQL
+        try
+        {
+            mainLogger.LogInformation("Applying PostgreSQL migrations...");
+            var postgresContext = serviceProvider.GetRequiredService<ApplicationDbContextPostgres>();
+            await postgresContext.Database.MigrateAsync();
+            mainLogger.LogInformation("PostgreSQL migrations applied successfully.");
+        }
+        catch (Exception ex)
+        {
+            mainLogger.LogInformation("Error applying PostgreSQL migrations.");
+        }
+
+        // Migrate MySQL
+        try
+        {
+            mainLogger.LogInformation("Applying MySQL migrations...");
+            var mysqlContext = serviceProvider.GetRequiredService<ApplicationDbContextMySql>();
+            await mysqlContext.Database.MigrateAsync();
+            mainLogger.LogInformation("MySQL migrations applied successfully.");
+        }
+        catch (Exception ex)
+        {
+            mainLogger.LogError(ex, "Error applying MySQL migrations.");
         }
     }
 }
 catch (Exception ex)
 {
-    logger.LogError(ex, "Error al aplicar migraciones o verificar conexi�n a base de datos");
+    logger.LogError(ex, "An error occurred during the initial database migration setup.");
 }
+
 
 // Configurar el pipeline de solicitudes
 if (app.Environment.IsDevelopment())
@@ -243,10 +260,10 @@ if (app.Environment.IsDevelopment())
 // REMOVER UseHttpsRedirection en Docker para evitar problemas
 // app.UseHttpsRedirection();
 
-// Usar la pol�tica de CORS - debe estar antes de Authentication
+// Usar la política de CORS - debe estar antes de Authentication
 app.UseCors("AllowOrigin");
 
-// A�adir middleware de autenticaci�n antes de autorizaci�n
+// Añadir middleware de autenticación antes de autorización
 app.UseAuthentication();
 app.UseAuthorization();
 
@@ -259,18 +276,20 @@ app.MapGet("/", () => Results.Ok(new
     message = "ModelSecurityDa API is running"
 }));
 
-app.MapGet("/health", async (IServiceProvider serviceProvider) =>
+// --- NEW: Updated Health Check ---
+app.MapGet("/health", async (IDbContextProvider dbProvider) =>
 {
     try
     {
-        var databaseSelector = serviceProvider.GetRequiredService<IDatabaseSelectorService>();
-        var context = databaseSelector.GetCurrentContext(serviceProvider);
+        var context = dbProvider.GetDbContext();
         var canConnect = await context.Database.CanConnectAsync();
+        var dbName = context.Database.ProviderName;
+
         return Results.Ok(new
         {
             status = canConnect ? "Healthy" : "Unhealthy",
             database = canConnect ? "Connected" : "Disconnected",
-            engine = databaseSelector.CurrentEngine,
+            engine = dbName,
             timestamp = DateTime.UtcNow
         });
     }
@@ -280,8 +299,32 @@ app.MapGet("/health", async (IServiceProvider serviceProvider) =>
     }
 });
 
+
 app.MapControllers();
 
-logger.LogInformation("Aplicaci�n configurada. Esperando requests...");
+logger.LogInformation("Aplicación configurada. Esperando requests...");
 
 app.Run();
+
+// --- NEW: Swagger Operation Filter Class ---
+public class AddRequiredHeaderParameter : IOperationFilter
+{
+    public void Apply(OpenApiOperation operation, OperationFilterContext context)
+    {
+        if (operation.Parameters == null)
+            operation.Parameters = new List<OpenApiParameter>();
+
+        operation.Parameters.Add(new OpenApiParameter
+        {
+            Name = "X-Database-Engine",
+            In = ParameterLocation.Header,
+            Description = "Database engine to use (sqlserver, postgres, mysql)",
+            Required = false, // Set to false so it's not mandatory for all requests
+            Schema = new OpenApiSchema
+            {
+                Type = "string",
+                Default = new Microsoft.OpenApi.Any.OpenApiString("sqlserver")
+            }
+        });
+    }
+}

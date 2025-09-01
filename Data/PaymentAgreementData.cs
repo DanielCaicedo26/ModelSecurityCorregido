@@ -2,34 +2,23 @@ using Entity.Context;
 using Entity.Model;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Entity.Services;
+using Web2.Services;
 
 namespace Data
 {
-    /// <summary>
-    /// Repositorio encargado de la gesti�n de la entidad PaymentAgreement en la base de datos.
-    /// </summary>
     public class PaymentAgreementData
     {
-        private readonly IDynamicDbContextService _dynamicContext;
-        private ApplicationDbContext _context => _dynamicContext.GetCurrentApplicationContext();
+        private readonly IDbContextProvider _dbContextProvider;
         private readonly ILogger<PaymentAgreementData> _logger;
 
-        /// <summary>
-        /// Constructor que recibe el contexto de base de datos.
-        /// </summary>
-        /// <param name="context">Instancia de <see cref="ApplicationDbContext"/> para la conexi�n con la base de datos.</param>
-        /// <param name="logger">Instancia de <see cref="ILogger{PaymentAgreementData}"/> para el registro de logs.</param>
-        public PaymentAgreementData(IDynamicDbContextService dynamicContext, ILogger<PaymentAgreementData> logger)
+        public PaymentAgreementData(IDbContextProvider dbContextProvider, ILogger<PaymentAgreementData> logger)
         {
-            _dynamicContext = dynamicContext;
+            _dbContextProvider = dbContextProvider;
             _logger = logger;
         }
 
-        /// <summary>
-        /// Obtiene todos los acuerdos de pago almacenados en la base de datos.
-        /// </summary>
-        /// <returns>Lista de acuerdos de pago.</returns>
+        private ApplicationDbContext _context => _dbContextProvider.GetDbContext();
+
         public async Task<IEnumerable<PaymentAgreement>> GetAllAsync()
         {
             try
@@ -47,11 +36,6 @@ namespace Data
             }
         }
 
-        /// <summary>
-        /// Obtiene un acuerdo de pago espec�fico por su identificador.
-        /// </summary>
-        /// <param name="id">Identificador del acuerdo de pago.</param>
-        /// <returns>El acuerdo de pago encontrado o null si no existe.</returns>
         public async Task<PaymentAgreement?> GetByIdAsync(int id)
         {
             try
@@ -68,11 +52,6 @@ namespace Data
             }
         }
 
-        /// <summary>
-        /// Crea un nuevo acuerdo de pago en la base de datos.
-        /// </summary>
-        /// <param name="paymentAgreement">Instancia del acuerdo de pago a crear.</param>
-        /// <returns>El acuerdo de pago creado.</returns>
         public async Task<PaymentAgreement> CreateAsync(PaymentAgreement paymentAgreement)
         {
             try
@@ -88,11 +67,6 @@ namespace Data
             }
         }
 
-        /// <summary>
-        /// Actualiza un acuerdo de pago existente en la base de datos.
-        /// </summary>
-        /// <param name="paymentAgreement">Objeto con la informaci�n actualizada.</param>
-        /// <returns>True si la operaci�n fue exitosa, False en caso contrario.</returns>
         public async Task<bool> UpdateAsync(PaymentAgreement paymentAgreement)
         {
             try
@@ -100,7 +74,7 @@ namespace Data
                 var existingPaymentAgreement = await _context.Set<PaymentAgreement>().FindAsync(paymentAgreement.Id);
                 if (existingPaymentAgreement == null)
                 {
-                    _logger.LogWarning("No se encontr� el acuerdo de pago con ID {PaymentAgreementId} para actualizar", paymentAgreement.Id);
+                    _logger.LogWarning("No se encontró el acuerdo de pago con ID {PaymentAgreementId} para actualizar", paymentAgreement.Id);
                     return false;
                 }
 
@@ -115,16 +89,11 @@ namespace Data
             }
         }
 
-        /// <summary>
-        /// Elimina un acuerdo de pago de la base de datos.
-        /// </summary>
-        /// <param name="id">Identificador �nico del acuerdo de pago a eliminar.</param>
-        /// <returns>True si la eliminaci�n fue exitosa, False en caso contrario.</returns>
         public async Task<bool> DeleteAsync(int id)
         {
             if (id <= 0)
             {
-                _logger.LogWarning("Se intent� eliminar un acuerdo de pago con ID inv�lido: {PaymentAgreementId}", id);
+                _logger.LogWarning("Se intentó eliminar un acuerdo de pago con ID inválido: {PaymentAgreementId}", id);
                 return false;
             }
 
@@ -133,7 +102,7 @@ namespace Data
                 var paymentAgreement = await _context.Set<PaymentAgreement>().FindAsync(id);
                 if (paymentAgreement == null)
                 {
-                    _logger.LogInformation("No se encontr� ning�n acuerdo de pago con ID: {PaymentAgreementId}", id);
+                    _logger.LogInformation("No se encontró ningún acuerdo de pago con ID: {PaymentAgreementId}", id);
                     return false;
                 }
 
@@ -149,5 +118,3 @@ namespace Data
         }
     }
 }
-
-

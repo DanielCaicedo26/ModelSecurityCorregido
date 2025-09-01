@@ -1,16 +1,16 @@
-﻿using Data.Core;
+using Data.Core;
 using Data.Interfaces;
 using Entity.Context;
 using Entity.Model;
 using Microsoft.Extensions.Logging;
-using Entity.Services;
+using Web2.Services;
 
 namespace Data.Repositories
 {
     public class ModuloFormRepository : GenericRepository<ModuloForm>, IModuloFormRepository
     {
-        public ModuloFormRepository(IDynamicDbContextService dynamicContext, ILogger<ModuloFormRepository> logger)
-            : base(dynamicContext, logger)
+        public ModuloFormRepository(IDbContextProvider dbContextProvider, ILogger<ModuloFormRepository> logger)
+            : base(dbContextProvider, logger)
         {
         }
     }

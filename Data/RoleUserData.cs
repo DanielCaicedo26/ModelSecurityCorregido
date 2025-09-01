@@ -2,34 +2,23 @@ using Entity.Context;
 using Entity.Model;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Entity.Services;
+using Web2.Services;
 
 namespace Data
 {
-    /// <summary>
-    /// Repositorio encargado de la gesti�n de la entidad RoleUser en la base de datos.
-    /// </summary>
     public class RoleUserData
     {
-        private readonly IDynamicDbContextService _dynamicContext;
-        private ApplicationDbContext _context => _dynamicContext.GetCurrentApplicationContext();
+        private readonly IDbContextProvider _dbContextProvider;
         private readonly ILogger<RoleUserData> _logger;
 
-        /// <summary>
-        /// Constructor que recibe el contexto de base de datos.
-        /// </summary>
-        /// <param name="context">Instancia de <see cref="ApplicationDbContext"/> para la conexi�n con la base de datos.</param>
-        /// <param name="logger">Instancia de <see cref="ILogger{RoleUserData}"/> para el registro de logs.</param>
-        public RoleUserData(IDynamicDbContextService dynamicContext, ILogger<RoleUserData> logger)
+        public RoleUserData(IDbContextProvider dbContextProvider, ILogger<RoleUserData> logger)
         {
-            _dynamicContext = dynamicContext;
+            _dbContextProvider = dbContextProvider;
             _logger = logger;
         }
 
-        /// <summary>
-        /// Obtiene todos los usuarios de rol almacenados en la base de datos.
-        /// </summary>
-        /// <returns>Lista de usuarios de rol.</returns>
+        private ApplicationDbContext _context => _dbContextProvider.GetDbContext();
+
         public async Task<IEnumerable<RoleUser>> GetAllAsync()
         {
             try
@@ -47,11 +36,6 @@ namespace Data
             }
         }
 
-        /// <summary>
-        /// Obtiene un usuario de rol espec�fico por su identificador.
-        /// </summary>
-        /// <param name="id">Identificador del usuario de rol.</param>
-        /// <returns>El usuario de rol encontrado o null si no existe.</returns>
         public async Task<RoleUser?> GetByIdAsync(int id)
         {
             try
@@ -68,11 +52,6 @@ namespace Data
             }
         }
 
-        /// <summary>
-        /// Crea un nuevo usuario de rol en la base de datos.
-        /// </summary>
-        /// <param name="roleUser">Instancia del usuario de rol a crear.</param>
-        /// <returns>El usuario de rol creado.</returns>
         public async Task<RoleUser> CreateAsync(RoleUser roleUser)
         {
             try
@@ -88,11 +67,6 @@ namespace Data
             }
         }
 
-        /// <summary>
-        /// Actualiza un usuario de rol existente en la base de datos.
-        /// </summary>
-        /// <param name="roleUser">Objeto con la informaci�n actualizada.</param>
-        /// <returns>True si la operaci�n fue exitosa, False en caso contrario.</returns>
         public async Task<bool> UpdateAsync(RoleUser roleUser)
         {
             try
@@ -100,7 +74,7 @@ namespace Data
                 var existingRoleUser = await _context.Set<RoleUser>().FindAsync(roleUser.Id);
                 if (existingRoleUser == null)
                 {
-                    _logger.LogWarning("No se encontr� el usuario de rol con ID {RoleUserId} para actualizar", roleUser.Id);
+                    _logger.LogWarning("No se encontró el usuario de rol con ID {RoleUserId} para actualizar", roleUser.Id);
                     return false;
                 }
 
@@ -115,16 +89,11 @@ namespace Data
             }
         }
 
-        /// <summary>
-        /// Elimina un usuario de rol de la base de datos.
-        /// </summary>
-        /// <param name="id">Identificador �nico del usuario de rol a eliminar.</param>
-        /// <returns>True si la eliminaci�n fue exitosa, False en caso contrario.</returns>
         public async Task<bool> DeleteAsync(int id)
         {
             if (id <= 0)
             {
-                _logger.LogWarning("Se intent� eliminar un usuario de rol con ID inv�lido: {RoleUserId}", id);
+                _logger.LogWarning("Se intentó eliminar un usuario de rol con ID inválido: {RoleUserId}", id);
                 return false;
             }
 
@@ -133,7 +102,7 @@ namespace Data
                 var roleUser = await _context.Set<RoleUser>().FindAsync(id);
                 if (roleUser == null)
                 {
-                    _logger.LogInformation("No se encontr� ning�n usuario de rol con ID: {RoleUserId}", id);
+                    _logger.LogInformation("No se encontró ningún usuario de rol con ID: {RoleUserId}", id);
                     return false;
                 }
 
@@ -149,6 +118,3 @@ namespace Data
         }
     }
 }
-
-
-

@@ -1,17 +1,17 @@
-﻿using Data.Core;
+using Data.Core;
 using Data.Interfaces;
 using Entity.Context;
 using Entity.Model;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Entity.Services;
+using Web2.Services;
 
 namespace Data.Repositories
 {
     public class AccessLogRepository : GenericRepository<AccessLog>, IAccessLogRepository
     {
-        public AccessLogRepository(IDynamicDbContextService dynamicContext, ILogger<AccessLogRepository> logger)
-            : base(dynamicContext, logger)
+        public AccessLogRepository(IDbContextProvider dbContextProvider, ILogger<AccessLogRepository> logger)
+            : base(dbContextProvider, logger)
         {
         }
 

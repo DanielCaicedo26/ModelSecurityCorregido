@@ -1,35 +1,24 @@
-﻿using Entity.Context;
+using Entity.Context;
 using Entity.Model;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Entity.Services;
+using Web2.Services;
 
 namespace Data
 {
-    /// <summary>
-    /// Repositorio encargado de la gestión de la entidad Bill en la base de datos.
-    /// </summary>
     public class BillData
     {
-        private readonly IDynamicDbContextService _dynamicContext;
-        private ApplicationDbContext _context => _dynamicContext.GetCurrentApplicationContext();
+        private readonly IDbContextProvider _dbContextProvider;
         private readonly ILogger<BillData> _logger;
 
-        /// <summary>
-        /// Constructor que recibe el contexto de base de datos.
-        /// </summary>
-        /// <param name="context">Instancia de <see cref="ApplicationDbContext"/> para la conexión con la base de datos.</param>
-        /// <param name="logger">Instancia de <see cref="ILogger{BillData}"/> para el registro de logs.</param>
-        public BillData(IDynamicDbContextService dynamicContext, ILogger<BillData> logger)
+        public BillData(IDbContextProvider dbContextProvider, ILogger<BillData> logger)
         {
-            _dynamicContext = dynamicContext;
+            _dbContextProvider = dbContextProvider;
             _logger = logger;
         }
 
-        /// <summary>
-        /// Obtiene todas las facturas almacenadas en la base de datos.
-        /// </summary>
-        /// <returns>Lista de facturas.</returns>
+        private ApplicationDbContext _context => _dbContextProvider.GetDbContext();
+
         public async Task<IEnumerable<Bill>> GetAllAsync()
         {
             try
@@ -47,11 +36,6 @@ namespace Data
             }
         }
 
-        /// <summary>
-        /// Obtiene una factura específica por su identificador.
-        /// </summary>
-        /// <param name="id">Identificador de la factura.</param>
-        /// <returns>La factura encontrada o null si no existe.</returns>
         public async Task<Bill?> GetByIdAsync(int id)
         {
             try
@@ -68,11 +52,6 @@ namespace Data
             }
         }
 
-        /// <summary>
-        /// Crea una nueva factura en la base de datos.
-        /// </summary>
-        /// <param name="bill">Instancia de la factura a crear.</param>
-        /// <returns>La factura creada.</returns>
         public async Task<Bill> CreateAsync(Bill bill)
         {
             try
@@ -88,11 +67,6 @@ namespace Data
             }
         }
 
-        /// <summary>
-        /// Actualiza una factura existente en la base de datos.
-        /// </summary>
-        /// <param name="bill">Objeto con la información actualizada.</param>
-        /// <returns>True si la operación fue exitosa, False en caso contrario.</returns>
         public async Task<bool> UpdateAsync(Bill bill)
         {
             try
@@ -115,11 +89,6 @@ namespace Data
             }
         }
 
-        /// <summary>
-        /// Elimina una factura de la base de datos.
-        /// </summary>
-        /// <param name="id">Identificador único de la factura a eliminar.</param>
-        /// <returns>True si la eliminación fue exitosa, False en caso contrario.</returns>
         public async Task<bool> DeleteAsync(int id)
         {
             if (id <= 0)

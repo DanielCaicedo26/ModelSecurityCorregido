@@ -46,7 +46,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d modelsecurityda"]
+      test: ["CMD-SHELL", "PGPASSWORD=StrongPwd!123 psql -h localhost -U postgres -d modelsecurityda -c 'SELECT 1'"]
       interval: 15s
       timeout: 10s
       retries: 10

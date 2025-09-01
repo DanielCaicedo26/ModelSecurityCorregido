@@ -1,25 +1,25 @@
-﻿// Ensure FormRepository implements IFormRepository
 using Data.Interfaces;
 using Entity.Context;
 using Entity.Dto;
 using Entity.Model;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Entity.Services;
+using Web2.Services;
 
 namespace Data.Repositories
 {
     public class FormRepository : IFormRepository
     {
-        private readonly IDynamicDbContextService _dynamicContext;
+        private readonly IDbContextProvider _dbContextProvider;
         private readonly ILogger<FormRepository> _logger;
-        private ApplicationDbContext _context => _dynamicContext.GetCurrentApplicationContext();
 
-        public FormRepository(IDynamicDbContextService dynamicContext, ILogger<FormRepository> logger)
+        public FormRepository(IDbContextProvider dbContextProvider, ILogger<FormRepository> logger)
         {
-            _dynamicContext = dynamicContext;
+            _dbContextProvider = dbContextProvider;
             _logger = logger;
         }
+
+        private ApplicationDbContext _context => _dbContextProvider.GetDbContext();
 
         public async Task<IEnumerable<Form>> GetAllAsync()
         {

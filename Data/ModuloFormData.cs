@@ -2,34 +2,23 @@ using Entity.Context;
 using Entity.Model;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Entity.Services;
+using Web2.Services;
 
 namespace Data
 {
-    /// <summary>
-    /// Repositorio encargado de la gesti�n de la entidad ModuloForm en la base de datos.
-    /// </summary>
     public class ModuloFormData
     {
-        private readonly IDynamicDbContextService _dynamicContext;
-        private ApplicationDbContext _context => _dynamicContext.GetCurrentApplicationContext();
+        private readonly IDbContextProvider _dbContextProvider;
         private readonly ILogger<ModuloFormData> _logger;
 
-        /// <summary>
-        /// Constructor que recibe el contexto de base de datos.
-        /// </summary>
-        /// <param name="context">Instancia de <see cref="ApplicationDbContext"/> para la conexi�n con la base de datos.</param>
-        /// <param name="logger">Instancia de <see cref="ILogger{ModuloFormData}"/> para el registro de logs.</param>
-        public ModuloFormData(IDynamicDbContextService dynamicContext, ILogger<ModuloFormData> logger)
+        public ModuloFormData(IDbContextProvider dbContextProvider, ILogger<ModuloFormData> logger)
         {
-            _dynamicContext = dynamicContext;
+            _dbContextProvider = dbContextProvider;
             _logger = logger;
         }
 
-        /// <summary>
-        /// Obtiene todos los ModuloForm almacenados en la base de datos.
-        /// </summary>
-        /// <returns>Lista de ModuloForm.</returns>
+        private ApplicationDbContext _context => _dbContextProvider.GetDbContext();
+
         public async Task<IEnumerable<ModuloForm>> GetAllAsync()
         {
             try
@@ -47,11 +36,6 @@ namespace Data
             }
         }
 
-        /// <summary>
-        /// Obtiene un ModuloForm espec�fico por su identificador.
-        /// </summary>
-        /// <param name="id">Identificador del ModuloForm.</param>
-        /// <returns>El ModuloForm encontrado o null si no existe.</returns>
         public async Task<ModuloForm?> GetByIdAsync(int id)
         {
             try
@@ -68,11 +52,6 @@ namespace Data
             }
         }
 
-        /// <summary>
-        /// Crea un nuevo ModuloForm en la base de datos.
-        /// </summary>
-        /// <param name="moduloForm">Instancia del ModuloForm a crear.</param>
-        /// <returns>El ModuloForm creado.</returns>
         public async Task<ModuloForm> CreateAsync(ModuloForm moduloForm)
         {
             try
@@ -88,11 +67,6 @@ namespace Data
             }
         }
 
-        /// <summary>
-        /// Actualiza un ModuloForm existente en la base de datos.
-        /// </summary>
-        /// <param name="moduloForm">Objeto con la informaci�n actualizada.</param>
-        /// <returns>True si la operaci�n fue exitosa, False en caso contrario.</returns>
         public async Task<bool> UpdateAsync(ModuloForm moduloForm)
         {
             try
@@ -100,7 +74,7 @@ namespace Data
                 var existingModuloForm = await _context.Set<ModuloForm>().FindAsync(moduloForm.Id);
                 if (existingModuloForm == null)
                 {
-                    _logger.LogWarning("No se encontr� el ModuloForm con ID {ModuloFormId} para actualizar", moduloForm.Id);
+                    _logger.LogWarning("No se encontró el ModuloForm con ID {ModuloFormId} para actualizar", moduloForm.Id);
                     return false;
                 }
 
@@ -115,16 +89,11 @@ namespace Data
             }
         }
 
-        /// <summary>
-        /// Elimina un ModuloForm de la base de datos.
-        /// </summary>
-        /// <param name="id">Identificador �nico del ModuloForm a eliminar.</param>
-        /// <returns>True si la eliminaci�n fue exitosa, False en caso contrario.</returns>
         public async Task<bool> DeleteAsync(int id)
         {
             if (id <= 0)
             {
-                _logger.LogWarning("Se intent� eliminar un ModuloForm con ID inv�lido: {ModuloFormId}", id);
+                _logger.LogWarning("Se intentó eliminar un ModuloForm con ID inválido: {ModuloFormId}", id);
                 return false;
             }
 
@@ -133,7 +102,7 @@ namespace Data
                 var moduloForm = await _context.Set<ModuloForm>().FindAsync(id);
                 if (moduloForm == null)
                 {
-                    _logger.LogInformation("No se encontr� ning�n ModuloForm con ID: {ModuloFormId}", id);
+                    _logger.LogInformation("No se encontró ningún ModuloForm con ID: {ModuloFormId}", id);
                     return false;
                 }
 
@@ -149,5 +118,3 @@ namespace Data
         }
     }
 }
-
-

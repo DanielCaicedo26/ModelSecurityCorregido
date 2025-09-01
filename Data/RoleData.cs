@@ -2,34 +2,23 @@ using Entity.Context;
 using Entity.Model;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Entity.Services;
+using Web2.Services;
 
 namespace Data
 {
-    /// <summary>
-    /// Repositorio encargado de la gesti�n de la entidad Role en la base de datos.
-    /// </summary>
     public class RoleData
     {
-        private readonly IDynamicDbContextService _dynamicContext;
-        private ApplicationDbContext _context => _dynamicContext.GetCurrentApplicationContext();
+        private readonly IDbContextProvider _dbContextProvider;
         private readonly ILogger<RoleData> _logger;
 
-        /// <summary>
-        /// Constructor que recibe el contexto de base de datos.
-        /// </summary>
-        /// <param name="context">Instancia de <see cref="ApplicationDbContext"/> para la conexi�n con la base de datos.</param>
-        /// <param name="logger">Instancia de <see cref="ILogger{RoleData}"/> para el registro de logs.</param>
-        public RoleData(IDynamicDbContextService dynamicContext, ILogger<RoleData> logger)
+        public RoleData(IDbContextProvider dbContextProvider, ILogger<RoleData> logger)
         {
-            _dynamicContext = dynamicContext;
+            _dbContextProvider = dbContextProvider;
             _logger = logger;
         }
 
-        /// <summary>
-        /// Obtiene todos los roles almacenados en la base de datos.
-        /// </summary>
-        /// <returns>Lista de roles.</returns>
+        private ApplicationDbContext _context => _dbContextProvider.GetDbContext();
+
         public async Task<IEnumerable<Role>> GetAllAsync()
         {
             try
@@ -47,11 +36,6 @@ namespace Data
             }
         }
 
-        /// <summary>
-        /// Obtiene un rol espec�fico por su identificador.
-        /// </summary>
-        /// <param name="id">Identificador del rol.</param>
-        /// <returns>El rol encontrado o null si no existe.</returns>
         public async Task<Role?> GetByIdAsync(int id)
         {
             try
@@ -68,11 +52,6 @@ namespace Data
             }
         }
 
-        /// <summary>
-        /// Crea un nuevo rol en la base de datos.
-        /// </summary>
-        /// <param name="role">Instancia del rol a crear.</param>
-        /// <returns>El rol creado.</returns>
         public async Task<Role> CreateAsync(Role role)
         {
             try
@@ -88,11 +67,6 @@ namespace Data
             }
         }
 
-        /// <summary>
-        /// Actualiza un rol existente en la base de datos.
-        /// </summary>
-        /// <param name="role">Objeto con la informaci�n actualizada.</param>
-        /// <returns>True si la operaci�n fue exitosa, False en caso contrario.</returns>
         public async Task<bool> UpdateAsync(Role role)
         {
             try
@@ -100,7 +74,7 @@ namespace Data
                 var existingRole = await _context.Set<Role>().FindAsync(role.Id);
                 if (existingRole == null)
                 {
-                    _logger.LogWarning("No se encontr� el rol con ID {RoleId} para actualizar", role.Id);
+                    _logger.LogWarning("No se encontró el rol con ID {RoleId} para actualizar", role.Id);
                     return false;
                 }
 
@@ -115,16 +89,11 @@ namespace Data
             }
         }
 
-        /// <summary>
-        /// Elimina un rol de la base de datos.
-        /// </summary>
-        /// <param name="id">Identificador �nico del rol a eliminar.</param>
-        /// <returns>True si la eliminaci�n fue exitosa, False en caso contrario.</returns>
         public async Task<bool> DeleteAsync(int id)
         {
             if (id <= 0)
             {
-                _logger.LogWarning("Se intent� eliminar un rol con ID inv�lido: {RoleId}", id);
+                _logger.LogWarning("Se intentó eliminar un rol con ID inválido: {RoleId}", id);
                 return false;
             }
 
@@ -133,7 +102,7 @@ namespace Data
                 var role = await _context.Set<Role>().FindAsync(id);
                 if (role == null)
                 {
-                    _logger.LogInformation("No se encontr� ning�n rol con ID: {RoleId}", id);
+                    _logger.LogInformation("No se encontró ningún rol con ID: {RoleId}", id);
                     return false;
                 }
 
@@ -149,5 +118,3 @@ namespace Data
         }
     }
 }
-
-

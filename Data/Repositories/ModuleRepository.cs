@@ -1,17 +1,17 @@
-﻿using Data.Core;
+using Data.Core;
 using Data.Interfaces;
 using Entity.Context;
 using Entity.Model;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Entity.Services;
+using Web2.Services;
 
 namespace Data.Repositories
 {
     public class ModuleRepository : GenericRepository<Module>, IModuleRepository
     {
-        public ModuleRepository(IDynamicDbContextService dynamicContext, ILogger<ModuleRepository> logger)
-            : base(dynamicContext, logger)
+        public ModuleRepository(IDbContextProvider dbContextProvider, ILogger<ModuleRepository> logger)
+            : base(dbContextProvider, logger)
         {
         }
 
@@ -32,9 +32,6 @@ namespace Data.Repositories
 
         public async Task<IEnumerable<Module>> GetByUserIdAsync(int userId)
         {
-            // Obtener los módulos asociados a un usuario
-            // Esta implementación presupone que existen relaciones definidas
-            // Para asociar módulos con usuarios a través de formularios o roles
             var userRoleIds = await _context.RoleUser
                 .Where(ru => ru.UserId == userId && ru.IsActive)
                 .Select(ru => ru.RoleId)

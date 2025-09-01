@@ -10,9 +10,9 @@ services:
       ConnectionStrings__SqlServer: Server=sqlserver-db,1433;Database=ModelSecurityDa;User Id=sa;Password=StrongPwd!123;Encrypt=True;TrustServerCertificate=True;Connection Timeout=60;
       ConnectionStrings__Postgres: Host=postgres-db;Port=5432;Database=modelsecurityda;Username=postgres;Password=StrongPwd!123;
       ConnectionStrings__MySql: Server=mysql-db;Port=3306;Database=modelsecurityda;User=mysqluser;Password=StrongPwd!123;
-      DB_ENGINE: postgres
+      DB_ENGINE: sqlserver
     ports:
-      - "5112:8080"
+      - "5113:8080"
     networks:
       - modelsecurity-network
     restart: unless-stopped
@@ -39,7 +39,7 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=StrongPwd!123
     ports:
-      - "5432:5432"
+      - "5433:5432"
     networks:
       - modelsecurity-network
     volumes:
@@ -62,7 +62,7 @@ services:
       - MYSQL_PASSWORD=StrongPwd!123
       - MYSQL_ROOT_PASSWORD=StrongPwd!123
     ports:
-      - "3306:3306"
+      - "3307:3306"
     networks:
       - modelsecurity-network
     volumes:
@@ -84,7 +84,7 @@ services:
       - SA_PASSWORD=StrongPwd!123
       - MSSQL_PID=Express
     ports:
-      - "1433:1433"
+      - "1434:1433"
     networks:
       - modelsecurity-network
     volumes:

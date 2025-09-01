@@ -70,6 +70,8 @@ ENV PATH="${PATH}:/opt/mssql-tools18/bin:/root/.dotnet/tools"
 # Copiar archivos publicados
 COPY --from=publish /app/publish .
 
+# No copiar scripts por ahora, usar entrypoint directo
+
 # Ejecutar migraciones antes de cambiar al usuario no-root
 RUN dotnet ef database update --no-build || true
 

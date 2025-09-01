@@ -106,11 +106,26 @@ run_migrations() {
 # Esperar a la base de datos
 wait_for_db
 
-# Ejecutar migraciones
-run_migrations
+# Ejecutar migraciones en todas las bases de datos
+echo "=== EJECUTANDO MIGRACIONES EN TODAS LAS BASES DE DATOS ==="
+
+echo "1. Aplicando migraciones en SQL Server..."
+DB_ENGINE="sqlserver" run_migrations
+
+echo "2. Aplicando migraciones en PostgreSQL..."  
+DB_ENGINE="postgres" run_migrations
+
+echo "3. Aplicando migraciones en MySQL..."
+DB_ENGINE="mysql" run_migrations
+
+echo "✅ Todas las bases de datos están preparadas con el mismo esquema"
 
 echo "=== INICIANDO APLICACIÓN WEB ==="
 echo "La aplicación estará disponible en http://localhost:8080"
+echo "Puede cambiar entre bases de datos usando:"
+echo "  POST /api/database/set-engine/sqlserver"
+echo "  POST /api/database/set-engine/postgres" 
+echo "  POST /api/database/set-engine/mysql"
 
 # Iniciar la aplicación
 exec "$@"

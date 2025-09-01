@@ -4,6 +4,7 @@ using Entity.Context;
 using Entity.Model;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Entity.Services;
 
 namespace Data.Repositories
 {
@@ -12,8 +13,8 @@ namespace Data.Repositories
     /// </summary>
     public class RoleRepository : GenericRepository<Role>, IRoleRepository
     {
-        public RoleRepository(ApplicationDbContext context, ILogger<RoleRepository> logger)
-            : base(context, logger)
+        public RoleRepository(IDynamicDbContextService dynamicContext, ILogger<RoleRepository> logger)
+            : base(dynamicContext, logger)
         {
         }
 

@@ -2,25 +2,27 @@ using Entity.Context;
 using Entity.Model;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Entity.Services;
 
 namespace Data
 {
     /// <summary>
-    /// Repositorio encargado de la gestión de la entidad Person en la base de datos.
+    /// Repositorio encargado de la gestiï¿½n de la entidad Person en la base de datos.
     /// </summary>
     public class PersonData
     {
-        private readonly ApplicationDbContext _context;
+        private readonly IDynamicDbContextService _dynamicContext;
+        private ApplicationDbContext _context => _dynamicContext.GetCurrentApplicationContext();
         private readonly ILogger<PersonData> _logger;
 
         /// <summary>
         /// Constructor que recibe el contexto de base de datos.
         /// </summary>
-        /// <param name="context">Instancia de <see cref="ApplicationDbContext"/> para la conexión con la base de datos.</param>
+        /// <param name="context">Instancia de <see cref="ApplicationDbContext"/> para la conexiï¿½n con la base de datos.</param>
         /// <param name="logger">Instancia de <see cref="ILogger{PersonData}"/> para el registro de logs.</param>
-        public PersonData(ApplicationDbContext context, ILogger<PersonData> logger)
+        public PersonData(IDynamicDbContextService dynamicContext, ILogger<PersonData> logger)
         {
-            _context = context;
+            _dynamicContext = dynamicContext;
             _logger = logger;
         }
 
@@ -50,7 +52,7 @@ namespace Data
                     }
                 }
 
-                // Cargamos las propiedades de navegación manualmente si es necesario
+                // Cargamos las propiedades de navegaciï¿½n manualmente si es necesario
                 foreach (var person in persons)
                 {
                     await _context.Entry(person)
@@ -76,7 +78,7 @@ namespace Data
         }
 
         /// <summary>
-        /// Obtiene una persona específica por su identificador.
+        /// Obtiene una persona especï¿½fica por su identificador.
         /// </summary>
         /// <param name="id">Identificador de la persona.</param>
         /// <returns>La persona encontrada o null si no existe.</returns>
@@ -100,7 +102,7 @@ namespace Data
                         person.DocumentType = "NO ESPECIFICADO";
                     }
 
-                    // Cargamos las propiedades de navegación manualmente
+                    // Cargamos las propiedades de navegaciï¿½n manualmente
                     await _context.Entry(person)
                         .Reference(p => p.User)
                         .LoadAsync();
@@ -124,10 +126,10 @@ namespace Data
         }
 
         /// <summary>
-        /// Obtiene personas por su número de documento.
+        /// Obtiene personas por su nï¿½mero de documento.
         /// </summary>
-        /// <param name="documentNumber">Número de documento a buscar.</param>
-        /// <returns>Lista de personas con el número de documento especificado.</returns>
+        /// <param name="documentNumber">Nï¿½mero de documento a buscar.</param>
+        /// <returns>Lista de personas con el nï¿½mero de documento especificado.</returns>
         public async Task<IEnumerable<Person>> GetByDocumentNumberAsync(string documentNumber)
         {
             try
@@ -151,7 +153,7 @@ namespace Data
                     }
                 }
 
-                // Cargamos las propiedades de navegación manualmente si es necesario
+                // Cargamos las propiedades de navegaciï¿½n manualmente si es necesario
                 foreach (var person in persons)
                 {
                     await _context.Entry(person)
@@ -171,7 +173,7 @@ namespace Data
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al obtener personas con número de documento {DocumentNumber}", documentNumber);
+                _logger.LogError(ex, "Error al obtener personas con nï¿½mero de documento {DocumentNumber}", documentNumber);
                 throw;
             }
         }
@@ -209,8 +211,8 @@ namespace Data
         /// <summary>
         /// Actualiza una persona existente en la base de datos.
         /// </summary>
-        /// <param name="person">Objeto con la información actualizada.</param>
-        /// <returns>True si la operación fue exitosa, False en caso contrario.</returns>
+        /// <param name="person">Objeto con la informaciï¿½n actualizada.</param>
+        /// <returns>True si la operaciï¿½n fue exitosa, False en caso contrario.</returns>
         public async Task<bool> UpdateAsync(Person person)
         {
             try
@@ -218,7 +220,7 @@ namespace Data
                 var existingPerson = await _context.Set<Person>().FindAsync(person.Id);
                 if (existingPerson == null)
                 {
-                    _logger.LogWarning("No se encontró la persona con ID {PersonId} para actualizar", person.Id);
+                    _logger.LogWarning("No se encontrï¿½ la persona con ID {PersonId} para actualizar", person.Id);
                     return false;
                 }
 
@@ -246,13 +248,13 @@ namespace Data
         /// <summary>
         /// Elimina una persona de la base de datos.
         /// </summary>
-        /// <param name="id">Identificador único de la persona a eliminar.</param>
-        /// <returns>True si la eliminación fue exitosa, False en caso contrario.</returns>
+        /// <param name="id">Identificador ï¿½nico de la persona a eliminar.</param>
+        /// <returns>True si la eliminaciï¿½n fue exitosa, False en caso contrario.</returns>
         public async Task<bool> DeleteAsync(int id)
         {
             if (id <= 0)
             {
-                _logger.LogWarning("Se intentó eliminar una persona con ID inválido: {PersonId}", id);
+                _logger.LogWarning("Se intentï¿½ eliminar una persona con ID invï¿½lido: {PersonId}", id);
                 return false;
             }
 
@@ -261,7 +263,7 @@ namespace Data
                 var person = await _context.Set<Person>().FindAsync(id);
                 if (person == null)
                 {
-                    _logger.LogInformation("No se encontró ninguna persona con ID: {PersonId}", id);
+                    _logger.LogInformation("No se encontrï¿½ ninguna persona con ID: {PersonId}", id);
                     return false;
                 }
 

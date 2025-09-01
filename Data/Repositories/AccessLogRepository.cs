@@ -4,13 +4,14 @@ using Entity.Context;
 using Entity.Model;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Entity.Services;
 
 namespace Data.Repositories
 {
     public class AccessLogRepository : GenericRepository<AccessLog>, IAccessLogRepository
     {
-        public AccessLogRepository(ApplicationDbContext context, ILogger<AccessLogRepository> logger)
-            : base(context, logger)
+        public AccessLogRepository(IDynamicDbContextService dynamicContext, ILogger<AccessLogRepository> logger)
+            : base(dynamicContext, logger)
         {
         }
 

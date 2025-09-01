@@ -2,25 +2,27 @@ using Entity.Context;
 using Entity.Model;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Entity.Services;
 
 namespace Data
 {
     /// <summary>
-    /// Repositorio encargado de la gestión de la entidad Role en la base de datos.
+    /// Repositorio encargado de la gestiï¿½n de la entidad Role en la base de datos.
     /// </summary>
     public class RoleData
     {
-        private readonly ApplicationDbContext _context;
+        private readonly IDynamicDbContextService _dynamicContext;
+        private ApplicationDbContext _context => _dynamicContext.GetCurrentApplicationContext();
         private readonly ILogger<RoleData> _logger;
 
         /// <summary>
         /// Constructor que recibe el contexto de base de datos.
         /// </summary>
-        /// <param name="context">Instancia de <see cref="ApplicationDbContext"/> para la conexión con la base de datos.</param>
+        /// <param name="context">Instancia de <see cref="ApplicationDbContext"/> para la conexiï¿½n con la base de datos.</param>
         /// <param name="logger">Instancia de <see cref="ILogger{RoleData}"/> para el registro de logs.</param>
-        public RoleData(ApplicationDbContext context, ILogger<RoleData> logger)
+        public RoleData(IDynamicDbContextService dynamicContext, ILogger<RoleData> logger)
         {
-            _context = context;
+            _dynamicContext = dynamicContext;
             _logger = logger;
         }
 
@@ -46,7 +48,7 @@ namespace Data
         }
 
         /// <summary>
-        /// Obtiene un rol específico por su identificador.
+        /// Obtiene un rol especï¿½fico por su identificador.
         /// </summary>
         /// <param name="id">Identificador del rol.</param>
         /// <returns>El rol encontrado o null si no existe.</returns>
@@ -89,8 +91,8 @@ namespace Data
         /// <summary>
         /// Actualiza un rol existente en la base de datos.
         /// </summary>
-        /// <param name="role">Objeto con la información actualizada.</param>
-        /// <returns>True si la operación fue exitosa, False en caso contrario.</returns>
+        /// <param name="role">Objeto con la informaciï¿½n actualizada.</param>
+        /// <returns>True si la operaciï¿½n fue exitosa, False en caso contrario.</returns>
         public async Task<bool> UpdateAsync(Role role)
         {
             try
@@ -98,7 +100,7 @@ namespace Data
                 var existingRole = await _context.Set<Role>().FindAsync(role.Id);
                 if (existingRole == null)
                 {
-                    _logger.LogWarning("No se encontró el rol con ID {RoleId} para actualizar", role.Id);
+                    _logger.LogWarning("No se encontrï¿½ el rol con ID {RoleId} para actualizar", role.Id);
                     return false;
                 }
 
@@ -116,13 +118,13 @@ namespace Data
         /// <summary>
         /// Elimina un rol de la base de datos.
         /// </summary>
-        /// <param name="id">Identificador único del rol a eliminar.</param>
-        /// <returns>True si la eliminación fue exitosa, False en caso contrario.</returns>
+        /// <param name="id">Identificador ï¿½nico del rol a eliminar.</param>
+        /// <returns>True si la eliminaciï¿½n fue exitosa, False en caso contrario.</returns>
         public async Task<bool> DeleteAsync(int id)
         {
             if (id <= 0)
             {
-                _logger.LogWarning("Se intentó eliminar un rol con ID inválido: {RoleId}", id);
+                _logger.LogWarning("Se intentï¿½ eliminar un rol con ID invï¿½lido: {RoleId}", id);
                 return false;
             }
 
@@ -131,7 +133,7 @@ namespace Data
                 var role = await _context.Set<Role>().FindAsync(id);
                 if (role == null)
                 {
-                    _logger.LogInformation("No se encontró ningún rol con ID: {RoleId}", id);
+                    _logger.LogInformation("No se encontrï¿½ ningï¿½n rol con ID: {RoleId}", id);
                     return false;
                 }
 

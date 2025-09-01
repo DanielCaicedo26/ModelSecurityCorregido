@@ -2,25 +2,27 @@ using Entity.Context;
 using Entity.Model;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Entity.Services;
 
 namespace Data
 {
     /// <summary>
-    /// Repositorio encargado de la gestión de la entidad Permission en la base de datos.
+    /// Repositorio encargado de la gestiï¿½n de la entidad Permission en la base de datos.
     /// </summary>
     public class PermissionData
     {
-        private readonly ApplicationDbContext _context;
+        private readonly IDynamicDbContextService _dynamicContext;
+        private ApplicationDbContext _context => _dynamicContext.GetCurrentApplicationContext();
         private readonly ILogger<PermissionData> _logger;
 
         /// <summary>
         /// Constructor que recibe el contexto de base de datos.
         /// </summary>
-        /// <param name="context">Instancia de <see cref="ApplicationDbContext"/> para la conexión con la base de datos.</param>
+        /// <param name="context">Instancia de <see cref="ApplicationDbContext"/> para la conexiï¿½n con la base de datos.</param>
         /// <param name="logger">Instancia de <see cref="ILogger{PermissionData}"/> para el registro de logs.</param>
-        public PermissionData(ApplicationDbContext context, ILogger<PermissionData> logger)
+        public PermissionData(IDynamicDbContextService dynamicContext, ILogger<PermissionData> logger)
         {
-            _context = context;
+            _dynamicContext = dynamicContext;
             _logger = logger;
         }
 
@@ -44,7 +46,7 @@ namespace Data
         }
 
         /// <summary>
-        /// Obtiene un permiso específico por su identificador.
+        /// Obtiene un permiso especï¿½fico por su identificador.
         /// </summary>
         /// <param name="id">Identificador del permiso.</param>
         /// <returns>El permiso encontrado o null si no existe.</returns>
@@ -85,8 +87,8 @@ namespace Data
         /// <summary>
         /// Actualiza un permiso existente en la base de datos.
         /// </summary>
-        /// <param name="permission">Objeto con la información actualizada.</param>
-        /// <returns>True si la operación fue exitosa, False en caso contrario.</returns>
+        /// <param name="permission">Objeto con la informaciï¿½n actualizada.</param>
+        /// <returns>True si la operaciï¿½n fue exitosa, False en caso contrario.</returns>
         public async Task<bool> UpdateAsync(Permission permission)
         {
             try
@@ -94,7 +96,7 @@ namespace Data
                 var existingPermission = await _context.Set<Permission>().FindAsync(permission.Id);
                 if (existingPermission == null)
                 {
-                    _logger.LogWarning("No se encontró el permiso con ID {PermissionId} para actualizar", permission.Id);
+                    _logger.LogWarning("No se encontrï¿½ el permiso con ID {PermissionId} para actualizar", permission.Id);
                     return false;
                 }
 
@@ -112,13 +114,13 @@ namespace Data
         /// <summary>
         /// Elimina un permiso de la base de datos.
         /// </summary>
-        /// <param name="id">Identificador único del permiso a eliminar.</param>
-        /// <returns>True si la eliminación fue exitosa, False en caso contrario.</returns>
+        /// <param name="id">Identificador ï¿½nico del permiso a eliminar.</param>
+        /// <returns>True si la eliminaciï¿½n fue exitosa, False en caso contrario.</returns>
         public async Task<bool> DeleteAsync(int id)
         {
             if (id <= 0)
             {
-                _logger.LogWarning("Se intentó eliminar un permiso con ID inválido: {PermissionId}", id);
+                _logger.LogWarning("Se intentï¿½ eliminar un permiso con ID invï¿½lido: {PermissionId}", id);
                 return false;
             }
 
@@ -127,7 +129,7 @@ namespace Data
                 var permission = await _context.Set<Permission>().FindAsync(id);
                 if (permission == null)
                 {
-                    _logger.LogInformation("No se encontró ningún permiso con ID: {PermissionId}", id);
+                    _logger.LogInformation("No se encontrï¿½ ningï¿½n permiso con ID: {PermissionId}", id);
                     return false;
                 }
 

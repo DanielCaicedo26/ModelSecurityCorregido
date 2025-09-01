@@ -2,25 +2,27 @@ using Entity.Context;
 using Entity.Model;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Entity.Services;
 
 namespace Data
 {
     /// <summary>
-    /// Repositorio encargado de la gestión de la entidad TypePayment en la base de datos.
+    /// Repositorio encargado de la gestiï¿½n de la entidad TypePayment en la base de datos.
     /// </summary>
     public class TypePaymentData
     {
-        private readonly ApplicationDbContext _context;
+        private readonly IDynamicDbContextService _dynamicContext;
+        private ApplicationDbContext _context => _dynamicContext.GetCurrentApplicationContext();
         private readonly ILogger<TypePaymentData> _logger;
 
         /// <summary>
         /// Constructor que recibe el contexto de base de datos.
         /// </summary>
-        /// <param name="context">Instancia de <see cref="ApplicationDbContext"/> para la conexión con la base de datos.</param>
+        /// <param name="context">Instancia de <see cref="ApplicationDbContext"/> para la conexiï¿½n con la base de datos.</param>
         /// <param name="logger">Instancia de <see cref="ILogger{TypePaymentData}"/> para el registro de logs.</param>
-        public TypePaymentData(ApplicationDbContext context, ILogger<TypePaymentData> logger)
+        public TypePaymentData(IDynamicDbContextService dynamicContext, ILogger<TypePaymentData> logger)
         {
-            _context = context;
+            _dynamicContext = dynamicContext;
             _logger = logger;
         }
 
@@ -45,7 +47,7 @@ namespace Data
         }
 
         /// <summary>
-        /// Obtiene un tipo de pago específico por su identificador.
+        /// Obtiene un tipo de pago especï¿½fico por su identificador.
         /// </summary>
         /// <param name="id">Identificador del tipo de pago.</param>
         /// <returns>El tipo de pago encontrado o null si no existe.</returns>
@@ -87,8 +89,8 @@ namespace Data
         /// <summary>
         /// Actualiza un tipo de pago existente en la base de datos.
         /// </summary>
-        /// <param name="typePayment">Objeto con la información actualizada.</param>
-        /// <returns>True si la operación fue exitosa, False en caso contrario.</returns>
+        /// <param name="typePayment">Objeto con la informaciï¿½n actualizada.</param>
+        /// <returns>True si la operaciï¿½n fue exitosa, False en caso contrario.</returns>
         public async Task<bool> UpdateAsync(TypePayment typePayment)
         {
             try
@@ -96,7 +98,7 @@ namespace Data
                 var existingTypePayment = await _context.Set<TypePayment>().FindAsync(typePayment.Id);
                 if (existingTypePayment == null)
                 {
-                    _logger.LogWarning("No se encontró el tipo de pago con ID {TypePaymentId} para actualizar", typePayment.Id);
+                    _logger.LogWarning("No se encontrï¿½ el tipo de pago con ID {TypePaymentId} para actualizar", typePayment.Id);
                     return false;
                 }
 
@@ -114,13 +116,13 @@ namespace Data
         /// <summary>
         /// Elimina un tipo de pago de la base de datos.
         /// </summary>
-        /// <param name="id">Identificador único del tipo de pago a eliminar.</param>
-        /// <returns>True si la eliminación fue exitosa, False en caso contrario.</returns>
+        /// <param name="id">Identificador ï¿½nico del tipo de pago a eliminar.</param>
+        /// <returns>True si la eliminaciï¿½n fue exitosa, False en caso contrario.</returns>
         public async Task<bool> DeleteAsync(int id)
         {
             if (id <= 0)
             {
-                _logger.LogWarning("Se intentó eliminar un tipo de pago con ID inválido: {TypePaymentId}", id);
+                _logger.LogWarning("Se intentï¿½ eliminar un tipo de pago con ID invï¿½lido: {TypePaymentId}", id);
                 return false;
             }
 
@@ -129,7 +131,7 @@ namespace Data
                 var typePayment = await _context.Set<TypePayment>().FindAsync(id);
                 if (typePayment == null)
                 {
-                    _logger.LogInformation("No se encontró ningún tipo de pago con ID: {TypePaymentId}", id);
+                    _logger.LogInformation("No se encontrï¿½ ningï¿½n tipo de pago con ID: {TypePaymentId}", id);
                     return false;
                 }
 

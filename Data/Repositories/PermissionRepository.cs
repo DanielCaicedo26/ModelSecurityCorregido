@@ -3,6 +3,7 @@ using Data.Interfaces;
 using Entity.Context;
 using Entity.Model;
 using Microsoft.Extensions.Logging;
+using Entity.Services;
 
 namespace Data.Repositories
 {
@@ -11,8 +12,8 @@ namespace Data.Repositories
     /// </summary>
     public class PermissionRepository : GenericRepository<Permission>, IPermissionRepository
     {
-        public PermissionRepository(ApplicationDbContext context, ILogger<PermissionRepository> logger)
-            : base(context, logger)
+        public PermissionRepository(IDynamicDbContextService dynamicContext, ILogger<PermissionRepository> logger)
+            : base(dynamicContext, logger)
         {
         }
     }

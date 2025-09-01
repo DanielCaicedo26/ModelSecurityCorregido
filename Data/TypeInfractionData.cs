@@ -2,25 +2,27 @@ using Entity.Context;
 using Entity.Model;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Entity.Services;
 
 namespace Data
 {
     /// <summary>
-    /// Repositorio encargado de la gestión de la entidad TypeInfraction en la base de datos.
+    /// Repositorio encargado de la gestiï¿½n de la entidad TypeInfraction en la base de datos.
     /// </summary>
     public class TypeInfractionData
     {
-        private readonly ApplicationDbContext _context;
+        private readonly IDynamicDbContextService _dynamicContext;
+        private ApplicationDbContext _context => _dynamicContext.GetCurrentApplicationContext();
         private readonly ILogger<TypeInfractionData> _logger;
 
         /// <summary>
         /// Constructor que recibe el contexto de base de datos.
         /// </summary>
-        /// <param name="context">Instancia de <see cref="ApplicationDbContext"/> para la conexión con la base de datos.</param>
+        /// <param name="context">Instancia de <see cref="ApplicationDbContext"/> para la conexiï¿½n con la base de datos.</param>
         /// <param name="logger">Instancia de <see cref="ILogger{TypeInfractionData}"/> para el registro de logs.</param>
-        public TypeInfractionData(ApplicationDbContext context, ILogger<TypeInfractionData> logger)
+        public TypeInfractionData(IDynamicDbContextService dynamicContext, ILogger<TypeInfractionData> logger)
         {
-            _context = context;
+            _dynamicContext = dynamicContext;
             _logger = logger;
         }
 
@@ -47,10 +49,10 @@ namespace Data
         }
 
         /// <summary>
-        /// Obtiene una infracción de tipo específica por su identificador.
+        /// Obtiene una infracciï¿½n de tipo especï¿½fica por su identificador.
         /// </summary>
-        /// <param name="id">Identificador de la infracción de tipo.</param>
-        /// <returns>La infracción de tipo encontrada o null si no existe.</returns>
+        /// <param name="id">Identificador de la infracciï¿½n de tipo.</param>
+        /// <returns>La infracciï¿½n de tipo encontrada o null si no existe.</returns>
         public async Task<TypeInfraction?> GetByIdAsync(int id)
         {
             try
@@ -63,16 +65,16 @@ namespace Data
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al obtener la infracción de tipo con ID {TypeInfractionId}", id);
+                _logger.LogError(ex, "Error al obtener la infracciï¿½n de tipo con ID {TypeInfractionId}", id);
                 throw;
             }
         }
 
         /// <summary>
-        /// Crea una nueva infracción de tipo en la base de datos.
+        /// Crea una nueva infracciï¿½n de tipo en la base de datos.
         /// </summary>
-        /// <param name="typeInfraction">Instancia de la infracción de tipo a crear.</param>
-        /// <returns>La infracción de tipo creada.</returns>
+        /// <param name="typeInfraction">Instancia de la infracciï¿½n de tipo a crear.</param>
+        /// <returns>La infracciï¿½n de tipo creada.</returns>
         public async Task<TypeInfraction> CreateAsync(TypeInfraction typeInfraction)
         {
             try
@@ -83,16 +85,16 @@ namespace Data
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al crear la infracción de tipo");
+                _logger.LogError(ex, "Error al crear la infracciï¿½n de tipo");
                 throw;
             }
         }
 
         /// <summary>
-        /// Actualiza una infracción de tipo existente en la base de datos.
+        /// Actualiza una infracciï¿½n de tipo existente en la base de datos.
         /// </summary>
-        /// <param name="typeInfraction">Objeto con la información actualizada.</param>
-        /// <returns>True si la operación fue exitosa, False en caso contrario.</returns>
+        /// <param name="typeInfraction">Objeto con la informaciï¿½n actualizada.</param>
+        /// <returns>True si la operaciï¿½n fue exitosa, False en caso contrario.</returns>
         public async Task<bool> UpdateAsync(TypeInfraction typeInfraction)
         {
             try
@@ -100,7 +102,7 @@ namespace Data
                 var existingTypeInfraction = await _context.Set<TypeInfraction>().FindAsync(typeInfraction.Id);
                 if (existingTypeInfraction == null)
                 {
-                    _logger.LogWarning("No se encontró la infracción de tipo con ID {TypeInfractionId} para actualizar", typeInfraction.Id);
+                    _logger.LogWarning("No se encontrï¿½ la infracciï¿½n de tipo con ID {TypeInfractionId} para actualizar", typeInfraction.Id);
                     return false;
                 }
 
@@ -110,21 +112,21 @@ namespace Data
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al actualizar la infracción de tipo");
+                _logger.LogError(ex, "Error al actualizar la infracciï¿½n de tipo");
                 return false;
             }
         }
 
         /// <summary>
-        /// Elimina una infracción de tipo de la base de datos.
+        /// Elimina una infracciï¿½n de tipo de la base de datos.
         /// </summary>
-        /// <param name="id">Identificador único de la infracción de tipo a eliminar.</param>
-        /// <returns>True si la eliminación fue exitosa, False en caso contrario.</returns>
+        /// <param name="id">Identificador ï¿½nico de la infracciï¿½n de tipo a eliminar.</param>
+        /// <returns>True si la eliminaciï¿½n fue exitosa, False en caso contrario.</returns>
         public async Task<bool> DeleteAsync(int id)
         {
             if (id <= 0)
             {
-                _logger.LogWarning("Se intentó eliminar una infracción de tipo con ID inválido: {TypeInfractionId}", id);
+                _logger.LogWarning("Se intentï¿½ eliminar una infracciï¿½n de tipo con ID invï¿½lido: {TypeInfractionId}", id);
                 return false;
             }
 
@@ -133,7 +135,7 @@ namespace Data
                 var typeInfraction = await _context.Set<TypeInfraction>().FindAsync(id);
                 if (typeInfraction == null)
                 {
-                    _logger.LogInformation("No se encontró ninguna infracción de tipo con ID: {TypeInfractionId}", id);
+                    _logger.LogInformation("No se encontrï¿½ ninguna infracciï¿½n de tipo con ID: {TypeInfractionId}", id);
                     return false;
                 }
 
@@ -143,7 +145,7 @@ namespace Data
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al eliminar la infracción de tipo con ID {TypeInfractionId}", id);
+                _logger.LogError(ex, "Error al eliminar la infracciï¿½n de tipo con ID {TypeInfractionId}", id);
                 return false;
             }
         }

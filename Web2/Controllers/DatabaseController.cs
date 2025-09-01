@@ -78,9 +78,9 @@ namespace Web2.Controllers
                 current = _databaseSelector.CurrentEngine,
                 description = new
                 {
-                    sqlserver = "SQL Server (Puerto 1434)",
-                    postgres = "PostgreSQL (Puerto 5433)", 
-                    mysql = "MySQL (Puerto 3307)"
+                    sqlserver = "SQL Server (Puerto 1433)",
+                    postgres = "PostgreSQL (Puerto 5432)", 
+                    mysql = "MySQL (Puerto 3306)"
                 }
             });
         }

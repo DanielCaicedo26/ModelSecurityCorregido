@@ -13,8 +13,8 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
+using Entity.Services;
 using Web2.Services;
-using Web2.Services.Web2.Services;
 
 namespace Web2.Controllers
 {

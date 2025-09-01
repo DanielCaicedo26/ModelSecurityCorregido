@@ -2,25 +2,27 @@ using Entity.Context;
 using Entity.Model;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Entity.Services;
 
 namespace Data
 {
     /// <summary>
-    /// Repositorio encargado de la gestión de la entidad StateInfraction en la base de datos.
+    /// Repositorio encargado de la gestiï¿½n de la entidad StateInfraction en la base de datos.
     /// </summary>
     public class StateInfractionData
     {
-        private readonly ApplicationDbContext _context;
+        private readonly IDynamicDbContextService _dynamicContext;
+        private ApplicationDbContext _context => _dynamicContext.GetCurrentApplicationContext();
         private readonly ILogger<StateInfractionData> _logger;
 
         /// <summary>
         /// Constructor que recibe el contexto de base de datos.
         /// </summary>
-        /// <param name="context">Instancia de <see cref="ApplicationDbContext"/> para la conexión con la base de datos.</param>
+        /// <param name="context">Instancia de <see cref="ApplicationDbContext"/> para la conexiï¿½n con la base de datos.</param>
         /// <param name="logger">Instancia de <see cref="ILogger{StateInfractionData}"/> para el registro de logs.</param>
-        public StateInfractionData(ApplicationDbContext context, ILogger<StateInfractionData> logger)
+        public StateInfractionData(IDynamicDbContextService dynamicContext, ILogger<StateInfractionData> logger)
         {
-            _context = context;
+            _dynamicContext = dynamicContext;
             _logger = logger;
         }
 
@@ -46,10 +48,10 @@ namespace Data
         }
 
         /// <summary>
-        /// Obtiene una infracción de estado específica por su identificador.
+        /// Obtiene una infracciï¿½n de estado especï¿½fica por su identificador.
         /// </summary>
-        /// <param name="id">Identificador de la infracción de estado.</param>
-        /// <returns>La infracción de estado encontrada o null si no existe.</returns>
+        /// <param name="id">Identificador de la infracciï¿½n de estado.</param>
+        /// <returns>La infracciï¿½n de estado encontrada o null si no existe.</returns>
         public async Task<StateInfraction?> GetByIdAsync(int id)
         {
             try
@@ -61,16 +63,16 @@ namespace Data
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al obtener la infracción de estado con ID {StateInfractionId}", id);
+                _logger.LogError(ex, "Error al obtener la infracciï¿½n de estado con ID {StateInfractionId}", id);
                 throw;
             }
         }
 
         /// <summary>
-        /// Obtiene infracciones por número de documento.
+        /// Obtiene infracciones por nï¿½mero de documento.
         /// </summary>
-        /// <param name="documentNumber">Número de documento a buscar.</param>
-        /// <returns>Lista de infracciones con el número de documento especificado.</returns>
+        /// <param name="documentNumber">Nï¿½mero de documento a buscar.</param>
+        /// <returns>Lista de infracciones con el nï¿½mero de documento especificado.</returns>
         public async Task<IEnumerable<StateInfraction>> GetByDocumentNumberAsync(string documentNumber)
         {
             try
@@ -84,7 +86,7 @@ namespace Data
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al obtener infracciones con número de documento {DocumentNumber}", documentNumber);
+                _logger.LogError(ex, "Error al obtener infracciones con nï¿½mero de documento {DocumentNumber}", documentNumber);
                 throw;
             }
         }
@@ -113,10 +115,10 @@ namespace Data
         }
 
         /// <summary>
-        /// Crea una nueva infracción de estado en la base de datos.
+        /// Crea una nueva infracciï¿½n de estado en la base de datos.
         /// </summary>
-        /// <param name="stateInfraction">Instancia de la infracción de estado a crear.</param>
-        /// <returns>La infracción de estado creada.</returns>
+        /// <param name="stateInfraction">Instancia de la infracciï¿½n de estado a crear.</param>
+        /// <returns>La infracciï¿½n de estado creada.</returns>
         public async Task<StateInfraction> CreateAsync(StateInfraction stateInfraction)
         {
             try
@@ -127,16 +129,16 @@ namespace Data
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al crear la infracción de estado");
+                _logger.LogError(ex, "Error al crear la infracciï¿½n de estado");
                 throw;
             }
         }
 
         /// <summary>
-        /// Actualiza una infracción de estado existente en la base de datos.
+        /// Actualiza una infracciï¿½n de estado existente en la base de datos.
         /// </summary>
-        /// <param name="stateInfraction">Objeto con la información actualizada.</param>
-        /// <returns>True si la operación fue exitosa, False en caso contrario.</returns>
+        /// <param name="stateInfraction">Objeto con la informaciï¿½n actualizada.</param>
+        /// <returns>True si la operaciï¿½n fue exitosa, False en caso contrario.</returns>
         public async Task<bool> UpdateAsync(StateInfraction stateInfraction)
         {
             try
@@ -144,7 +146,7 @@ namespace Data
                 var existingStateInfraction = await _context.Set<StateInfraction>().FindAsync(stateInfraction.Id);
                 if (existingStateInfraction == null)
                 {
-                    _logger.LogWarning("No se encontró la infracción de estado con ID {StateInfractionId} para actualizar", stateInfraction.Id);
+                    _logger.LogWarning("No se encontrï¿½ la infracciï¿½n de estado con ID {StateInfractionId} para actualizar", stateInfraction.Id);
                     return false;
                 }
 
@@ -154,21 +156,21 @@ namespace Data
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al actualizar la infracción de estado");
+                _logger.LogError(ex, "Error al actualizar la infracciï¿½n de estado");
                 return false;
             }
         }
 
         /// <summary>
-        /// Elimina una infracción de estado de la base de datos.
+        /// Elimina una infracciï¿½n de estado de la base de datos.
         /// </summary>
-        /// <param name="id">Identificador único de la infracción de estado a eliminar.</param>
-        /// <returns>True si la eliminación fue exitosa, False en caso contrario.</returns>
+        /// <param name="id">Identificador ï¿½nico de la infracciï¿½n de estado a eliminar.</param>
+        /// <returns>True si la eliminaciï¿½n fue exitosa, False en caso contrario.</returns>
         public async Task<bool> DeleteAsync(int id)
         {
             if (id <= 0)
             {
-                _logger.LogWarning("Se intentó eliminar una infracción de estado con ID inválido: {StateInfractionId}", id);
+                _logger.LogWarning("Se intentï¿½ eliminar una infracciï¿½n de estado con ID invï¿½lido: {StateInfractionId}", id);
                 return false;
             }
 
@@ -177,7 +179,7 @@ namespace Data
                 var stateInfraction = await _context.Set<StateInfraction>().FindAsync(id);
                 if (stateInfraction == null)
                 {
-                    _logger.LogInformation("No se encontró ninguna infracción de estado con ID: {StateInfractionId}", id);
+                    _logger.LogInformation("No se encontrï¿½ ninguna infracciï¿½n de estado con ID: {StateInfractionId}", id);
                     return false;
                 }
 
@@ -187,7 +189,7 @@ namespace Data
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al eliminar la infracción de estado con ID {StateInfractionId}", id);
+                _logger.LogError(ex, "Error al eliminar la infracciï¿½n de estado con ID {StateInfractionId}", id);
                 return false;
             }
         }

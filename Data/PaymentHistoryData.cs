@@ -2,25 +2,27 @@ using Entity.Context;
 using Entity.Model;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Entity.Services;
 
 namespace Data
 {
     /// <summary>
-    /// Repositorio encargado de la gestión de la entidad PaymentHistory en la base de datos.
+    /// Repositorio encargado de la gestiï¿½n de la entidad PaymentHistory en la base de datos.
     /// </summary>
     public class PaymentHistoryData
     {
-        private readonly ApplicationDbContext _context;
+        private readonly IDynamicDbContextService _dynamicContext;
+        private ApplicationDbContext _context => _dynamicContext.GetCurrentApplicationContext();
         private readonly ILogger<PaymentHistoryData> _logger;
 
         /// <summary>
         /// Constructor que recibe el contexto de base de datos.
         /// </summary>
-        /// <param name="context">Instancia de <see cref="ApplicationDbContext"/> para la conexión con la base de datos.</param>
+        /// <param name="context">Instancia de <see cref="ApplicationDbContext"/> para la conexiï¿½n con la base de datos.</param>
         /// <param name="logger">Instancia de <see cref="ILogger{PaymentHistoryData}"/> para el registro de logs.</param>
-        public PaymentHistoryData(ApplicationDbContext context, ILogger<PaymentHistoryData> logger)
+        public PaymentHistoryData(IDynamicDbContextService dynamicContext, ILogger<PaymentHistoryData> logger)
         {
-            _context = context;
+            _dynamicContext = dynamicContext;
             _logger = logger;
         }
 
@@ -45,7 +47,7 @@ namespace Data
         }
 
         /// <summary>
-        /// Obtiene un historial de pago específico por su identificador.
+        /// Obtiene un historial de pago especï¿½fico por su identificador.
         /// </summary>
         /// <param name="id">Identificador del historial de pago.</param>
         /// <returns>El historial de pago encontrado o null si no existe.</returns>
@@ -87,8 +89,8 @@ namespace Data
         /// <summary>
         /// Actualiza un historial de pago existente en la base de datos.
         /// </summary>
-        /// <param name="paymentHistory">Objeto con la información actualizada.</param>
-        /// <returns>True si la operación fue exitosa, False en caso contrario.</returns>
+        /// <param name="paymentHistory">Objeto con la informaciï¿½n actualizada.</param>
+        /// <returns>True si la operaciï¿½n fue exitosa, False en caso contrario.</returns>
         public async Task<bool> UpdateAsync(PaymentHistory paymentHistory)
         {
             try
@@ -96,7 +98,7 @@ namespace Data
                 var existingPaymentHistory = await _context.Set<PaymentHistory>().FindAsync(paymentHistory.Id);
                 if (existingPaymentHistory == null)
                 {
-                    _logger.LogWarning("No se encontró el historial de pago con ID {PaymentHistoryId} para actualizar", paymentHistory.Id);
+                    _logger.LogWarning("No se encontrï¿½ el historial de pago con ID {PaymentHistoryId} para actualizar", paymentHistory.Id);
                     return false;
                 }
 
@@ -114,13 +116,13 @@ namespace Data
         /// <summary>
         /// Elimina un historial de pago de la base de datos.
         /// </summary>
-        /// <param name="id">Identificador único del historial de pago a eliminar.</param>
-        /// <returns>True si la eliminación fue exitosa, False en caso contrario.</returns>
+        /// <param name="id">Identificador ï¿½nico del historial de pago a eliminar.</param>
+        /// <returns>True si la eliminaciï¿½n fue exitosa, False en caso contrario.</returns>
         public async Task<bool> DeleteAsync(int id)
         {
             if (id <= 0)
             {
-                _logger.LogWarning("Se intentó eliminar un historial de pago con ID inválido: {PaymentHistoryId}", id);
+                _logger.LogWarning("Se intentï¿½ eliminar un historial de pago con ID invï¿½lido: {PaymentHistoryId}", id);
                 return false;
             }
 
@@ -129,7 +131,7 @@ namespace Data
                 var paymentHistory = await _context.Set<PaymentHistory>().FindAsync(id);
                 if (paymentHistory == null)
                 {
-                    _logger.LogInformation("No se encontró ningún historial de pago con ID: {PaymentHistoryId}", id);
+                    _logger.LogInformation("No se encontrï¿½ ningï¿½n historial de pago con ID: {PaymentHistoryId}", id);
                     return false;
                 }
 

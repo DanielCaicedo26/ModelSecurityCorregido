@@ -2,6 +2,7 @@
 using Entity.Model;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Entity.Services;
 
 namespace Data
 {
@@ -10,7 +11,8 @@ namespace Data
     /// </summary>
     public class BillData
     {
-        private readonly ApplicationDbContext _context;
+        private readonly IDynamicDbContextService _dynamicContext;
+        private ApplicationDbContext _context => _dynamicContext.GetCurrentApplicationContext();
         private readonly ILogger<BillData> _logger;
 
         /// <summary>
@@ -18,9 +20,9 @@ namespace Data
         /// </summary>
         /// <param name="context">Instancia de <see cref="ApplicationDbContext"/> para la conexión con la base de datos.</param>
         /// <param name="logger">Instancia de <see cref="ILogger{BillData}"/> para el registro de logs.</param>
-        public BillData(ApplicationDbContext context, ILogger<BillData> logger)
+        public BillData(IDynamicDbContextService dynamicContext, ILogger<BillData> logger)
         {
-            _context = context;
+            _dynamicContext = dynamicContext;
             _logger = logger;
         }
 

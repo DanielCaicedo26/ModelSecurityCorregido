@@ -5,17 +5,19 @@ using Entity.Dto;
 using Entity.Model;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Entity.Services;
 
 namespace Data.Repositories
 {
     public class FormRepository : IFormRepository
     {
-        private readonly ApplicationDbContext _context;
+        private readonly IDynamicDbContextService _dynamicContext;
         private readonly ILogger<FormRepository> _logger;
+        private ApplicationDbContext _context => _dynamicContext.GetCurrentApplicationContext();
 
-        public FormRepository(ApplicationDbContext context, ILogger<FormRepository> logger)
+        public FormRepository(IDynamicDbContextService dynamicContext, ILogger<FormRepository> logger)
         {
-            _context = context;
+            _dynamicContext = dynamicContext;
             _logger = logger;
         }
 

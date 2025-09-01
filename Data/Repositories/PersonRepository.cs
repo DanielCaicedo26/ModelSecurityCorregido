@@ -4,14 +4,15 @@ using Entity.Context;
 using Entity.Model;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Entity.Services;
 
 
 namespace Data.Repositories
 {
     public class PersonRepository : GenericRepository<Person>, IPersonRepository
     {
-        public PersonRepository(ApplicationDbContext context, ILogger<PersonRepository> logger)
-            : base(context, logger)
+        public PersonRepository(IDynamicDbContextService dynamicContext, ILogger<PersonRepository> logger)
+            : base(dynamicContext, logger)
         {
         }
 

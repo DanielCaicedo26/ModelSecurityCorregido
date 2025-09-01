@@ -2,25 +2,27 @@ using Entity.Context;
 using Entity.Model;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Entity.Services;
 
 namespace Data
 {
     /// <summary>
-    /// Repositorio encargado de la gestión de la entidad UserNotification en la base de datos.
+    /// Repositorio encargado de la gestiï¿½n de la entidad UserNotification en la base de datos.
     /// </summary>
     public class UserNotificationData
     {
-        private readonly ApplicationDbContext _context;
+        private readonly IDynamicDbContextService _dynamicContext;
+        private ApplicationDbContext _context => _dynamicContext.GetCurrentApplicationContext();
         private readonly ILogger<UserNotificationData> _logger;
 
         /// <summary>
         /// Constructor que recibe el contexto de base de datos.
         /// </summary>
-        /// <param name="context">Instancia de <see cref="ApplicationDbContext"/> para la conexión con la base de datos.</param>
+        /// <param name="context">Instancia de <see cref="ApplicationDbContext"/> para la conexiï¿½n con la base de datos.</param>
         /// <param name="logger">Instancia de <see cref="ILogger{UserNotificationData}"/> para el registro de logs.</param>
-        public UserNotificationData(ApplicationDbContext context, ILogger<UserNotificationData> logger)
+        public UserNotificationData(IDynamicDbContextService dynamicContext, ILogger<UserNotificationData> logger)
         {
-            _context = context;
+            _dynamicContext = dynamicContext;
             _logger = logger;
         }
 
@@ -45,10 +47,10 @@ namespace Data
         }
 
         /// <summary>
-        /// Obtiene una notificación de usuario específica por su identificador.
+        /// Obtiene una notificaciï¿½n de usuario especï¿½fica por su identificador.
         /// </summary>
-        /// <param name="id">Identificador de la notificación de usuario.</param>
-        /// <returns>La notificación de usuario encontrada o null si no existe.</returns>
+        /// <param name="id">Identificador de la notificaciï¿½n de usuario.</param>
+        /// <returns>La notificaciï¿½n de usuario encontrada o null si no existe.</returns>
         public async Task<UserNotification?> GetByIdAsync(int id)
         {
             try
@@ -59,16 +61,16 @@ namespace Data
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al obtener la notificación de usuario con ID {UserNotificationId}", id);
+                _logger.LogError(ex, "Error al obtener la notificaciï¿½n de usuario con ID {UserNotificationId}", id);
                 throw;
             }
         }
 
         /// <summary>
-        /// Crea una nueva notificación de usuario en la base de datos.
+        /// Crea una nueva notificaciï¿½n de usuario en la base de datos.
         /// </summary>
-        /// <param name="userNotification">Instancia de la notificación de usuario a crear.</param>
-        /// <returns>La notificación de usuario creada.</returns>
+        /// <param name="userNotification">Instancia de la notificaciï¿½n de usuario a crear.</param>
+        /// <returns>La notificaciï¿½n de usuario creada.</returns>
         public async Task<UserNotification> CreateAsync(UserNotification userNotification)
         {
             try
@@ -79,16 +81,16 @@ namespace Data
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al crear la notificación de usuario");
+                _logger.LogError(ex, "Error al crear la notificaciï¿½n de usuario");
                 throw;
             }
         }
 
         /// <summary>
-        /// Actualiza una notificación de usuario existente en la base de datos.
+        /// Actualiza una notificaciï¿½n de usuario existente en la base de datos.
         /// </summary>
-        /// <param name="userNotification">Objeto con la información actualizada.</param>
-        /// <returns>True si la operación fue exitosa, False en caso contrario.</returns>
+        /// <param name="userNotification">Objeto con la informaciï¿½n actualizada.</param>
+        /// <returns>True si la operaciï¿½n fue exitosa, False en caso contrario.</returns>
         public async Task<bool> UpdateAsync(UserNotification userNotification)
         {
             try
@@ -96,7 +98,7 @@ namespace Data
                 var existingUserNotification = await _context.Set<UserNotification>().FindAsync(userNotification.Id);
                 if (existingUserNotification == null)
                 {
-                    _logger.LogWarning("No se encontró la notificación de usuario con ID {UserNotificationId} para actualizar", userNotification.Id);
+                    _logger.LogWarning("No se encontrï¿½ la notificaciï¿½n de usuario con ID {UserNotificationId} para actualizar", userNotification.Id);
                     return false;
                 }
 
@@ -106,21 +108,21 @@ namespace Data
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al actualizar la notificación de usuario");
+                _logger.LogError(ex, "Error al actualizar la notificaciï¿½n de usuario");
                 return false;
             }
         }
 
         /// <summary>
-        /// Elimina una notificación de usuario de la base de datos.
+        /// Elimina una notificaciï¿½n de usuario de la base de datos.
         /// </summary>
-        /// <param name="id">Identificador único de la notificación de usuario a eliminar.</param>
-        /// <returns>True si la eliminación fue exitosa, False en caso contrario.</returns>
+        /// <param name="id">Identificador ï¿½nico de la notificaciï¿½n de usuario a eliminar.</param>
+        /// <returns>True si la eliminaciï¿½n fue exitosa, False en caso contrario.</returns>
         public async Task<bool> DeleteAsync(int id)
         {
             if (id <= 0)
             {
-                _logger.LogWarning("Se intentó eliminar una notificación de usuario con ID inválido: {UserNotificationId}", id);
+                _logger.LogWarning("Se intentï¿½ eliminar una notificaciï¿½n de usuario con ID invï¿½lido: {UserNotificationId}", id);
                 return false;
             }
 
@@ -129,7 +131,7 @@ namespace Data
                 var userNotification = await _context.Set<UserNotification>().FindAsync(id);
                 if (userNotification == null)
                 {
-                    _logger.LogInformation("No se encontró ninguna notificación de usuario con ID: {UserNotificationId}", id);
+                    _logger.LogInformation("No se encontrï¿½ ninguna notificaciï¿½n de usuario con ID: {UserNotificationId}", id);
                     return false;
                 }
 
@@ -139,7 +141,7 @@ namespace Data
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al eliminar la notificación de usuario con ID {UserNotificationId}", id);
+                _logger.LogError(ex, "Error al eliminar la notificaciï¿½n de usuario con ID {UserNotificationId}", id);
                 return false;
             }
         }

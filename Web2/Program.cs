@@ -9,8 +9,8 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using Entity.Services;
 using Web2.Services;
-using Web2.Services.Web2.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -186,6 +186,9 @@ builder.Services.AddScoped<JwtAuthService>();
 // Registrar el servicio de selección de base de datos
 builder.Services.AddSingleton<IDatabaseSelectorService, DatabaseSelectorService>();
 
+// Registrar el servicio de contexto dinámico
+builder.Services.AddScoped<IDynamicDbContextService, DynamicDbContextServiceImpl>();
+
 // Registrar servicio dinámico de personas
 builder.Services.AddScoped<IDynamicPersonService, DynamicPersonService>();
 
@@ -256,15 +259,18 @@ app.MapGet("/", () => Results.Ok(new
     message = "ModelSecurityDa API is running"
 }));
 
-app.MapGet("/health", async (ApplicationDbContext context) =>
+app.MapGet("/health", async (IServiceProvider serviceProvider) =>
 {
     try
     {
+        var databaseSelector = serviceProvider.GetRequiredService<IDatabaseSelectorService>();
+        var context = databaseSelector.GetCurrentContext(serviceProvider);
         var canConnect = await context.Database.CanConnectAsync();
         return Results.Ok(new
         {
             status = canConnect ? "Healthy" : "Unhealthy",
             database = canConnect ? "Connected" : "Disconnected",
+            engine = databaseSelector.CurrentEngine,
             timestamp = DateTime.UtcNow
         });
     }

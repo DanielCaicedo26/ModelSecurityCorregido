@@ -1,17 +1,20 @@
 ﻿using Entity.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Entity.Services;
 
 namespace Data.Core
 {
     public class GenericRepository<T> : IServiceBase<T> where T : class
     {
-        protected readonly ApplicationDbContext _context;
+        protected readonly IDynamicDbContextService _dynamicContext;
         protected readonly ILogger _logger;
+        
+        protected ApplicationDbContext _context => _dynamicContext.GetCurrentApplicationContext();
 
-        public GenericRepository(ApplicationDbContext context, ILogger logger)
+        public GenericRepository(IDynamicDbContextService dynamicContext, ILogger logger)
         {
-            _context = context;
+            _dynamicContext = dynamicContext;
             _logger = logger;
         }
 

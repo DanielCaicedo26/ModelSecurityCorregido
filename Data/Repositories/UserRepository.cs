@@ -6,13 +6,14 @@
 
     using Microsoft.EntityFrameworkCore;
     using Microsoft.Extensions.Logging;
+    using Entity.Services;
 
     namespace Data.Repositories
     {
         public class UserRepository : GenericRepository<User>, IUserRepository
         {
-            public UserRepository(ApplicationDbContext context, ILogger<UserRepository> logger)
-                : base(context, logger)
+            public UserRepository(IDynamicDbContextService dynamicContext, ILogger<UserRepository> logger)
+                : base(dynamicContext, logger)
             {
             }
         // esta en prueba 

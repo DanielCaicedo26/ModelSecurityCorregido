@@ -3,14 +3,10 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Linq;
+using Data.Interfaces;
 
 namespace Web2.Services
 {
-    public interface IDbContextProvider
-    {
-        ApplicationDbContext GetDbContext();
-    }
-
     public class PerRequestDbContextProvider : IDbContextProvider
     {
         private readonly IHttpContextAccessor _httpContextAccessor;

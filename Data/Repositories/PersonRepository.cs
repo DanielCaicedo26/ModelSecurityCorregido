@@ -4,7 +4,6 @@ using Entity.Context;
 using Entity.Model;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Web2.Services;
 
 namespace Data.Repositories
 {

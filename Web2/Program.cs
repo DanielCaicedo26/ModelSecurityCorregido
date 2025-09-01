@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Swashbuckle.AspNetCore.SwaggerGen;
 using System.Text;
 using Web2.Services;
 
@@ -23,10 +24,12 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("SqlServer")));
 
 builder.Services.AddDbContext<ApplicationDbContextPostgres>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("Postgres")));
+    options.UseNpgsql(builder.Configuration.GetConnectionString("Postgres"), 
+        b => b.MigrationsAssembly("Web2")));
 
 builder.Services.AddDbContext<ApplicationDbContextMySql>(options =>
-    options.UseMySql(builder.Configuration.GetConnectionString("MySql"), ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("MySql"))));
+    options.UseMySql(builder.Configuration.GetConnectionString("MySql"), ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("MySql")),
+        b => b.MigrationsAssembly("Web2")));
 
 // --- NEW: Register services for per-request DB switching ---
 builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();

@@ -18,8 +18,9 @@ COPY ["Utilities/Utilities.csproj", "Utilities/"]
 
 RUN dotnet restore "Web2/Web2.csproj"
 
-# Copiar todo el código fuente
 COPY . .
+# Copiar herramientas locales dotnet-ef
+COPY Web2/.config ./Web2/.config
 WORKDIR "/src/Web2"
 
 # Construir el proyecto
@@ -52,7 +53,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && ACCEPT_EULA=Y apt-get install -y mssql-tools18 \
     && rm -rf /var/lib/apt/lists/*
 
-# Instalar .NET SDK para herramientas EF
+
+# Instalar .NET SDK para herramientas EF y dotnet-ef global
 RUN wget https://packages.microsoft.com/config/debian/12/packages-microsoft-prod.deb -O packages-microsoft-prod.deb \
     && dpkg -i packages-microsoft-prod.deb \
     && rm packages-microsoft-prod.deb \
@@ -61,11 +63,15 @@ RUN wget https://packages.microsoft.com/config/debian/12/packages-microsoft-prod
     && dotnet tool install --global dotnet-ef \
     && rm -rf /var/lib/apt/lists/*
 
-# Configurar PATH para herramientas
+# Configurar PATH para herramientas y dotnet-ef global
 ENV PATH="${PATH}:/opt/mssql-tools18/bin:/root/.dotnet/tools"
+
 
 # Copiar archivos publicados
 COPY --from=publish /app/publish .
+
+# Ejecutar migraciones antes de cambiar al usuario no-root
+RUN dotnet ef database update --no-build || true
 
 # Crear usuario no-root para seguridad (después de configurar herramientas)
 RUN adduser --disabled-password --gecos "" appuser \

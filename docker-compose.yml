@@ -1,20 +1,21 @@
-﻿version: '3.8'
+version: '3.8'
 
 services:
-  web-api:
-    build: 
-      context: .
-      dockerfile: Web2/Dockerfile
-    container_name: modelsecurityda-api
+  app:
+    build: .
+    container_name: modelsecurityda-nginx
     environment:
-      ASPNETCORE_ENVIRONMENT: Development
-      ASPNETCORE_URLS: http://+:8080
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:5000
       ConnectionStrings__SqlServer: Server=sqlserver-db,1433;Database=ModelSecurityDa;User Id=sa;Password=StrongPwd!123;Encrypt=True;TrustServerCertificate=True;Connection Timeout=60;
       ConnectionStrings__Postgres: Host=postgres-db;Port=5432;Database=modelsecurityda;Username=postgres;Password=StrongPwd!123;
       ConnectionStrings__MySql: Server=mysql-db;Port=3306;Database=modelsecurityda;User=mysqluser;Password=StrongPwd!123;
-      DB_ENGINE: sqlserver
+      JwtSettings__SecretKey: "mi-clave-secreta-super-segura-que-tiene-mas-de-256-bits-para-garantizar-la-seguridad"
+      JwtSettings__Issuer: "ModelSecurityDa"
+      JwtSettings__Audience: "ModelSecurityDaUsers"
     ports:
-      - "5112:8080"
+      - "80:80"
+      - "5000:5000"
     networks:
       - modelsecurity-network
     restart: unless-stopped
@@ -26,7 +27,7 @@ services:
       mysql:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
       interval: 30s
       timeout: 10s
       retries: 5

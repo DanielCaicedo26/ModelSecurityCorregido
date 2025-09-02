@@ -209,9 +209,9 @@ try
             await sqlContext.Database.MigrateAsync();
             mainLogger.LogInformation("SQL Server migrations applied successfully.");
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            mainLogger.LogError(ex, "Error applying SQL Server migrations.");
+            mainLogger.LogError("Error applying SQL Server migrations.");
         }
 
         // Migrate PostgreSQL
@@ -222,7 +222,7 @@ try
             await postgresContext.Database.MigrateAsync();
             mainLogger.LogInformation("PostgreSQL migrations applied successfully.");
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             mainLogger.LogInformation("Error applying PostgreSQL migrations.");
         }
@@ -247,18 +247,15 @@ catch (Exception ex)
 }
 
 
-// Configurar el pipeline de solicitudes
-if (app.Environment.IsDevelopment())
+// Configurar el pipeline de solicitudes - Swagger habilitado también en Production
+app.UseSwagger();
+app.UseSwaggerUI(c =>
 {
-    app.UseSwagger();
-    app.UseSwaggerUI(c =>
-    {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "ModelSecurityDa API V1");
-        c.RoutePrefix = "swagger";
-        c.DisplayRequestDuration();
-    });
-    logger.LogInformation("Swagger habilitado en: /swagger");
-}
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "ModelSecurityDa API V1");
+    c.RoutePrefix = "swagger";
+    c.DisplayRequestDuration();
+});
+logger.LogInformation("Swagger habilitado en: /swagger");
 
 // REMOVER UseHttpsRedirection en Docker para evitar problemas
 // app.UseHttpsRedirection();

@@ -152,3 +152,227 @@ ConnectionStrings__MySql: Server=mysql-db;Port=3306;Database=modelsecurityda;Use
 ```
 
 **Nota**: Los nombres de host (`sqlserver-db`, `postgres-db`, `mysql-db`) son importantes para la comunicación entre contenedores.
+
+## Troubleshooting (Solución de Problemas)
+
+### Problema: "longitud del contenido: 0" en el navegador
+
+**Síntomas:**
+- La API devuelve respuestas vacías
+- Status 500 Internal Server Error
+- Content-Length: 0
+
+**Causas y Soluciones:**
+
+1. **Base de datos desconectada**
+   ```bash
+   # Verificar health check
+   curl http://localhost:8888/health
+   
+   # Si muestra "Unhealthy", revisar conexiones BD
+   docker logs sqlserver-db
+   docker logs postgres-db
+   ```
+
+2. **Contenedores no están en la misma red**
+   ```bash
+   # Usar docker-compose en lugar de docker run individual
+   docker-compose up -d
+   
+   # NO hacer: docker run -p 8888:80 modelsecurityda-app
+   ```
+
+3. **Conflictos de puertos**
+   ```bash
+   # Verificar puertos ocupados
+   netstat -ano | findstr :80
+   netstat -ano | findstr :3306
+   
+   # Cambiar puertos en docker-compose.yml si es necesario
+   ```
+
+### Problema: "502 Bad Gateway"
+
+**Síntomas:**
+- Nginx muestra 502 Bad Gateway
+- La aplicación no responde
+
+**Soluciones:**
+```bash
+# 1. Verificar que la aplicación .NET esté corriendo
+docker exec modelsecurityda-nginx ps aux | grep dotnet
+
+# 2. Verificar logs del contenedor
+docker logs modelsecurityda-nginx --tail 20
+
+# 3. Reiniciar el contenedor
+docker-compose restart app
+```
+
+### Problema: MySQL no inicia (Puerto 3306 ocupado)
+
+**Síntomas:**
+- Error: "bind: Solo se permite un uso de cada dirección de socket"
+- MySQL ya instalado en el host
+
+**Soluciones:**
+
+**Opción 1: Deshabilitar dependencia de MySQL**
+```yaml
+# En docker-compose.yml, comentar:
+depends_on:
+  # mysql:
+  #   condition: service_healthy
+```
+
+**Opción 2: Cambiar puerto de MySQL**
+```yaml
+mysql:
+  ports:
+    - "3307:3306"  # Cambiar de 3306 a 3307
+```
+
+**Opción 3: Parar MySQL local**
+```bash
+# Windows (como administrador)
+net stop mysql80
+
+# O usar solo PostgreSQL y SQL Server
+docker-compose up app sqlserver postgres -d
+```
+
+### Problema: Puerto 80 ocupado
+
+**Síntomas:**
+- Error: "listen tcp 0.0.0.0:80: bind: Intento de acceso a un socket no permitido"
+
+**Solución:**
+```yaml
+# En docker-compose.yml cambiar:
+ports:
+  - "8888:80"  # En lugar de "80:80"
+  - "5001:5000" # En lugar de "5000:5000"
+```
+
+### Problema: Aplicación no se conecta a las BD
+
+**Síntomas:**
+- Health check muestra "Unhealthy"
+- API devuelve errores 500
+
+**Verificaciones:**
+```bash
+# 1. Verificar que las BD estén saludables
+docker ps
+
+# 2. Verificar conexiones desde el contenedor
+docker exec modelsecurityda-nginx ping sqlserver-db
+docker exec modelsecurityda-nginx ping postgres-db
+
+# 3. Verificar variables de entorno
+docker exec modelsecurityda-nginx env | grep ConnectionStrings
+```
+
+### Problema: Swagger no se carga
+
+**Síntomas:**
+- /swagger devuelve página en blanco
+- /swagger redirige incorrectamente
+
+**Soluciones:**
+```bash
+# Acceder directamente por el puerto de .NET
+curl http://localhost:5001/swagger
+
+# O verificar configuración de Nginx
+docker exec modelsecurityda-nginx cat /etc/nginx/sites-available/default
+```
+
+## Comandos de Diagnóstico
+
+### Ver estado completo
+```bash
+# Estado de contenedores
+docker ps -a
+
+# Uso de puertos
+netstat -ano | findstr :8888
+netstat -ano | findstr :5001
+netstat -ano | findstr :1433
+netstat -ano | findstr :5432
+
+# Logs completos
+docker-compose logs
+```
+
+### Limpiar y empezar de nuevo
+```bash
+# Parar todo
+docker-compose down
+
+# Limpiar contenedores huérfanos
+docker container prune
+
+# Limpiar redes no usadas
+docker network prune
+
+# Reiniciar todo
+docker-compose up -d
+```
+
+## Configuraciones Importantes Realizadas
+
+### 1. Modificaciones en docker-compose.yml
+
+**Puertos cambiados:**
+- `80:80` → `8888:80`
+- `5000:5000` → `5001:5000`
+
+**Dependencia de MySQL comentada:**
+```yaml
+depends_on:
+  sqlserver:
+    condition: service_healthy
+  postgres:
+    condition: service_healthy
+  # mysql:
+  #   condition: service_healthy
+```
+
+### 2. Configuración de Red
+
+Los contenedores están en la red `modelsecurity-network` y se comunican usando:
+- `sqlserver-db:1433`
+- `postgres-db:5432`
+- `mysql-db:3306`
+
+### 3. Variables de Entorno
+
+Las connection strings están configuradas para usar nombres de contenedores:
+```
+ConnectionStrings__SqlServer=Server=sqlserver-db,1433;Database=ModelSecurityDa;User Id=sa;Password=StrongPwd!123;Encrypt=True;TrustServerCertificate=True;
+```
+
+## Verificación Final
+
+Para confirmar que todo funciona:
+
+```bash
+# 1. Health check
+curl http://localhost:8888/health
+# Debe devolver: {"status":"Healthy","database":"Connected"...}
+
+# 2. API con SQL Server
+curl http://localhost:8888/api/Person -H "x-database-engine: sqlserver"
+# Debe devolver: JSON con array de personas
+
+# 3. API con PostgreSQL
+curl http://localhost:8888/api/Person -H "x-database-engine: postgres"
+# Debe devolver: JSON con array de personas
+
+# 4. Swagger
+curl http://localhost:8888/swagger
+# Debe devolver: HTML de Swagger UI
+```
+
+Si todos estos comandos funcionan, ¡la aplicación está correctamente configurada! 🎉

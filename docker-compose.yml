@@ -14,8 +14,8 @@ services:
       JwtSettings__Issuer: "ModelSecurityDa"
       JwtSettings__Audience: "ModelSecurityDaUsers"
     ports:
-      - "80:80"
-      - "5000:5000"
+      - "8888:80"
+      - "5001:5000"
     networks:
       - modelsecurity-network
     restart: unless-stopped
@@ -24,8 +24,8 @@ services:
         condition: service_healthy
       postgres:
         condition: service_healthy
-      mysql:
-        condition: service_healthy
+      # mysql:
+      #   condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost/health"]
       interval: 30s

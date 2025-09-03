@@ -295,7 +295,14 @@ app.MapGet("/health", async (IDbContextProvider dbProvider) =>
     }
     catch (Exception ex)
     {
-        return Results.Problem($"Health check failed: {ex.Message}");
+        return Results.Ok(new
+        {
+            status = "Unhealthy",
+            database = "Disconnected",
+            engine = "Unknown",
+            timestamp = DateTime.UtcNow,
+            error = $"Health check failed: {ex.Message}"
+        });
     }
 });
 
